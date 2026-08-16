@@ -573,6 +573,15 @@
             <select id="f_marital"><option value=""></option><option>Single</option><option>Married</option><option>Widowed</option><option>Divorced</option></select>
           </div>
           <div class="field"><label>No. of Children</label><input id="f_children" type="number" min="0"></div>
+          <div class="field wide">
+            <label>Employee Photo</label>
+            <input id="f_photoFile" type="file" accept="image/*" onchange="handlePhotoUpload(this,'photoData','photoPreview')">
+            <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+              <img id="photoPreview" style="display:none;max-height:110px;max-width:110px;border:1px solid var(--line);border-radius:6px;object-fit:cover;">
+              <span id="photoPreviewEmpty" style="font-size:12px;color:var(--ink-soft);">No photo uploaded yet.</span>
+              <button type="button" class="btn btn-sm" id="photoClearBtn" style="display:none;" onclick="clearPhoto('photoData','photoPreview','photoPreviewEmpty','photoClearBtn','f_photoFile')">Remove</button>
+            </div>
+          </div>
         </div>
 
         <div class="form-section-title"><span class="idx">02</span>CNIC / Army Record</div>
@@ -607,6 +616,15 @@
           <div class="field"><label>Deployment Location</label><input id="f_deployloc"></div>
           <div class="field"><label>Police Verification</label>
             <select id="f_policeverif"><option value=""></option><option>Done</option><option>Pending</option><option>N/A</option></select>
+          </div>
+          <div class="field wide">
+            <label>Police Verification Certificate</label>
+            <input id="f_policeverifFile" type="file" accept="image/*,.pdf" onchange="handlePhotoUpload(this,'policeVerifDoc','policeVerifPreview')">
+            <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
+              <img id="policeVerifPreview" style="display:none;max-height:110px;max-width:110px;border:1px solid var(--line);border-radius:6px;object-fit:cover;">
+              <span id="policeVerifPreviewEmpty" style="font-size:12px;color:var(--ink-soft);">No certificate uploaded yet.</span>
+              <button type="button" class="btn btn-sm" id="policeVerifClearBtn" style="display:none;" onclick="clearPhoto('policeVerifDoc','policeVerifPreview','policeVerifPreviewEmpty','policeVerifClearBtn','f_policeverifFile')">Remove</button>
+            </div>
           </div>
         </div>
 
@@ -791,7 +809,7 @@
       other client/location's Gmail from the in-app "Admin: Access" tab.
    ===================================================================== */
 const firebaseConfig = {
-  //  CONFIG HERE (from Firebase console → Project settings → Your apps)
+  // PASTE YOUR FIREBASE CONFIG HERE (from Firebase console → Project settings → Your apps)
   apiKey: "AIzaSyDJZ4AlqJ5Z7E2naih5rgwD_8OzD2Z7qLY",
   authDomain: "msm-security-guards-database.firebaseapp.com",
   projectId: "msm-security-guards-database",
@@ -1006,6 +1024,76 @@ function switchTab(tab){
   if(tab==='register') renderTable();
 }
 
+/* ===================== Photo / document uploads ===================== */
+const uploadState = { photoData: '', policeVerifDoc: '' };
+
+function updatePhotoPreviewUI(key, previewImgId, emptyId, btnId){
+  const val = uploadState[key];
+  const img = document.getElementById(previewImgId);
+  const empty = document.getElementById(emptyId);
+  const btn = document.getElementById(btnId);
+  if(!empty.dataset.defaultText) empty.dataset.defaultText = empty.textContent;
+  const isImage = val && val.startsWith('data:image');
+
+  img.style.display = isImage ? 'inline-block' : 'none';
+  if(isImage) img.src = val;
+
+  if(!val){
+    empty.textContent = empty.dataset.defaultText;
+    empty.style.display = 'inline';
+  } else if(!isImage){
+    empty.textContent = 'File attached (PDF).';
+    empty.style.display = 'inline';
+  } else {
+    empty.style.display = 'none';
+  }
+  btn.style.display = val ? 'inline-flex' : 'none';
+}
+
+function handlePhotoUpload(inputEl, key, previewImgId){
+  const file = inputEl.files && inputEl.files[0];
+  if(!file) return;
+  const emptyId = previewImgId + 'Empty';
+  const btnId = previewImgId.replace('Preview','') + 'ClearBtn';
+
+  if(file.type === 'application/pdf'){
+    const reader = new FileReader();
+    reader.onload = e => {
+      uploadState[key] = e.target.result;
+      updatePhotoPreviewUI(key, previewImgId, emptyId, btnId);
+      if(e.target.result.length > 900000) showToast('This PDF is quite large — saving may be slow or fail. A smaller file works better.');
+    };
+    reader.readAsDataURL(file);
+    return;
+  }
+
+  // Image: compress via canvas before storing, so records stay small and fast to sync.
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const maxDim = 700;
+      let w = img.width, h = img.height;
+      if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+      else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      uploadState[key] = dataUrl;
+      updatePhotoPreviewUI(key, previewImgId, emptyId, btnId);
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearPhoto(key, previewImgId, emptyId, btnId, fileInputId){
+  uploadState[key] = '';
+  document.getElementById(fileInputId).value = '';
+  updatePhotoPreviewUI(key, previewImgId, emptyId, btnId);
+}
+
 /* ===================== Form <-> record mapping ===================== */
 function readForm(){
   const g = id => document.getElementById(id).value.trim();
@@ -1049,6 +1137,7 @@ function readForm(){
     homecell: g('f_homecell'), policestation: g('f_policestation'),
     curraddr: g('f_curraddr'), joining: g('f_joining'), deployloc: g('f_deployloc'),
     acno: g('f_acno'), branchname: g('f_branchname'), branchcode: g('f_branchcode'),
+    photoData: uploadState.photoData || '', policeVerifDoc: uploadState.policeVerifDoc || '',
   };
 }
 
@@ -1071,6 +1160,11 @@ function fillForm(rec){
   s('f_uniformdate', rec.uniformdate); s('f_newold', rec.newold); s('f_supervisor', rec.supervisor);
   s('f_clientproject', rec.clientproject); s('f_photo', rec.photo); s('f_specialbranch', rec.specialbranch);
   s('f_remarks', rec.remarks);
+
+  uploadState.photoData = rec.photoData || '';
+  uploadState.policeVerifDoc = rec.policeVerifDoc || '';
+  updatePhotoPreviewUI('photoData', 'photoPreview', 'photoPreviewEmpty', 'photoClearBtn');
+  updatePhotoPreviewUI('policeVerifDoc', 'policeVerifPreview', 'policeVerifPreviewEmpty', 'policeVerifClearBtn');
 }
 
 function resetForm(){
@@ -1078,6 +1172,10 @@ function resetForm(){
   if(currentAccess && !isParent()){
     document.getElementById('f_clientproject').value = myClientProject();
   }
+  uploadState.photoData = '';
+  uploadState.policeVerifDoc = '';
+  updatePhotoPreviewUI('photoData', 'photoPreview', 'photoPreviewEmpty', 'photoClearBtn');
+  updatePhotoPreviewUI('policeVerifDoc', 'policeVerifPreview', 'policeVerifPreviewEmpty', 'policeVerifClearBtn');
   cancelEdit();
 }
 
@@ -1143,9 +1241,12 @@ function renderTable(){
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = filtered.map(r=>{
     const cells = COLUMNS.map(c=>`<td>${escapeHtml(r[c.key] ?? '')}</td>`).join('');
+    const photoLink = r.photoData ? `<a class="btn btn-sm" href="${r.photoData}" target="_blank" rel="noopener">📷 Photo</a>` : '';
+    const verifLink = r.policeVerifDoc ? `<a class="btn btn-sm" href="${r.policeVerifDoc}" target="_blank" rel="noopener">🛡 Verif Doc</a>` : '';
     return `<tr>${cells}<td class="row-actions">
       <button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button>
       <button class="btn btn-sm" onclick="printRecordForm('${r.id}')">🖨 Print</button>
+      ${photoLink}${verifLink}
       <button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button>
     </td></tr>`;
   }).join('');
