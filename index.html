@@ -203,6 +203,33 @@
   .btn-danger{color:var(--danger); border-color:#e6cfc9;}
   .btn-sm{padding:5px 10px; font-size:12px; border-radius:5px;}
 
+  .photo-print-settings{
+    margin-top:12px;
+    padding:12px 14px;
+    border:1px solid var(--line);
+    border-left:3px solid var(--brass);
+    border-radius:0 6px 6px 0;
+    background:var(--paper-dark);
+  }
+  .photo-print-settings-title{
+    font-size:12px;
+    font-weight:700;
+    color:var(--navy);
+    margin-bottom:9px;
+  }
+  .photo-setting-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .photo-setting-row label,.photo-setting-grid label{
+    display:flex;flex-direction:column;gap:4px;
+    font-size:10.5px;color:var(--ink-soft);font-weight:600;
+  }
+  .photo-setting-row select,.photo-setting-grid input{
+    border:1px solid var(--line);border-radius:5px;padding:6px 8px;
+    background:var(--white);color:var(--ink);font:inherit;font-size:12px;min-width:180px;
+  }
+  .photo-setting-grid{display:grid;grid-template-columns:repeat(4,minmax(90px,1fr));gap:8px;margin-top:9px;}
+  .photo-setting-grid input{min-width:0;width:100%;}
+  .photo-setting-actions{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:9px;font-size:10.5px;color:var(--ink-soft);}
+
   /* ===== Main container ===== */
   main{
     max-width:1180px;
@@ -421,7 +448,8 @@
     left:75.5%;
     width:18.5%;
     height:19%;
-    object-fit:cover;
+    object-fit:contain;
+    object-position:center center;
     border:1px solid #999;
     background:#fff;
   }
@@ -543,7 +571,7 @@
   <div class="actions">
     <span class="count-pill" id="userBadge" style="margin-right:4px;"></span>
     <button class="btn btn-sm" onclick="doSignOut()">Sign out</button>
-    <button class="btn" onclick="printLiveForm()">🖨 Print 2-Page Enrollment Form</button>
+    <button class="btn" onclick="printLiveForm()">🖨 Print Enrollment Form (2/3 Pages)</button>
     <button class="btn btn-brass" onclick="exportExcel()">⬇ Export Long Roll (.xlsx)</button>
     <button class="btn" onclick="document.getElementById('longRollImport').click()">⬆ Import Long Roll (.xlsx)</button>
     <input id="longRollImport" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importLongRoll(this.files[0])">
@@ -588,10 +616,38 @@
           <div class="field wide">
             <label>Employee Photo</label>
             <input id="f_photoFile" type="file" accept="image/*" onchange="handlePhotoUpload(this,'photoData','photoPreview')">
-            <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
-              <img id="photoPreview" style="display:none;max-height:110px;max-width:110px;border:1px solid var(--line);border-radius:6px;object-fit:cover;">
+            <div style="margin-top:8px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+              <img id="photoPreview" style="display:none;max-height:110px;max-width:110px;border:1px solid var(--line);border-radius:6px;object-fit:contain;background:#fff;">
               <span id="photoPreviewEmpty" style="font-size:12px;color:var(--ink-soft);">No photo uploaded yet.</span>
               <button type="button" class="btn btn-sm" id="photoClearBtn" style="display:none;" onclick="clearPhoto('photoData','photoPreview','photoPreviewEmpty','photoClearBtn','f_photoFile')">Remove</button>
+            </div>
+
+            <div class="photo-print-settings">
+              <div class="photo-print-settings-title">🖨 Photo Print Position &amp; Size</div>
+              <div class="photo-setting-row">
+                <label>Mode
+                  <select id="f_photoPrintMode" onchange="updatePhotoPrintSettingsUI()">
+                    <option value="auto">Auto (recommended)</option>
+                    <option value="custom">Custom</option>
+                  </select>
+                </label>
+                <label>Fit
+                  <select id="f_photoFit" onchange="savePhotoPrintSettings()">
+                    <option value="contain">Contain — full photo visible</option>
+                    <option value="cover">Cover — fill the box</option>
+                  </select>
+                </label>
+              </div>
+              <div id="photoCustomSettings" class="photo-setting-grid" style="display:none;">
+                <label>Top %<input id="f_photoTop" type="number" min="0" max="90" step="0.1" onchange="savePhotoPrintSettings()"></label>
+                <label>Left %<input id="f_photoLeft" type="number" min="0" max="90" step="0.1" onchange="savePhotoPrintSettings()"></label>
+                <label>Width %<input id="f_photoWidth" type="number" min="5" max="40" step="0.1" onchange="savePhotoPrintSettings()"></label>
+                <label>Height %<input id="f_photoHeight" type="number" min="5" max="40" step="0.1" onchange="savePhotoPrintSettings()"></label>
+              </div>
+              <div class="photo-setting-actions">
+                <button type="button" class="btn btn-sm" onclick="resetPhotoPrintSettings()">↺ Reset Auto</button>
+                <span>Custom values change the photo box on the printed Page 1 only.</span>
+              </div>
             </div>
           </div>
         </div>
@@ -944,6 +1000,68 @@ function safeSave(key, value){
   try{ localStorage.setItem(key, JSON.stringify(value)); return true; }
   catch(e){ return false; }
 }
+
+/* ===================== Printed employee photo settings =====================
+   Device/browser-level settings only; they never change saved employee data.
+*/
+const PHOTO_PRINT_SETTINGS_KEY = 'msm_employee_photo_print_v2';
+const PHOTO_PRINT_DEFAULTS = {mode:'auto',fit:'contain',top:2.4,left:75.5,width:18.5,height:19};
+
+function getPhotoPrintSettings(){
+  const saved = safeLoad(PHOTO_PRINT_SETTINGS_KEY, {});
+  return {...PHOTO_PRINT_DEFAULTS, ...(saved && typeof saved==='object' ? saved : {})};
+}
+function loadPhotoPrintSettingsUI(){
+  const s=getPhotoPrintSettings();
+  const mode=document.getElementById('f_photoPrintMode'), fit=document.getElementById('f_photoFit');
+  if(!mode || !fit) return;
+  mode.value=s.mode==='custom'?'custom':'auto';
+  fit.value=s.fit==='cover'?'cover':'contain';
+  document.getElementById('f_photoTop').value=s.top;
+  document.getElementById('f_photoLeft').value=s.left;
+  document.getElementById('f_photoWidth').value=s.width;
+  document.getElementById('f_photoHeight').value=s.height;
+  updatePhotoPrintSettingsUI(false);
+}
+function savePhotoPrintSettings(){
+  const mode=document.getElementById('f_photoPrintMode')?.value||'auto';
+  const fit=document.getElementById('f_photoFit')?.value||'contain';
+  const clamp=(id,fallback,min,max)=>{
+    const n=Number(document.getElementById(id)?.value);
+    return Number.isFinite(n)?Math.min(max,Math.max(min,n)):fallback;
+  };
+  safeSave(PHOTO_PRINT_SETTINGS_KEY,{
+    mode:mode==='custom'?'custom':'auto',fit:fit==='cover'?'cover':'contain',
+    top:clamp('f_photoTop',2.4,0,90),left:clamp('f_photoLeft',75.5,0,90),
+    width:clamp('f_photoWidth',18.5,5,40),height:clamp('f_photoHeight',19,5,40)
+  });
+  updatePhotoPrintSettingsUI(false);
+}
+function updatePhotoPrintSettingsUI(shouldSave=true){
+  const mode=document.getElementById('f_photoPrintMode'), custom=document.getElementById('photoCustomSettings');
+  if(!mode || !custom) return;
+  custom.style.display=mode.value==='custom'?'grid':'none';
+  if(shouldSave) savePhotoPrintSettings();
+}
+function resetPhotoPrintSettings(){
+  safeSave(PHOTO_PRINT_SETTINGS_KEY,PHOTO_PRINT_DEFAULTS);
+  loadPhotoPrintSettingsUI();
+  showToast('Photo print settings reset to Auto.');
+}
+function applyPhotoPrintSettings(){
+  const photoEl=document.getElementById('pf_employeePhoto');
+  if(!photoEl) return;
+  const s=getPhotoPrintSettings();
+  const top=s.mode==='custom'?Number(s.top):2.4;
+  const left=s.mode==='custom'?Number(s.left):75.5;
+  const width=s.mode==='custom'?Number(s.width):18.5;
+  const height=s.mode==='custom'?Number(s.height):19;
+  photoEl.style.top=`${top}%`;
+  photoEl.style.left=`${left}%`;
+  photoEl.style.width=`${width}%`;
+  photoEl.style.height=`${height}%`;
+  photoEl.style.objectFit=s.fit==='cover'?'cover':'contain';
+}
 function persistMeta(){
   safeSave(META_KEY, { companyName: document.getElementById('companyName').value });
 }
@@ -958,6 +1076,7 @@ function startApp(){
   editingId = null;
   const meta = safeLoad(META_KEY, {});
   if(meta.companyName) document.getElementById('companyName').value = meta.companyName;
+  loadPhotoPrintSettingsUI();
 
   document.getElementById('userBadge').textContent = `${currentUser.email} · ${isParent()?'Parent (all data)':('Client: '+myClientProject())}`;
   document.getElementById('adminTabBtn').style.display = isParent() ? '' : 'none';
@@ -1525,6 +1644,7 @@ function populatePrintTemplate(){
 
   // Employee photo (only shown if uploaded — avoids a broken-image icon otherwise).
   const photoEl = document.getElementById('pf_employeePhoto');
+  applyPhotoPrintSettings();
   if(d.photoData && d.photoData.startsWith('data:image')){
     photoEl.src = d.photoData;
     photoEl.style.display = 'block';
@@ -1537,19 +1657,27 @@ function populatePrintTemplate(){
   // hidden) so it never becomes a stray blank page when there's no document.
   const existingVerifPage = document.getElementById('pf_policeVerifPage');
   if(existingVerifPage) existingVerifPage.remove();
-  if(d.policeVerifDoc && d.policeVerifDoc.startsWith('data:image')){
+  if(d.policeVerifDoc){
     const page = document.createElement('div');
     page.className = 'pf-print-page';
     page.id = 'pf_policeVerifPage';
     page.style.background = '#fff';
-    const img = document.createElement('img');
-    img.src = d.policeVerifDoc;
-    img.style.position = 'absolute';
-    img.style.inset = '0';
-    img.style.width = '100%';
-    img.style.height = '100%';
-    img.style.objectFit = 'contain';
-    page.appendChild(img);
+    if(d.policeVerifDoc.startsWith('data:image')){
+      const img = document.createElement('img');
+      img.src = d.policeVerifDoc;
+      img.style.position = 'absolute'; img.style.inset = '0';
+      img.style.width = '100%'; img.style.height = '100%';
+      img.style.objectFit = 'contain'; img.style.objectPosition = 'center center';
+      page.appendChild(img);
+    } else if(d.policeVerifDoc.startsWith('data:application/pdf')){
+      const pdfFrame = document.createElement('iframe');
+      pdfFrame.src = d.policeVerifDoc;
+      pdfFrame.title = 'Police Verification Certificate';
+      pdfFrame.style.position = 'absolute'; pdfFrame.style.inset = '0';
+      pdfFrame.style.width = '100%'; pdfFrame.style.height = '100%';
+      pdfFrame.style.border = '0'; pdfFrame.style.background = '#fff';
+      page.appendChild(pdfFrame);
+    }
     document.getElementById('printFormTemplate').appendChild(page);
   }
 }
