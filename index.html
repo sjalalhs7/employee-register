@@ -441,9 +441,13 @@
       -webkit-print-color-adjust:exact !important;
       print-color-adjust:exact !important;
     }
-    body > *:not(#printFormTemplate){display:none !important;}
+    body *{visibility:hidden !important;}
+    #printFormTemplate, #printFormTemplate *{visibility:visible !important;}
     #printFormTemplate{
       display:block !important;
+      position:absolute !important;
+      top:0 !important;
+      left:0 !important;
       width:8.5in !important;
       margin:0 !important;
       padding:0 !important;
@@ -1461,11 +1465,19 @@ let printSourceId = null; // null = print the live New Entry form; else a record
 
 function printLiveForm(){
   printSourceId = null;
-  window.print();
+  doPrint();
 }
 function printRecordForm(id){
   printSourceId = id;
-  window.print();
+  doPrint();
+}
+function doPrint(){
+  populatePrintTemplate();
+  document.getElementById('printFormTemplate').style.display='block';
+  fitPrintValues();
+  // Give the browser a moment to lay out the now-visible template before
+  // opening print — on some mobile browsers 'beforeprint' fires too late.
+  setTimeout(()=>{ window.print(); }, 60);
 }
 
 function getPrintData(){
