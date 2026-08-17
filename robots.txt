@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://sjalalhs7.github.io/employee-register/sitemap.xml
