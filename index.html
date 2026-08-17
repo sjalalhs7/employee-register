@@ -517,6 +517,87 @@
   }
 #publicSeoInfo{display:block;}
 @media print{#publicSeoInfo{display:none !important;}}
+
+/* ===== MSM Premium Login Redesign ===== */
+#msmLoginPage{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 18px;
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(201,162,83,.16), transparent 32%),
+    radial-gradient(circle at 85% 80%, rgba(76,108,135,.14), transparent 34%),
+    linear-gradient(135deg,#101c29 0%,#1B2A3A 48%,#28405A 100%);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+#msmLoginPage::before{
+  content:"";
+  position:absolute;inset:-20%;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.035' stroke-width='2'%3E%3Ccircle cx='210' cy='210' r='130'/%3E%3Ccircle cx='210' cy='210' r='105'/%3E%3Cpath d='M110 210h200M210 110v200'/%3E%3C/g%3E%3C/svg%3E");
+  transform:rotate(-8deg);
+  pointer-events:none;
+}
+.msm-login-card{
+  width:min(520px,100%);
+  position:relative;
+  z-index:2;
+  padding:42px 38px 32px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:22px;
+  background:rgba(255,253,248,.97);
+  box-shadow:0 30px 80px rgba(0,0,0,.34);
+  text-align:center;
+}
+.msm-login-logo{
+  width:92px;height:92px;object-fit:contain;
+  background:#fff;border-radius:14px;
+  padding:7px;margin:0 auto 18px;
+  box-shadow:0 8px 24px rgba(27,42,58,.18);
+}
+.msm-login-kicker{
+  color:#A8802F;font-size:11px;font-weight:800;
+  letter-spacing:3px;text-transform:uppercase;margin-bottom:9px;
+}
+.msm-login-title{
+  margin:0;color:#1B2A3A;font-family:Georgia,serif;
+  font-size:clamp(25px,5vw,35px);line-height:1.12;
+  letter-spacing:.6px;text-transform:uppercase;
+}
+.msm-login-designer{
+  margin:12px 0 25px;color:#5B5A50;
+  font-size:12px;font-weight:800;letter-spacing:1.2px;
+  text-transform:uppercase;
+}
+.msm-login-divider{
+  height:1px;background:linear-gradient(90deg,transparent,#D9CFB8,transparent);
+  margin:0 0 24px;
+}
+.msm-google-btn{
+  width:100%;min-height:52px;border:1px solid #D9CFB8;
+  border-radius:10px;background:#fff;color:#1B2A3A;
+  font-size:14px;font-weight:750;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  transition:.2s ease;box-shadow:0 3px 12px rgba(27,42,58,.08);
+}
+.msm-google-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(27,42,58,.14);border-color:#A8802F;}
+.msm-google-icon{width:20px;height:20px}
+.msm-login-note{
+  margin:17px 0 0;color:#6b6a61;font-size:11.5px;line-height:1.55;
+}
+.msm-login-security{
+  margin-top:18px;padding:10px 12px;border-radius:9px;
+  background:#F6F2E8;border:1px solid #D9CFB8;
+  color:#5B5A50;font-size:11px;line-height:1.5;
+}
+.msm-login-footer{
+  margin-top:24px;padding-top:17px;border-top:1px solid #E7DFCF;
+  color:#77746b;font-size:10.5px;line-height:1.6;
+}
+#msmLoginError{display:none;margin-top:13px;color:#9B3A31;font-size:12px;font-weight:650;line-height:1.45}
+
 </style>
 </head>
 <body>
@@ -540,12 +621,40 @@
   <div style="font-size:13px;line-height:1.6;margin-top:6px;">Secure employee enrollment and long-roll management for authorized Parent, department, sector and client users.</div>
 </div>
 
-<!-- ============ LOGIN SCREEN ============ -->
-<div id="loginGate" style="display:none; max-width:420px; margin:80px auto; padding:36px 30px; text-align:center; background:#FFFDF8; border:1px solid #D9CFB8; border-radius:10px; box-shadow:0 4px 18px rgba(27,42,58,0.10); font-family:Arial,sans-serif;">
-  <div style="font-family:Georgia,serif; font-size:20px; color:#1B2A3A; margin-bottom:6px;">Employee Register &amp; Long Roll</div>
-  <div style="font-size:13px; color:#5B5A50; margin-bottom:22px;">Sign in with the Gmail account that was authorized for your location or client.</div>
-  <button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="doGoogleSignIn()">Sign in with Google</button>
-  <div id="loginError" style="display:none; margin-top:14px; font-size:12.5px; color:#9B3A31;"></div>
+<!-- ============ PREMIUM MSM LOGIN SCREEN ============ -->
+<div id="loginGate" style="display:none;">
+  <div id="msmLoginPage">
+    <div class="msm-login-card">
+      <img class="msm-login-logo" src="data:image/png;base64,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" alt="MSM Security Guards Logo" id="msmLoginLogo">
+      <div class="msm-login-kicker">SECURE ACCESS PORTAL</div>
+      <h1 class="msm-login-title">WELCOME TO MSM<br>LONGROLL DATABASE</h1>
+      <div class="msm-login-designer">DESIGNED BY SYED JALAL HUSSAIN SHAH</div>
+      <div class="msm-login-divider"></div>
+
+      <button class="msm-google-btn" onclick="doGoogleSignIn()" type="button">
+        <svg class="msm-google-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#4285F4" d="M21.35 12.27c0-.73-.07-1.43-.2-2.1H12v3.98h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.27z"/>
+          <path fill="#34A853" d="M12 21.67c2.63 0 4.84-.87 6.45-2.35l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.72-5.46-4.03H3.29v2.53A9.74 9.74 0 0 0 12 21.67z"/>
+          <path fill="#FBBC05" d="M6.54 13.76A5.86 5.86 0 0 1 6.23 12c0-.61.11-1.21.31-1.76V7.71H3.29A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.05 1.04 4.29l3.25-2.53z"/>
+          <path fill="#EA4335" d="M12 6.21c1.43 0 2.71.49 3.72 1.46l2.79-2.79C16.84 3.28 14.63 2.33 12 2.33a9.74 9.74 0 0 0-8.71 5.38l3.25 2.53C7.31 7.93 9.46 6.21 12 6.21z"/>
+        </svg>
+        Continue with Google / Gmail
+      </button>
+
+      <div id="msmLoginError"></div>
+      <div class="msm-login-note">
+        Sign in using the <strong>authorized Gmail account</strong> assigned to your sector, department or client.
+      </div>
+      <div class="msm-login-security">
+        🔐 <strong>Authorized Access Only</strong><br>
+        Your Gmail is checked against the MSM authorized-user list. Unauthorized accounts cannot access the Long Roll database.
+      </div>
+      <div class="msm-login-footer">
+        <strong>MSM Longroll Database © All Rights Reserved</strong><br>
+        Designed by Syed Jalal Hussain Shah
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ============ NOT AUTHORIZED SCREEN ============ -->
@@ -993,7 +1102,7 @@ function initFirebase(){
   auth.onAuthStateChanged(async (user) => {
     if(recordsUnsub){ recordsUnsub(); recordsUnsub=null; }
     if(adminUsersUnsub){ adminUsersUnsub(); adminUsersUnsub=null; }
-    if(!user){ currentUser=null; currentAccess=null; const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='block'; showOnly('loginGate'); return; }
+    if(!user){ currentUser=null; currentAccess=null; const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='none'; showOnly('loginGate'); return; }
     currentUser = user;
     const email = (user.email||'').toLowerCase();
     try{
@@ -1017,9 +1126,9 @@ function initFirebase(){
 
 function doGoogleSignIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
-  document.getElementById('loginError').style.display='none';
+  document.getElementById('msmLoginError').style.display='none';
   auth.signInWithPopup(provider).catch(err=>{
-    const el = document.getElementById('loginError');
+    const el = document.getElementById('msmLoginError');
     el.textContent = 'Sign-in failed: ' + err.message;
     el.style.display='block';
   });
