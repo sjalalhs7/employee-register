@@ -415,15 +415,18 @@
     display:block;
     image-rendering:auto;
   }
+  /* Official photo area on the supplied MSM enrollment artwork.
+     The source artwork is 1232x1584; these percentages map to the
+     printed passport-photo rectangle (roughly x=985..1129, y=168..329). */
   .pf-photo-frame{
     position:absolute;
     z-index:6;
-    top:2.4%;
-    left:75.5%;
-    width:18.5%;
-    height:19%;
+    top:10.58%;
+    left:79.95%;
+    width:11.78%;
+    height:10.15%;
     overflow:hidden;
-    border:1px solid #999;
+    border:0;
     background:#fff;
   }
   .pf-photo-box{
@@ -455,8 +458,8 @@
     z-index:5;
     color:#111;
     font-family:Arial,Helvetica,sans-serif;
-    font-size:12px; /* kept in sync with PRINT_FONT_CONFIG.baseSize in the script below */
-    line-height:1;
+    font-size:11px;
+    line-height:1.05;
     transform:translateY(-2px);
     white-space:nowrap;
     overflow:hidden;
@@ -468,6 +471,7 @@
   }
   @media print{
     @page{size:Letter portrait;margin:0;}
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
     html,body{
       margin:0 !important;
       padding:0 !important;
@@ -737,21 +741,23 @@
     <!-- ============ ADMIN: ACCESS VIEW (parent role only) ============ -->
     <div id="view-admin" style="display:none;">
       <div class="helper-note">
-        Add the Gmail address of every client / location / sector that should be able to sign in. Give each
-        one a <strong>Client / Project</strong> name that exactly matches what you type in the
+        Only an authorized Parent Gmail can manage access. Parent/Admin accounts are protected from removal.
+        Add the Gmail address of every department / sector / client / location that should be able to sign in.
+        Give each one a <strong>Client / Project</strong> name that exactly matches what you type in the
         "Client / Project" field on entries for that location — that's how their view gets filtered to only
         their own data. Your own Parent account (role = Parent) can see everything, across all locations.
       </div>
       <div class="form-section-title"><span class="idx">+</span>Add authorized Gmail</div>
       <div class="grid">
         <div class="field"><label>Gmail address</label><input id="adm_email" type="email" placeholder="location@gmail.com"></div>
-        <div class="field"><label>Role</label>
-          <select id="adm_role" onchange="document.getElementById('adm_clientRow').style.display = this.value==='client' ? 'flex' : 'none';">
-            <option value="client">Client / Location (sees only their own data)</option>
-            <option value="parent">Parent (sees everything)</option>
-          </select>
+        <div class="field">
+          <label>Access Type</label>
+          <input value="Client / Department / Sector" readonly style="background:var(--paper-dark);">
         </div>
-        <div class="field" id="adm_clientRow"><label>Client / Project name</label><input id="adm_clientproject" placeholder="must match the Client / Project field exactly"></div>
+        <div class="field" id="adm_clientRow">
+          <label>Client / Project name</label>
+          <input id="adm_clientproject" placeholder="must match the Client / Project field exactly">
+        </div>
       </div>
       <div style="margin-top:14px;"><button class="btn btn-primary" onclick="addAuthorizedUser()">+ Add Gmail access</button></div>
 
@@ -1057,18 +1063,26 @@ function subscribeAdminUsers(){
         <td>${escapeHtml(r.email)}</td>
         <td>${r.role==='parent'?'Parent':'Client / Location'}</td>
         <td>${escapeHtml(r.clientproject||'')}</td>
-        <td class="row-actions">${r.role==='parent' ? '<span style="color:var(--ink-soft);font-size:12px;">Protected</span>' : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
+        <td class="row-actions">${r.role==='parent'
+          ? '<span style="font-size:11px;color:var(--ink-soft);font-weight:600;">Protected Parent</span>'
+          : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
       </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:20px;">No one added yet.</td></tr>`;
   });
 }
 
 function addAuthorizedUser(){
+  if(!isParent()){
+    showToast('Only an authorized Parent Gmail account can manage access.');
+    return;
+  }
   const email = document.getElementById('adm_email').value.trim().toLowerCase();
-  const role = document.getElementById('adm_role').value;
   const clientproject = document.getElementById('adm_clientproject').value.trim();
   if(!email || !email.includes('@')){ showToast('Enter a valid Gmail address.'); return; }
-  if(role==='client' && !clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
-  const payload = role==='parent' ? {role:'parent'} : {role:'client', clientproject};
+  if(!clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
+
+  // Parent/Admin is deliberately NOT editable from the web UI.
+  // It is the protected account created in Firestore during first-time setup.
+  const payload = {role:'client', clientproject};
   db.collection(AUTHUSERS_COLLECTION).doc(email).set(payload)
     .then(()=>{
       showToast(`Added access for ${email}.`);
@@ -1077,19 +1091,29 @@ function addAuthorizedUser(){
     })
     .catch(err=>showToast('Could not add: ' + err.message));
 }
-function removeAuthorizedUser(email){
-  // Safety check: Parent/Admin accounts can never be removed from here, even if this
-  // function is invoked directly, so the company always keeps at least one Parent account.
-  db.collection(AUTHUSERS_COLLECTION).doc(email).get().then(doc=>{
-    if(doc.exists && doc.data().role === 'parent'){
-      showToast('Parent accounts are protected and cannot be removed here.');
+async function removeAuthorizedUser(email){
+  if(!isParent() || !currentUser){
+    showToast('Only an authorized Parent Gmail account can manage access.');
+    return;
+  }
+  const targetEmail=String(email||'').trim().toLowerCase();
+  try{
+    const target=await db.collection(AUTHUSERS_COLLECTION).doc(targetEmail).get();
+    if(!target.exists){
+      showToast('This Gmail account is already removed.');
       return;
     }
-    if(!confirm(`Remove access for ${email}?`)) return;
-    db.collection(AUTHUSERS_COLLECTION).doc(email).delete()
-      .then(()=>showToast(`Removed ${email}.`))
-      .catch(err=>showToast('Could not remove: ' + err.message));
-  }).catch(err=>showToast('Could not check user: ' + err.message));
+    if(target.data().role==='parent'){
+      showToast('Parent/Admin Gmail is protected and cannot be removed here.');
+      return;
+    }
+    if(!confirm(`Remove access for ${targetEmail}?`)) return;
+    await db.collection(AUTHUSERS_COLLECTION).doc(targetEmail).delete();
+    showToast(`Removed ${targetEmail}.`);
+  }catch(err){
+    console.error(err);
+    showToast('Could not remove: ' + err.message);
+  }
 }
 
 /* ===================== Tabs ===================== */
@@ -1651,41 +1675,35 @@ function printRecordForm(id){
   doPrint();
 }
 async function doPrint(){
-  populatePrintTemplate();
-  document.getElementById('printFormTemplate').style.display='block';
-  fitPrintValues();
-  // Wait for an uploaded police-verification document to finish rendering before
-  // opening the browser print dialog, preventing a blank third page. This covers
-  // BOTH cases: a PDF (rendered to <canvas> by PDF.js) and a plain JPG/PNG image
-  // (which needs its own decode to complete before the print snapshot is taken).
-  await new Promise(resolve=>setTimeout(resolve,120));
-  const pdfPage=document.getElementById('pf_policeVerifPage');
-  const verifDoc = getPrintData().policeVerifDoc;
-  if(pdfPage && verifDoc && verifDoc.startsWith('data:application/pdf')){
-    await new Promise(resolve=>{
-      const check=()=>{ if(pdfPage.querySelector('canvas') || pdfPage.textContent.includes('could not be rendered')) resolve(); else setTimeout(check,80); };
-      check();
-    });
-  } else if(pdfPage && verifDoc && verifDoc.startsWith('data:image')){
-    await new Promise(resolve=>{
-      const check=()=>{
-        const img = pdfPage.querySelector('img');
-        if(img && img.complete && img.naturalWidth > 0) resolve(); else setTimeout(check,60);
-      };
-      check();
-    });
+  try{
+    await populatePrintTemplate();
+    const template=document.getElementById('printFormTemplate');
+    template.style.display='block';
+
+    // Wait for every image used by the print layout and for browser fonts.
+    const images=[...template.querySelectorAll('img')];
+    await Promise.all(images.map(img=>{
+      if(img.complete){
+        return img.decode ? img.decode().catch(()=>{}) : Promise.resolve();
+      }
+      return new Promise(resolve=>{
+        img.onload=resolve; img.onerror=resolve;
+      });
+    }));
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+
+    fitPrintValues();
+
+    // Give the browser one paint cycle so dynamically created verification
+    // pages/canvases are included in the print tree before opening the dialog.
+    await new Promise(requestAnimationFrame);
+    await new Promise(resolve=>setTimeout(resolve,80));
+
+    window.print();
+  }catch(err){
+    console.error('Print preparation failed:',err);
+    showToast('Print could not be prepared. Please try again.');
   }
-  // Also make sure the employee photo (if any) has finished decoding into the
-  // passport-photo box before printing, using the same completeness check.
-  const photoEl = document.getElementById('pf_employeePhoto');
-  if(photoEl && photoEl.getAttribute('src')){
-    await new Promise(resolve=>{
-      const check=()=>{ if(photoEl.complete && photoEl.naturalWidth > 0) resolve(); else setTimeout(check,60); };
-      check();
-    });
-  }
-  fitPrintValues();
-  setTimeout(()=>{ window.print(); }, 80);
 }
 
 function getPrintData(){
@@ -1697,7 +1715,7 @@ function getPrintData(){
   return readForm();
 }
 
-function populatePrintTemplate(){
+async function populatePrintTemplate(){
   const d = getPrintData();
   const formatDate = (val) => {
     if(!val) return '';
@@ -1721,28 +1739,11 @@ function populatePrintTemplate(){
   const photoEl = document.getElementById('pf_employeePhoto');
   if(d.photoData && d.photoData.startsWith('data:image')){
     photoFrame.style.display='block';
-    const ps = normalizePhotoSettings(d.photoSettings);
-    // Mirror the New Entry photo adjuster's own math exactly, using the actual
-    // frame pixel size (not object-fit:cover), so the passport photo always lands
-    // fully inside the printed box at the right zoom/position, never overflowing it.
-    const img = new Image();
-    img.onload = () => {
-      const frameW = photoFrame.clientWidth || photoFrame.offsetWidth;
-      const frameH = photoFrame.clientHeight || photoFrame.offsetHeight;
-      const baseScale = Math.max(frameW / img.naturalWidth, frameH / img.naturalHeight);
-      const scale = baseScale * ps.scale;
-      const px = (ps.x/100) * frameW;
-      const py = (ps.y/100) * frameH;
-      photoEl.style.width = img.naturalWidth + 'px';
-      photoEl.style.height = img.naturalHeight + 'px';
-      photoEl.style.left = '50%';
-      photoEl.style.top = '50%';
-      photoEl.style.objectFit = 'unset';
-      photoEl.style.transformOrigin = 'center center';
-      photoEl.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) scale(${scale})`;
-    };
-    img.src = d.photoData;
     photoEl.src = d.photoData;
+    const ps = normalizePhotoSettings(d.photoSettings);
+    photoEl.style.objectPosition='50% 50%';
+    photoEl.style.transform=`translate(${ps.x/2}%, ${ps.y/2}%) scale(${ps.scale})`;
+    photoEl.style.transformOrigin='center center';
   } else {
     photoEl.removeAttribute('src');
     photoFrame.style.display = 'none';
@@ -1764,8 +1765,16 @@ function populatePrintTemplate(){
     document.getElementById('printFormTemplate').appendChild(page);
     if(d.policeVerifDoc.startsWith('data:image')){
       img.src=d.policeVerifDoc;
+      if(img.decode){
+        try{ await img.decode(); }catch(_e){}
+      } else {
+        await new Promise(resolve=>{
+          if(img.complete) resolve();
+          else { img.onload=resolve; img.onerror=resolve; }
+        });
+      }
     } else {
-      renderPolicePdfForPrint(d.policeVerifDoc, img, page);
+      await renderPolicePdfForPrint(d.policeVerifDoc, img, page);
     }
   }
 }
@@ -1774,61 +1783,83 @@ async function renderPolicePdfForPrint(dataUrl, imgEl, pageEl){
   try{
     if(!window.pdfjsLib) throw new Error('PDF renderer is not loaded');
     pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    const raw=atob(dataUrl.split(',')[1]); const bytes=new Uint8Array(raw.length); for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+
+    const raw=atob(dataUrl.split(',')[1]);
+    const bytes=new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+
     const pdf=await pdfjsLib.getDocument({data:bytes}).promise;
-    // First page is the official printable verification page. If the certificate
-    // itself has multiple pages, add each page as another print page automatically.
+
+    // Render every PDF page into an actual print page. Nothing is sent to
+    // window.print() until all canvases have finished rendering.
     for(let i=1;i<=pdf.numPages;i++){
       const target=i===1?pageEl:document.createElement('div');
-      if(i>1){target.className='pf-print-page'; target.style.background='#fff'; target.id='pf_policeVerifPage_'+i; document.getElementById('printFormTemplate').appendChild(target);}
+
+      if(i>1){
+        target.className='pf-print-page';
+        target.style.background='#fff';
+        target.id='pf_policeVerifPage_'+i;
+        document.getElementById('printFormTemplate').appendChild(target);
+      }
+
       const canvas=document.createElement('canvas');
       const page=await pdf.getPage(i);
       const base=page.getViewport({scale:1});
       const scale=Math.min(816/base.width,1056/base.height);
       const viewport=page.getViewport({scale});
-      canvas.width=Math.ceil(viewport.width); canvas.height=Math.ceil(viewport.height);
-      canvas.style.position='absolute'; canvas.style.left='50%'; canvas.style.top='50%'; canvas.style.transform='translate(-50%,-50%)'; canvas.style.maxWidth='100%'; canvas.style.maxHeight='100%';
+
+      canvas.width=Math.ceil(viewport.width);
+      canvas.height=Math.ceil(viewport.height);
+      canvas.style.position='absolute';
+      canvas.style.left='50%';
+      canvas.style.top='50%';
+      canvas.style.transform='translate(-50%,-50%)';
+      canvas.style.maxWidth='100%';
+      canvas.style.maxHeight='100%';
+
       await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-      if(i===1){ imgEl.replaceWith(canvas); } else target.appendChild(canvas);
+
+      if(i===1) imgEl.replaceWith(canvas);
+      else target.appendChild(canvas);
+
+      target.dataset.ready='1';
     }
   }catch(err){
     pageEl.innerHTML='<div style="padding:36px;font-family:Arial,sans-serif;color:#9B3A31;font-size:16px;text-align:center;">Police Verification PDF could not be rendered for printing.<br><small>Please re-upload the certificate or use an image (JPG/PNG).</small></div>';
+    pageEl.dataset.ready='error';
     console.error('Police verification PDF render error:',err);
   }
 }
 
-/* PRINT_FONT_CONFIG: change ONLY these two numbers to fine-tune how the
-   manually typed data matches the printed form's own label font size —
-   no other code needs to change. Compare a fresh print to the paper form
-   and nudge baseSize up/down by 0.5px steps until they line up visually. */
-const PRINT_FONT_CONFIG = { baseSize: 12, minSize: 9 };
-
 function fitPrintValues(){
-  // Letter print width is 8.5in = 816 CSS px.
-  // Entered data starts at PRINT_FONT_CONFIG.baseSize (matched to the
-  // enrollment form's own printed field size) and is reduced only when the
-  // actual value is too long for its own printed line, preventing overlap.
+  // The supplied artwork is 1232px wide and prints at 8.5in (816 CSS px).
+  // Keep entered values close to the artwork's own label font, then shrink
+  // only when a value would overflow its allotted printed line.
   const PAGE_PX = 816;
-  const { baseSize, minSize } = PRINT_FONT_CONFIG;
+  const baseSize = 11;
+  const minSize = 8.5;
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
+
   document.querySelectorAll('#printFormTemplate .pf-value').forEach(el=>{
     const m = (el.getAttribute('style')||'').match(/width\s*:\s*([0-9.]+)%/);
     const maxWidth = m ? PAGE_PX * parseFloat(m[1]) / 100 : PAGE_PX;
-    let size = baseSize;
     const text = el.textContent || '';
+    let size = baseSize;
+
     while(size > minSize){
       ctx.font = `400 ${size}px Arial`;
       if(ctx.measureText(text).width <= maxWidth - 3) break;
       size -= 0.25;
     }
+
     el.style.fontSize = size.toFixed(2) + 'px';
-    el.style.transform = 'translateY(-2px)';
+    el.style.lineHeight = '1.05';
+    el.style.transform = 'translateY(-1px)';
   });
 }
 
 window.addEventListener('beforeprint', ()=>{
-  populatePrintTemplate();
   document.getElementById('printFormTemplate').style.display='block';
   fitPrintValues();
 });
