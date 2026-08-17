@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Employee Enrollment &amp; Long Roll Register</title>
+<title>MSM Security Guards — Employee Enrollment &amp; Long Roll Register</title>
+<meta name="description" content="MSM Security Guards employee enrollment and long roll register. Authorized Parent, department, sector and client access with secure Google Sign-In.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://sjalalhs7.github.io/employee-register/">
+<meta property="og:title" content="MSM Security Guards — Employee Register">
+<meta property="og:description" content="Secure employee enrollment and long roll register for authorized users.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sjalalhs7.github.io/employee-register/">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- Firebase (Google Sign-In + shared cloud database) -->
@@ -415,15 +422,18 @@
     display:block;
     image-rendering:auto;
   }
+  /* Official photo area on the supplied MSM enrollment artwork.
+     The source artwork is 1232x1584; these percentages map to the
+     printed passport-photo rectangle (roughly x=985..1129, y=168..329). */
   .pf-photo-frame{
     position:absolute;
     z-index:6;
-    top:2.4%;
-    left:75.5%;
-    width:18.5%;
-    height:19%;
+    top:10.58%;
+    left:79.95%;
+    width:11.78%;
+    height:10.15%;
     overflow:hidden;
-    border:1px solid #999;
+    border:0;
     background:#fff;
   }
   .pf-photo-box{
@@ -440,8 +450,8 @@
   .photo-editor-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;}
   .photo-editor-head h3{margin:0;color:var(--navy);font-family:Georgia,serif;font-size:20px;}
   .photo-editor-grid{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:18px;align-items:start;}
-  .photo-editor-stage{width:100%;aspect-ratio:3/4;background:#111;border:2px solid var(--brass);border-radius:10px;overflow:hidden;position:relative;touch-action:none;}
-  .photo-editor-stage img{position:absolute;left:50%;top:50%;max-width:none;user-select:none;-webkit-user-drag:none;cursor:grab;transform-origin:center center;}
+  .photo-editor-stage{width:100%;aspect-ratio:0.895/1;background:#111;border:2px solid var(--brass);border-radius:10px;overflow:hidden;position:relative;touch-action:none;}
+  .photo-editor-stage img{position:absolute;left:50%;top:50%;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;cursor:grab;touch-action:none;transform-origin:center center;}
   .photo-editor-stage img.dragging{cursor:grabbing;}
   .photo-editor-controls{display:flex;flex-direction:column;gap:12px;}
   .photo-control{background:var(--paper-dark);border:1px solid var(--line);border-radius:8px;padding:10px;}
@@ -455,8 +465,8 @@
     z-index:5;
     color:#111;
     font-family:Arial,Helvetica,sans-serif;
-    font-size:12px; /* kept in sync with PRINT_FONT_CONFIG.baseSize in the script below */
-    line-height:1;
+    font-size:11px;
+    line-height:1.05;
     transform:translateY(-2px);
     white-space:nowrap;
     overflow:hidden;
@@ -468,6 +478,7 @@
   }
   @media print{
     @page{size:Letter portrait;margin:0;}
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
     html,body{
       margin:0 !important;
       padding:0 !important;
@@ -504,6 +515,8 @@
     .tabbar{padding:14px 16px 0;}
     main{padding:0 16px 40px;}
   }
+#publicSeoInfo{display:block;}
+@media print{#publicSeoInfo{display:none !important;}}
 </style>
 </head>
 <body>
@@ -519,6 +532,12 @@
     Once the config is filled in and the file is hosted (e.g. Firebase Hosting, so Google Sign-In has a
     fixed web address to trust), reload this page.
   </p>
+</div>
+
+<!-- Public, indexable website description; no employee data is exposed here. -->
+<div id="publicSeoInfo" style="max-width:820px;margin:34px auto 0;padding:0 20px;font-family:Arial,sans-serif;color:#5B5A50;text-align:center;">
+  <div style="font-family:Georgia,serif;font-size:22px;color:#1B2A3A;font-weight:700;">MSM Security Guards — Employee Register</div>
+  <div style="font-size:13px;line-height:1.6;margin-top:6px;">Secure employee enrollment and long-roll management for authorized Parent, department, sector and client users.</div>
 </div>
 
 <!-- ============ LOGIN SCREEN ============ -->
@@ -563,6 +582,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="form" onclick="switchTab('form')">New Entry</button>
     <button class="tab-btn" data-tab="register" onclick="switchTab('register')">Register (Long Roll)</button>
+    <button class="tab-btn" data-tab="instructions" onclick="switchTab('instructions')">📘 Instructions</button>
     <button class="tab-btn" data-tab="admin" id="adminTabBtn" style="display:none;" onclick="switchTab('admin')">Admin: Access</button>
   </div>
   <div class="actions">
@@ -734,24 +754,90 @@
       </div>
     </div>
 
+    <!-- ============ INSTRUCTIONS VIEW ============ -->
+    <div id="view-instructions" style="display:none;">
+      <div class="helper-note">
+        <strong>Complete User Guide:</strong> This page explains the access pattern for the Parent/Admin and for all other authorized users. Everyone uses the same website link; access is controlled by the Gmail account that signs in.
+      </div>
+
+      <div class="form-section-title"><span class="idx">01</span>Parent / Admin User</div>
+      <div class="helper-note" style="text-align:left;">
+        <ol style="margin:0;padding-left:20px;line-height:1.75;">
+          <li>Open the website link: <strong>https://sjalalhs7.github.io/employee-register/</strong></li>
+          <li>Sign in with the <strong>authorized Parent Gmail</strong> that was created in Firestore as <strong>role = parent</strong>.</li>
+          <li>The Parent can see the complete register, including all clients, departments and sectors.</li>
+          <li>Open <strong>Admin: Access</strong> to add or remove authorized user Gmail accounts.</li>
+          <li>For each user, assign the exact <strong>Client / Project</strong> name that should be used for that user's records.</li>
+          <li>The Parent account is protected and cannot be removed from the website.</li>
+        </ol>
+      </div>
+
+      <div class="form-section-title"><span class="idx">02</span>Department / Sector / Client User</div>
+      <div class="helper-note" style="text-align:left;">
+        <ol style="margin:0;padding-left:20px;line-height:1.75;">
+          <li>The Parent first adds the user's Gmail in <strong>Admin: Access</strong>.</li>
+          <li>The user then opens the <strong>same website link</strong>: <strong>https://sjalalhs7.github.io/employee-register/</strong></li>
+          <li>The user signs in with the <strong>same Gmail address</strong> that the Parent authorized.</li>
+          <li>The system automatically identifies the user's assigned Client / Project.</li>
+          <li>The user can add and manage only records belonging to that assigned Client / Project.</li>
+          <li>The user cannot change their Client / Project to access another client's data.</li>
+          <li>If the Gmail has not been authorized, access is denied until the Parent adds it.</li>
+        </ol>
+      </div>
+
+      <div class="form-section-title"><span class="idx">03</span>Website Access Pattern</div>
+      <div class="helper-note" style="text-align:left;">
+        <p style="margin-top:0;"><strong>There is only one main website URL.</strong> There is no separate website URL required for every department, sector or client.</p>
+        <div style="background:var(--paper-dark);border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;word-break:break-all;">
+          https://sjalalhs7.github.io/employee-register/
+        </div>
+        <p style="margin-bottom:0;">Access is controlled by <strong>Google Sign-In + authorized Gmail + assigned Client / Project</strong>. This means users can use the system from mobile, laptop or desktop anywhere they have internet access.</p>
+      </div>
+
+      <div class="form-section-title"><span class="idx">04</span>Daily Data Entry &amp; Printing</div>
+      <div class="helper-note" style="text-align:left;">
+        <ol style="margin:0;padding-left:20px;line-height:1.75;">
+          <li>Open <strong>New Entry</strong> and enter the employee information.</li>
+          <li>Upload the employee photo.</li>
+          <li>Use <strong>Adjust Photo</strong> for manual crop/zoom/position, or <strong>Auto Fit</strong> for automatic passport-box fitting.</li>
+          <li>Save the employee to the Long Roll.</li>
+          <li>Use <strong>Register (Long Roll)</strong> to search, edit or print an existing employee.</li>
+          <li>Print generates the enrollment pages and the uploaded Police Verification document when available.</li>
+        </ol>
+      </div>
+
+      <div class="form-section-title"><span class="idx">05</span>Important Security Rules</div>
+      <div class="helper-note" style="text-align:left;margin-bottom:0;">
+        <ul style="margin:0;padding-left:20px;line-height:1.75;">
+          <li>Never share the Parent/Admin Gmail account.</li>
+          <li>Each department / sector / client should use its own authorized Gmail.</li>
+          <li>Do not manually edit the Client / Project field to another client's name when logged in as a client user.</li>
+          <li>If a user's access must be stopped, the Parent removes that Gmail from <strong>Admin: Access</strong>.</li>
+          <li>The database remains protected by Firebase Firestore security rules in addition to the website interface.</li>
+        </ul>
+      </div>
+    </div>
+
     <!-- ============ ADMIN: ACCESS VIEW (parent role only) ============ -->
     <div id="view-admin" style="display:none;">
       <div class="helper-note">
-        Add the Gmail address of every client / location / sector that should be able to sign in. Give each
-        one a <strong>Client / Project</strong> name that exactly matches what you type in the
+        Only an authorized Parent Gmail can manage access. Parent/Admin accounts are protected from removal.
+        Add the Gmail address of every department / sector / client / location that should be able to sign in.
+        Give each one a <strong>Client / Project</strong> name that exactly matches what you type in the
         "Client / Project" field on entries for that location — that's how their view gets filtered to only
         their own data. Your own Parent account (role = Parent) can see everything, across all locations.
       </div>
       <div class="form-section-title"><span class="idx">+</span>Add authorized Gmail</div>
       <div class="grid">
         <div class="field"><label>Gmail address</label><input id="adm_email" type="email" placeholder="location@gmail.com"></div>
-        <div class="field"><label>Role</label>
-          <select id="adm_role" onchange="document.getElementById('adm_clientRow').style.display = this.value==='client' ? 'flex' : 'none';">
-            <option value="client">Client / Location (sees only their own data)</option>
-            <option value="parent">Parent (sees everything)</option>
-          </select>
+        <div class="field">
+          <label>Access Type</label>
+          <input value="Client / Department / Sector" readonly style="background:var(--paper-dark);">
         </div>
-        <div class="field" id="adm_clientRow"><label>Client / Project name</label><input id="adm_clientproject" placeholder="must match the Client / Project field exactly"></div>
+        <div class="field" id="adm_clientRow">
+          <label>Client / Project name</label>
+          <input id="adm_clientproject" placeholder="must match the Client / Project field exactly">
+        </div>
       </div>
       <div style="margin-top:14px;"><button class="btn btn-primary" onclick="addAuthorizedUser()">+ Add Gmail access</button></div>
 
@@ -907,13 +993,14 @@ function initFirebase(){
   auth.onAuthStateChanged(async (user) => {
     if(recordsUnsub){ recordsUnsub(); recordsUnsub=null; }
     if(adminUsersUnsub){ adminUsersUnsub(); adminUsersUnsub=null; }
-    if(!user){ currentUser=null; currentAccess=null; showOnly('loginGate'); return; }
+    if(!user){ currentUser=null; currentAccess=null; const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='block'; showOnly('loginGate'); return; }
     currentUser = user;
     const email = (user.email||'').toLowerCase();
     try{
       const doc = await db.collection('authorizedUsers').doc(email).get();
       if(!doc.exists){
         document.getElementById('notAuthorizedEmail').textContent = email;
+        const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='block';
         showOnly('notAuthorizedGate');
         return;
       }
@@ -1010,6 +1097,7 @@ function isParent(){ return currentAccess && currentAccess.role === 'parent'; }
 function myClientProject(){ return currentAccess ? (currentAccess.clientproject||'') : ''; }
 
 function startApp(){
+  const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='none';
   editingId = null;
   const meta = safeLoad(META_KEY, {});
   if(meta.companyName) document.getElementById('companyName').value = meta.companyName;
@@ -1057,18 +1145,26 @@ function subscribeAdminUsers(){
         <td>${escapeHtml(r.email)}</td>
         <td>${r.role==='parent'?'Parent':'Client / Location'}</td>
         <td>${escapeHtml(r.clientproject||'')}</td>
-        <td class="row-actions">${r.role==='parent' ? '<span style="color:var(--ink-soft);font-size:12px;">Protected</span>' : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
+        <td class="row-actions">${r.role==='parent'
+          ? '<span style="font-size:11px;color:var(--ink-soft);font-weight:600;">Protected Parent</span>'
+          : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
       </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:20px;">No one added yet.</td></tr>`;
   });
 }
 
 function addAuthorizedUser(){
+  if(!isParent()){
+    showToast('Only an authorized Parent Gmail account can manage access.');
+    return;
+  }
   const email = document.getElementById('adm_email').value.trim().toLowerCase();
-  const role = document.getElementById('adm_role').value;
   const clientproject = document.getElementById('adm_clientproject').value.trim();
   if(!email || !email.includes('@')){ showToast('Enter a valid Gmail address.'); return; }
-  if(role==='client' && !clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
-  const payload = role==='parent' ? {role:'parent'} : {role:'client', clientproject};
+  if(!clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
+
+  // Parent/Admin is deliberately NOT editable from the web UI.
+  // It is the protected account created in Firestore during first-time setup.
+  const payload = {role:'client', clientproject};
   db.collection(AUTHUSERS_COLLECTION).doc(email).set(payload)
     .then(()=>{
       showToast(`Added access for ${email}.`);
@@ -1077,27 +1173,38 @@ function addAuthorizedUser(){
     })
     .catch(err=>showToast('Could not add: ' + err.message));
 }
-function removeAuthorizedUser(email){
-  // Safety check: Parent/Admin accounts can never be removed from here, even if this
-  // function is invoked directly, so the company always keeps at least one Parent account.
-  db.collection(AUTHUSERS_COLLECTION).doc(email).get().then(doc=>{
-    if(doc.exists && doc.data().role === 'parent'){
-      showToast('Parent accounts are protected and cannot be removed here.');
+async function removeAuthorizedUser(email){
+  if(!isParent() || !currentUser){
+    showToast('Only an authorized Parent Gmail account can manage access.');
+    return;
+  }
+  const targetEmail=String(email||'').trim().toLowerCase();
+  try{
+    const target=await db.collection(AUTHUSERS_COLLECTION).doc(targetEmail).get();
+    if(!target.exists){
+      showToast('This Gmail account is already removed.');
       return;
     }
-    if(!confirm(`Remove access for ${email}?`)) return;
-    db.collection(AUTHUSERS_COLLECTION).doc(email).delete()
-      .then(()=>showToast(`Removed ${email}.`))
-      .catch(err=>showToast('Could not remove: ' + err.message));
-  }).catch(err=>showToast('Could not check user: ' + err.message));
+    if(target.data().role==='parent'){
+      showToast('Parent/Admin Gmail is protected and cannot be removed here.');
+      return;
+    }
+    if(!confirm(`Remove access for ${targetEmail}?`)) return;
+    await db.collection(AUTHUSERS_COLLECTION).doc(targetEmail).delete();
+    showToast(`Removed ${targetEmail}.`);
+  }catch(err){
+    console.error(err);
+    showToast('Could not remove: ' + err.message);
+  }
 }
 
 /* ===================== Tabs ===================== */
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-  document.getElementById('view-form').style.display = tab==='form' ? 'block' : 'none';
-  document.getElementById('view-register').style.display = tab==='register' ? 'block' : 'none';
-  document.getElementById('view-admin').style.display = tab==='admin' ? 'block' : 'none';
+  ['form','register','instructions','admin'].forEach(v=>{
+    const el=document.getElementById('view-'+v);
+    if(el) el.style.display = tab===v ? 'block' : 'none';
+  });
   if(tab==='register') renderTable();
 }
 
@@ -1185,38 +1292,51 @@ function clearPhoto(key, previewImgId, emptyId, btnId, fileInputId){
 function normalizePhotoSettings(v){
   v = v || {};
   return {
-    scale: Math.min(3, Math.max(1, Number(v.scale) || 1)),
+    scale: Math.min(3, Math.max(0.75, Number(v.scale) || 1)),
     x: Math.min(100, Math.max(-100, Number(v.x) || 0)),
     y: Math.min(100, Math.max(-100, Number(v.y) || 0))
   };
 }
 function getPhotoSettings(){ return normalizePhotoSettings(uploadState.photoSettings); }
 function setPhotoSettings(v){ uploadState.photoSettings = normalizePhotoSettings(v); }
+
 function autoFitPhoto(){
   setPhotoSettings({scale:1,x:0,y:0});
+  photoEditorState = {...getPhotoSettings()};
   syncPhotoEditorControls();
   updatePhotoPreviewUI('photoData','photoPreview','photoPreviewEmpty','photoClearBtn');
   if(document.getElementById('photoEditorBackdrop').style.display==='flex') renderPhotoEditor();
-  showToast('Photo reset to Auto Fit.');
+  showToast('Photo fitted automatically inside the passport-size box.');
 }
 function resetPhotoPositionOnly(){
-  const s=getPhotoSettings(); setPhotoSettings({scale:s.scale,x:0,y:0}); syncPhotoEditorControls(); renderPhotoEditor();
+  photoEditorState = {scale:getPhotoSettings().scale,x:0,y:0};
+  syncPhotoEditorControls();
+  renderPhotoEditor();
 }
 function openPhotoAdjuster(){
-  if(!uploadState.photoData || !uploadState.photoData.startsWith('data:image')){ showToast('Please upload an employee photo first.'); return; }
+  if(!uploadState.photoData || !uploadState.photoData.startsWith('data:image')){
+    showToast('Please upload an employee photo first.');
+    return;
+  }
   photoEditorState = {...getPhotoSettings()};
   const backdrop=document.getElementById('photoEditorBackdrop');
   backdrop.style.display='flex';
+  document.body.style.overflow='hidden';
   const img=document.getElementById('photoEditorImage');
-  img.onload=()=>{ calculatePhotoEditorBase(); renderPhotoEditor(); };
+  img.onload=()=>{ requestAnimationFrame(()=>{ calculatePhotoEditorBase(); renderPhotoEditor(); }); };
   img.src=uploadState.photoData;
-  if(img.complete) { calculatePhotoEditorBase(); renderPhotoEditor(); }
+  if(img.complete && img.naturalWidth) requestAnimationFrame(()=>{ calculatePhotoEditorBase(); renderPhotoEditor(); });
 }
-function closePhotoAdjuster(){ document.getElementById('photoEditorBackdrop').style.display='none'; }
+function closePhotoAdjuster(){
+  document.getElementById('photoEditorBackdrop').style.display='none';
+  document.body.style.overflow='';
+}
 function calculatePhotoEditorBase(){
   const img=document.getElementById('photoEditorImage'), stage=document.getElementById('photoEditorStage');
-  if(!img.naturalWidth || !stage.clientWidth) return;
-  const sx=stage.clientWidth/img.naturalWidth, sy=stage.clientHeight/img.naturalHeight;
+  if(!img.naturalWidth || !img.naturalHeight || !stage.clientWidth || !stage.clientHeight) return;
+  // Base scale makes the whole photo cover the crop area without leaving blank space.
+  const sx=stage.clientWidth/img.naturalWidth;
+  const sy=stage.clientHeight/img.naturalHeight;
   photoEditorBase.scale=Math.max(sx,sy);
 }
 function syncPhotoEditorControls(){
@@ -1230,13 +1350,13 @@ function syncPhotoEditorControls(){
 }
 function renderPhotoEditor(){
   const img=document.getElementById('photoEditorImage');
-  if(!img || !img.naturalWidth) return;
-  img.style.width=img.naturalWidth+'px';
-  img.style.height=img.naturalHeight+'px';
   const stage=document.getElementById('photoEditorStage');
+  if(!img || !img.naturalWidth || !stage.clientWidth) return;
   const px=(Number(photoEditorState.x)||0)*stage.clientWidth/100;
   const py=(Number(photoEditorState.y)||0)*stage.clientHeight/100;
   const scale=photoEditorBase.scale*(Number(photoEditorState.scale)||1);
+  img.style.width=img.naturalWidth+'px';
+  img.style.height=img.naturalHeight+'px';
   img.style.transform=`translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) scale(${scale})`;
   syncPhotoEditorControls();
 }
@@ -1244,7 +1364,7 @@ function applyPhotoAdjuster(){
   setPhotoSettings(photoEditorState);
   closePhotoAdjuster();
   updatePhotoPreviewUI('photoData','photoPreview','photoPreviewEmpty','photoClearBtn');
-  showToast('Photo adjustment saved with this employee record.');
+  showToast('Photo adjustment saved. Save the employee record to keep it permanently.');
 }
 ['photoZoomRange','photoXRange','photoYRange'].forEach(id=>{
   document.addEventListener('input',e=>{
@@ -1256,17 +1376,45 @@ function applyPhotoAdjuster(){
   });
 });
 (function enablePhotoDragging(){
-  const stage=()=>document.getElementById('photoEditorStage'), img=()=>document.getElementById('photoEditorImage');
+  const stage=()=>document.getElementById('photoEditorStage');
+  const img=()=>document.getElementById('photoEditorImage');
   let dragging=false,sx=0,sy=0,ox=0,oy=0;
-  function down(e){ if(!img().src) return; dragging=true; img().classList.add('dragging'); const p=e.touches?e.touches[0]:e; sx=p.clientX; sy=p.clientY; ox=photoEditorState.x; oy=photoEditorState.y; e.preventDefault(); }
-  function move(e){ if(!dragging) return; const p=e.touches?e.touches[0]:e; const st=stage(); photoEditorState.x=Math.max(-100,Math.min(100,ox+(p.clientX-sx)*100/st.clientWidth)); photoEditorState.y=Math.max(-100,Math.min(100,oy+(p.clientY-sy)*100/st.clientHeight)); renderPhotoEditor(); e.preventDefault(); }
+  function down(e){
+    if(!img().src) return;
+    dragging=true;
+    img().classList.add('dragging');
+    const p=e;
+    sx=p.clientX; sy=p.clientY;
+    ox=photoEditorState.x; oy=photoEditorState.y;
+    try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_e){}
+    e.preventDefault();
+  }
+  function move(e){
+    if(!dragging) return;
+    const st=stage();
+    photoEditorState.x=Math.max(-100,Math.min(100,ox+(e.clientX-sx)*100/st.clientWidth));
+    photoEditorState.y=Math.max(-100,Math.min(100,oy+(e.clientY-sy)*100/st.clientHeight));
+    renderPhotoEditor();
+    e.preventDefault();
+  }
   function up(){ dragging=false; img().classList.remove('dragging'); }
-  document.addEventListener('mousedown',e=>{if(e.target.id==='photoEditorImage')down(e);});
-  document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
-  document.addEventListener('touchstart',e=>{if(e.target.id==='photoEditorImage')down(e);},{passive:false});
-  document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',up);
+  document.addEventListener('pointerdown',e=>{if(e.target.id==='photoEditorImage') down(e);});
+  document.addEventListener('pointermove',move,{passive:false});
+  document.addEventListener('pointerup',up);
+  document.addEventListener('pointercancel',up);
+  document.addEventListener('wheel',e=>{
+    if(e.target.id!=='photoEditorImage') return;
+    e.preventDefault();
+    photoEditorState.scale=Math.max(0.75,Math.min(3,photoEditorState.scale+(e.deltaY<0?0.05:-0.05)));
+    renderPhotoEditor();
+  },{passive:false});
 })();
-window.addEventListener('resize',()=>{ if(document.getElementById('photoEditorBackdrop').style.display==='flex'){calculatePhotoEditorBase();renderPhotoEditor();} });
+window.addEventListener('resize',()=>{
+  if(document.getElementById('photoEditorBackdrop').style.display==='flex'){
+    calculatePhotoEditorBase();
+    renderPhotoEditor();
+  }
+});
 
 /* ===================== Form <-> record mapping ===================== */
 function readForm(){
@@ -1651,41 +1799,35 @@ function printRecordForm(id){
   doPrint();
 }
 async function doPrint(){
-  populatePrintTemplate();
-  document.getElementById('printFormTemplate').style.display='block';
-  fitPrintValues();
-  // Wait for an uploaded police-verification document to finish rendering before
-  // opening the browser print dialog, preventing a blank third page. This covers
-  // BOTH cases: a PDF (rendered to <canvas> by PDF.js) and a plain JPG/PNG image
-  // (which needs its own decode to complete before the print snapshot is taken).
-  await new Promise(resolve=>setTimeout(resolve,120));
-  const pdfPage=document.getElementById('pf_policeVerifPage');
-  const verifDoc = getPrintData().policeVerifDoc;
-  if(pdfPage && verifDoc && verifDoc.startsWith('data:application/pdf')){
-    await new Promise(resolve=>{
-      const check=()=>{ if(pdfPage.querySelector('canvas') || pdfPage.textContent.includes('could not be rendered')) resolve(); else setTimeout(check,80); };
-      check();
-    });
-  } else if(pdfPage && verifDoc && verifDoc.startsWith('data:image')){
-    await new Promise(resolve=>{
-      const check=()=>{
-        const img = pdfPage.querySelector('img');
-        if(img && img.complete && img.naturalWidth > 0) resolve(); else setTimeout(check,60);
-      };
-      check();
-    });
+  try{
+    await populatePrintTemplate();
+    const template=document.getElementById('printFormTemplate');
+    template.style.display='block';
+
+    // Wait for every image used by the print layout and for browser fonts.
+    const images=[...template.querySelectorAll('img')];
+    await Promise.all(images.map(img=>{
+      if(img.complete){
+        return img.decode ? img.decode().catch(()=>{}) : Promise.resolve();
+      }
+      return new Promise(resolve=>{
+        img.onload=resolve; img.onerror=resolve;
+      });
+    }));
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+
+    fitPrintValues();
+
+    // Give the browser one paint cycle so dynamically created verification
+    // pages/canvases are included in the print tree before opening the dialog.
+    await new Promise(requestAnimationFrame);
+    await new Promise(resolve=>setTimeout(resolve,80));
+
+    window.print();
+  }catch(err){
+    console.error('Print preparation failed:',err);
+    showToast('Print could not be prepared. Please try again.');
   }
-  // Also make sure the employee photo (if any) has finished decoding into the
-  // passport-photo box before printing, using the same completeness check.
-  const photoEl = document.getElementById('pf_employeePhoto');
-  if(photoEl && photoEl.getAttribute('src')){
-    await new Promise(resolve=>{
-      const check=()=>{ if(photoEl.complete && photoEl.naturalWidth > 0) resolve(); else setTimeout(check,60); };
-      check();
-    });
-  }
-  fitPrintValues();
-  setTimeout(()=>{ window.print(); }, 80);
 }
 
 function getPrintData(){
@@ -1697,7 +1839,7 @@ function getPrintData(){
   return readForm();
 }
 
-function populatePrintTemplate(){
+async function populatePrintTemplate(){
   const d = getPrintData();
   const formatDate = (val) => {
     if(!val) return '';
@@ -1721,28 +1863,14 @@ function populatePrintTemplate(){
   const photoEl = document.getElementById('pf_employeePhoto');
   if(d.photoData && d.photoData.startsWith('data:image')){
     photoFrame.style.display='block';
-    const ps = normalizePhotoSettings(d.photoSettings);
-    // Mirror the New Entry photo adjuster's own math exactly, using the actual
-    // frame pixel size (not object-fit:cover), so the passport photo always lands
-    // fully inside the printed box at the right zoom/position, never overflowing it.
-    const img = new Image();
-    img.onload = () => {
-      const frameW = photoFrame.clientWidth || photoFrame.offsetWidth;
-      const frameH = photoFrame.clientHeight || photoFrame.offsetHeight;
-      const baseScale = Math.max(frameW / img.naturalWidth, frameH / img.naturalHeight);
-      const scale = baseScale * ps.scale;
-      const px = (ps.x/100) * frameW;
-      const py = (ps.y/100) * frameH;
-      photoEl.style.width = img.naturalWidth + 'px';
-      photoEl.style.height = img.naturalHeight + 'px';
-      photoEl.style.left = '50%';
-      photoEl.style.top = '50%';
-      photoEl.style.objectFit = 'unset';
-      photoEl.style.transformOrigin = 'center center';
-      photoEl.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) scale(${scale})`;
-    };
-    img.src = d.photoData;
     photoEl.src = d.photoData;
+    const ps = normalizePhotoSettings(d.photoSettings);
+    photoEl.style.objectPosition='50% 50%';
+    photoEl.style.transform=`translate(${ps.x/2}%, ${ps.y/2}%) scale(${ps.scale})`;
+    photoEl.style.transformOrigin='center center';
+    photoEl.style.width='100%';
+    photoEl.style.height='100%';
+    photoEl.style.objectFit='cover';
   } else {
     photoEl.removeAttribute('src');
     photoFrame.style.display = 'none';
@@ -1764,8 +1892,16 @@ function populatePrintTemplate(){
     document.getElementById('printFormTemplate').appendChild(page);
     if(d.policeVerifDoc.startsWith('data:image')){
       img.src=d.policeVerifDoc;
+      if(img.decode){
+        try{ await img.decode(); }catch(_e){}
+      } else {
+        await new Promise(resolve=>{
+          if(img.complete) resolve();
+          else { img.onload=resolve; img.onerror=resolve; }
+        });
+      }
     } else {
-      renderPolicePdfForPrint(d.policeVerifDoc, img, page);
+      await renderPolicePdfForPrint(d.policeVerifDoc, img, page);
     }
   }
 }
@@ -1774,61 +1910,83 @@ async function renderPolicePdfForPrint(dataUrl, imgEl, pageEl){
   try{
     if(!window.pdfjsLib) throw new Error('PDF renderer is not loaded');
     pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    const raw=atob(dataUrl.split(',')[1]); const bytes=new Uint8Array(raw.length); for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+
+    const raw=atob(dataUrl.split(',')[1]);
+    const bytes=new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+
     const pdf=await pdfjsLib.getDocument({data:bytes}).promise;
-    // First page is the official printable verification page. If the certificate
-    // itself has multiple pages, add each page as another print page automatically.
+
+    // Render every PDF page into an actual print page. Nothing is sent to
+    // window.print() until all canvases have finished rendering.
     for(let i=1;i<=pdf.numPages;i++){
       const target=i===1?pageEl:document.createElement('div');
-      if(i>1){target.className='pf-print-page'; target.style.background='#fff'; target.id='pf_policeVerifPage_'+i; document.getElementById('printFormTemplate').appendChild(target);}
+
+      if(i>1){
+        target.className='pf-print-page';
+        target.style.background='#fff';
+        target.id='pf_policeVerifPage_'+i;
+        document.getElementById('printFormTemplate').appendChild(target);
+      }
+
       const canvas=document.createElement('canvas');
       const page=await pdf.getPage(i);
       const base=page.getViewport({scale:1});
       const scale=Math.min(816/base.width,1056/base.height);
       const viewport=page.getViewport({scale});
-      canvas.width=Math.ceil(viewport.width); canvas.height=Math.ceil(viewport.height);
-      canvas.style.position='absolute'; canvas.style.left='50%'; canvas.style.top='50%'; canvas.style.transform='translate(-50%,-50%)'; canvas.style.maxWidth='100%'; canvas.style.maxHeight='100%';
+
+      canvas.width=Math.ceil(viewport.width);
+      canvas.height=Math.ceil(viewport.height);
+      canvas.style.position='absolute';
+      canvas.style.left='50%';
+      canvas.style.top='50%';
+      canvas.style.transform='translate(-50%,-50%)';
+      canvas.style.maxWidth='100%';
+      canvas.style.maxHeight='100%';
+
       await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-      if(i===1){ imgEl.replaceWith(canvas); } else target.appendChild(canvas);
+
+      if(i===1) imgEl.replaceWith(canvas);
+      else target.appendChild(canvas);
+
+      target.dataset.ready='1';
     }
   }catch(err){
     pageEl.innerHTML='<div style="padding:36px;font-family:Arial,sans-serif;color:#9B3A31;font-size:16px;text-align:center;">Police Verification PDF could not be rendered for printing.<br><small>Please re-upload the certificate or use an image (JPG/PNG).</small></div>';
+    pageEl.dataset.ready='error';
     console.error('Police verification PDF render error:',err);
   }
 }
 
-/* PRINT_FONT_CONFIG: change ONLY these two numbers to fine-tune how the
-   manually typed data matches the printed form's own label font size —
-   no other code needs to change. Compare a fresh print to the paper form
-   and nudge baseSize up/down by 0.5px steps until they line up visually. */
-const PRINT_FONT_CONFIG = { baseSize: 12, minSize: 9 };
-
 function fitPrintValues(){
-  // Letter print width is 8.5in = 816 CSS px.
-  // Entered data starts at PRINT_FONT_CONFIG.baseSize (matched to the
-  // enrollment form's own printed field size) and is reduced only when the
-  // actual value is too long for its own printed line, preventing overlap.
+  // The supplied artwork is 1232px wide and prints at 8.5in (816 CSS px).
+  // Keep entered values close to the artwork's own label font, then shrink
+  // only when a value would overflow its allotted printed line.
   const PAGE_PX = 816;
-  const { baseSize, minSize } = PRINT_FONT_CONFIG;
+  const baseSize = 11;
+  const minSize = 8.5;
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
+
   document.querySelectorAll('#printFormTemplate .pf-value').forEach(el=>{
     const m = (el.getAttribute('style')||'').match(/width\s*:\s*([0-9.]+)%/);
     const maxWidth = m ? PAGE_PX * parseFloat(m[1]) / 100 : PAGE_PX;
-    let size = baseSize;
     const text = el.textContent || '';
+    let size = baseSize;
+
     while(size > minSize){
       ctx.font = `400 ${size}px Arial`;
       if(ctx.measureText(text).width <= maxWidth - 3) break;
       size -= 0.25;
     }
+
     el.style.fontSize = size.toFixed(2) + 'px';
-    el.style.transform = 'translateY(-2px)';
+    el.style.lineHeight = '1.05';
+    el.style.transform = 'translateY(-1px)';
   });
 }
 
 window.addEventListener('beforeprint', ()=>{
-  populatePrintTemplate();
   document.getElementById('printFormTemplate').style.display='block';
   fitPrintValues();
 });
