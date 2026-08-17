@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Employee Enrollment &amp; Long Roll Register</title>
+<title>MSM Security Guards — Employee Enrollment &amp; Long Roll Register</title>
+<meta name="description" content="MSM Security Guards employee enrollment and long roll register. Authorized Parent, department, sector and client access with secure Google Sign-In.">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="https://sjalalhs7.github.io/employee-register/">
+<meta property="og:title" content="MSM Security Guards — Employee Register">
+<meta property="og:description" content="Secure employee enrollment and long roll register for authorized users.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://sjalalhs7.github.io/employee-register/">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- Firebase (Google Sign-In + shared cloud database) -->
@@ -415,15 +422,18 @@
     display:block;
     image-rendering:auto;
   }
+  /* Official photo area on the supplied MSM enrollment artwork.
+     The source artwork is 1232x1584; these percentages map to the
+     printed passport-photo rectangle (roughly x=985..1129, y=168..329). */
   .pf-photo-frame{
     position:absolute;
     z-index:6;
-    top:2.4%;
-    left:75.5%;
-    width:18.5%;
-    height:19%;
+    top:10.58%;
+    left:79.95%;
+    width:11.78%;
+    height:10.15%;
     overflow:hidden;
-    border:1px solid #999;
+    border:0;
     background:#fff;
   }
   .pf-photo-box{
@@ -440,8 +450,8 @@
   .photo-editor-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;}
   .photo-editor-head h3{margin:0;color:var(--navy);font-family:Georgia,serif;font-size:20px;}
   .photo-editor-grid{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:18px;align-items:start;}
-  .photo-editor-stage{width:100%;aspect-ratio:3/4;background:#111;border:2px solid var(--brass);border-radius:10px;overflow:hidden;position:relative;touch-action:none;}
-  .photo-editor-stage img{position:absolute;left:50%;top:50%;max-width:none;user-select:none;-webkit-user-drag:none;cursor:grab;transform-origin:center center;}
+  .photo-editor-stage{width:100%;aspect-ratio:0.895/1;background:#111;border:2px solid var(--brass);border-radius:10px;overflow:hidden;position:relative;touch-action:none;}
+  .photo-editor-stage img{position:absolute;left:50%;top:50%;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;cursor:grab;touch-action:none;transform-origin:center center;}
   .photo-editor-stage img.dragging{cursor:grabbing;}
   .photo-editor-controls{display:flex;flex-direction:column;gap:12px;}
   .photo-control{background:var(--paper-dark);border:1px solid var(--line);border-radius:8px;padding:10px;}
@@ -455,8 +465,8 @@
     z-index:5;
     color:#111;
     font-family:Arial,Helvetica,sans-serif;
-    font-size:12px; /* kept in sync with PRINT_FONT_CONFIG.baseSize in the script below */
-    line-height:1;
+    font-size:11px;
+    line-height:1.05;
     transform:translateY(-2px);
     white-space:nowrap;
     overflow:hidden;
@@ -468,6 +478,7 @@
   }
   @media print{
     @page{size:Letter portrait;margin:0;}
+    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
     html,body{
       margin:0 !important;
       padding:0 !important;
@@ -504,6 +515,89 @@
     .tabbar{padding:14px 16px 0;}
     main{padding:0 16px 40px;}
   }
+#publicSeoInfo{display:block;}
+@media print{#publicSeoInfo{display:none !important;}}
+
+/* ===== MSM Premium Login Redesign ===== */
+#msmLoginPage{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:32px 18px;
+  position:relative;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(201,162,83,.16), transparent 32%),
+    radial-gradient(circle at 85% 80%, rgba(76,108,135,.14), transparent 34%),
+    linear-gradient(135deg,#101c29 0%,#1B2A3A 48%,#28405A 100%);
+  font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+}
+#msmLoginPage::before{
+  content:"";
+  position:absolute;inset:-20%;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.035' stroke-width='2'%3E%3Ccircle cx='210' cy='210' r='130'/%3E%3Ccircle cx='210' cy='210' r='105'/%3E%3Cpath d='M110 210h200M210 110v200'/%3E%3C/g%3E%3C/svg%3E");
+  transform:rotate(-8deg);
+  pointer-events:none;
+}
+.msm-login-card{
+  width:min(520px,100%);
+  position:relative;
+  z-index:2;
+  padding:42px 38px 32px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:22px;
+  background:rgba(255,253,248,.97);
+  box-shadow:0 30px 80px rgba(0,0,0,.34);
+  text-align:center;
+}
+.msm-login-logo{
+  width:92px;height:92px;object-fit:contain;
+  background:#fff;border-radius:14px;
+  padding:7px;margin:0 auto 18px;
+  box-shadow:0 8px 24px rgba(27,42,58,.18);
+}
+.msm-login-kicker{
+  color:#A8802F;font-size:11px;font-weight:800;
+  letter-spacing:3px;text-transform:uppercase;margin-bottom:9px;
+}
+.msm-login-title{
+  margin:0;color:#1B2A3A;font-family:Georgia,serif;
+  font-size:clamp(25px,5vw,35px);line-height:1.12;
+  letter-spacing:.6px;text-transform:uppercase;
+}
+.msm-login-designer{
+  margin:12px 0 25px;color:#5B5A50;
+  font-size:12px;font-weight:800;letter-spacing:1.2px;
+  text-transform:uppercase;
+}
+.msm-login-divider{
+  height:1px;background:linear-gradient(90deg,transparent,#D9CFB8,transparent);
+  margin:0 0 24px;
+}
+.msm-google-btn{
+  width:100%;min-height:52px;border:1px solid #D9CFB8;
+  border-radius:10px;background:#fff;color:#1B2A3A;
+  font-size:14px;font-weight:750;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  transition:.2s ease;box-shadow:0 3px 12px rgba(27,42,58,.08);
+}
+.msm-google-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(27,42,58,.14);border-color:#A8802F;}
+.msm-google-icon{width:20px;height:20px}
+.msm-login-note{
+  margin:17px 0 0;color:#6b6a61;font-size:11.5px;line-height:1.55;
+}
+.msm-login-security{
+  margin-top:18px;padding:10px 12px;border-radius:9px;
+  background:#F6F2E8;border:1px solid #D9CFB8;
+  color:#5B5A50;font-size:11px;line-height:1.5;
+}
+.msm-login-footer{
+  margin-top:24px;padding-top:17px;border-top:1px solid #E7DFCF;
+  color:#77746b;font-size:10.5px;line-height:1.6;
+}
+#msmLoginError{display:none;margin-top:13px;color:#9B3A31;font-size:12px;font-weight:650;line-height:1.45}
+
 </style>
 </head>
 <body>
@@ -521,208 +615,47 @@
   </p>
 </div>
 
-<!-- ============ LOGIN SCREEN ============ -->
+<!-- Public, indexable website description; no employee data is exposed here. -->
+<div id="publicSeoInfo" style="max-width:820px;margin:34px auto 0;padding:0 20px;font-family:Arial,sans-serif;color:#5B5A50;text-align:center;">
+  <div style="font-family:Georgia,serif;font-size:22px;color:#1B2A3A;font-weight:700;">MSM Security Guards — Employee Register</div>
+  <div style="font-size:13px;line-height:1.6;margin-top:6px;">Secure employee enrollment and long-roll management for authorized Parent, department, sector and client users.</div>
+</div>
+
+<!-- ============ PREMIUM MSM LOGIN SCREEN ============ -->
 <div id="loginGate" style="display:none;">
-  <div class="login-wrap">
-    <div class="login-card">
-      <img class="login-logo" src="data:image/png;base64,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" alt="MSM Security Guards Logo">
-      <div class="login-eyebrow">MSM SECURITY GUARDS (PVT) LTD</div>
-      <div class="login-heading">Welcome to MSM<br>Long Roll Database</div>
-      <div class="login-subheading">Sign in with the Gmail account authorized for your location or client.</div>
+  <div id="msmLoginPage">
+    <div class="msm-login-card">
+      <img class="msm-login-logo" src="data:image/png;base64,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" alt="MSM Security Guards Logo" id="msmLoginLogo">
+      <div class="msm-login-kicker">SECURE ACCESS PORTAL</div>
+      <h1 class="msm-login-title">WELCOME TO MSM<br>LONGROLL DATABASE</h1>
+      <div class="msm-login-designer">DESIGNED BY SYED JALAL HUSSAIN SHAH</div>
+      <div class="msm-login-divider"></div>
 
-      <label class="login-label" for="loginEmailHint">Email</label>
-      <input id="loginEmailHint" class="login-input" type="email" placeholder="username@gmail.com" autocomplete="email">
+      <button class="msm-google-btn" onclick="doGoogleSignIn()" type="button">
+        <svg class="msm-google-icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path fill="#4285F4" d="M21.35 12.27c0-.73-.07-1.43-.2-2.1H12v3.98h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.27z"/>
+          <path fill="#34A853" d="M12 21.67c2.63 0 4.84-.87 6.45-2.35l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.72-5.46-4.03H3.29v2.53A9.74 9.74 0 0 0 12 21.67z"/>
+          <path fill="#FBBC05" d="M6.54 13.76A5.86 5.86 0 0 1 6.23 12c0-.61.11-1.21.31-1.76V7.71H3.29A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.05 1.04 4.29l3.25-2.53z"/>
+          <path fill="#EA4335" d="M12 6.21c1.43 0 2.71.49 3.72 1.46l2.79-2.79C16.84 3.28 14.63 2.33 12 2.33a9.74 9.74 0 0 0-8.71 5.38l3.25 2.53C7.31 7.93 9.46 6.21 12 6.21z"/>
+        </svg>
+        Continue with Google / Gmail
+      </button>
 
-      <label class="login-label" for="loginPasswordDummy">Password</label>
-      <div class="login-pass-wrap">
-        <input id="loginPasswordDummy" class="login-input" type="password" placeholder="Secured by Google — no password needed" disabled>
+      <div id="msmLoginError"></div>
+      <div class="msm-login-note">
+        Sign in using the <strong>authorized Gmail account</strong> assigned to your sector, department or client.
       </div>
-      <div class="login-pass-note">Access is secured through Google, so there's no separate password — enter your email above, then continue with Google below.</div>
-
-      <button class="login-btn-primary" onclick="doGoogleSignIn()">Sign in with Google</button>
-
-      <div id="loginError" style="display:none; margin-top:12px; font-size:12.5px; color:#9B3A31; text-align:center;"></div>
-
-      <div class="login-footer">Designed By Syed Jalal Hussain Shah</div>
-    </div>
-    <div class="login-hero">
-      <div class="login-hero-watermark">
-        <img src="data:image/png;base64,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" alt="">
+      <div class="msm-login-security">
+        🔐 <strong>Authorized Access Only</strong><br>
+        Your Gmail is checked against the MSM authorized-user list. Unauthorized accounts cannot access the Long Roll database.
       </div>
-      <div class="login-hero-content">
-        <div class="login-hero-badge">SECURITY GUARDS (PVT) LTD</div>
-        <h2 class="login-hero-title">Every guard.<br>One trusted record.</h2>
-        <p class="login-hero-text">A single, secure long roll register for every location — enrollment forms, verification, and records, all in one place.</p>
+      <div class="msm-login-footer">
+        <strong>MSM Longroll Database © All Rights Reserved</strong><br>
+        Designed by Syed Jalal Hussain Shah
       </div>
     </div>
   </div>
-  <div id="loginErrorOuter" style="display:none;"></div>
 </div>
-
-<style>
-  #loginGate{
-    min-height:100vh;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:linear-gradient(160deg,#FBF6EC 0%,#F3E9D6 60%,#EFE0C4 100%);
-    font-family:Arial,Helvetica,sans-serif;
-    padding:32px 16px;
-  }
-  .login-wrap{
-    width:100%;
-    max-width:960px;
-    display:grid;
-    grid-template-columns:1fr 1fr;
-    background:var(--white);
-    border-radius:20px;
-    overflow:hidden;
-    box-shadow:0 20px 60px rgba(27,42,58,0.16);
-    min-height:560px;
-  }
-  .login-card{
-    padding:44px 42px;
-    display:flex;
-    flex-direction:column;
-  }
-  .login-logo{
-    width:56px;
-    height:auto;
-    margin-bottom:14px;
-  }
-  .login-eyebrow{
-    font-family:Arial,sans-serif;
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:1.6px;
-    color:var(--brass);
-    text-transform:uppercase;
-    margin-bottom:10px;
-  }
-  .login-heading{
-    font-family:Georgia,serif;
-    font-size:28px;
-    line-height:1.22;
-    color:var(--navy);
-    font-weight:700;
-    margin-bottom:10px;
-  }
-  .login-subheading{
-    font-size:13.5px;
-    color:var(--ink-soft);
-    line-height:1.5;
-    margin-bottom:26px;
-  }
-  .login-label{
-    font-size:12px;
-    font-weight:700;
-    color:var(--ink);
-    margin-bottom:6px;
-    display:block;
-  }
-  .login-input{
-    width:100%;
-    box-sizing:border-box;
-    padding:11px 14px;
-    border:1px solid var(--line);
-    border-radius:9px;
-    font-size:13.5px;
-    font-family:Arial,sans-serif;
-    color:var(--ink);
-    background:#FFFFFF;
-    margin-bottom:16px;
-    transition:border-color .15s;
-  }
-  .login-input:focus{outline:none; border-color:var(--brass);}
-  .login-input:disabled{background:#F6F2E8; color:var(--ink-soft); cursor:not-allowed;}
-  .login-pass-wrap{margin-bottom:0;}
-  .login-pass-note{
-    font-size:11.5px;
-    color:var(--ink-soft);
-    line-height:1.5;
-    margin:-10px 0 22px;
-  }
-  .login-btn-primary{
-    width:100%;
-    padding:13px 16px;
-    border:none;
-    border-radius:9px;
-    background:var(--brass);
-    color:var(--white);
-    font-size:14px;
-    font-weight:700;
-    font-family:Arial,sans-serif;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:8px;
-    transition:background .15s;
-  }
-  .login-btn-primary:hover{background:var(--brass-soft);}
-  .login-footer{
-    margin-top:auto;
-    padding-top:28px;
-    font-family:Georgia,serif;
-    font-size:12.5px;
-    font-weight:700;
-    letter-spacing:0.3px;
-    color:var(--navy);
-    text-align:center;
-  }
-  .login-hero{
-    position:relative;
-    background:linear-gradient(155deg,#2A4157 0%,#1B2A3A 60%,#141F2B 100%);
-    display:flex;
-    align-items:flex-end;
-    overflow:hidden;
-  }
-  .login-hero-watermark{
-    position:absolute;
-    inset:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    opacity:0.14;
-  }
-  .login-hero-watermark img{
-    width:78%;
-    max-width:380px;
-    filter:brightness(0) invert(1);
-  }
-  .login-hero-content{
-    position:relative;
-    z-index:2;
-    padding:42px 38px;
-    color:var(--white);
-  }
-  .login-hero-badge{
-    font-size:11px;
-    font-weight:700;
-    letter-spacing:1.6px;
-    text-transform:uppercase;
-    color:var(--brass-soft);
-    margin-bottom:14px;
-  }
-  .login-hero-title{
-    font-family:Georgia,serif;
-    font-size:26px;
-    line-height:1.28;
-    margin:0 0 12px;
-    font-weight:700;
-  }
-  .login-hero-text{
-    font-size:13px;
-    line-height:1.6;
-    color:#C7D2DC;
-    margin:0;
-    max-width:340px;
-  }
-  @media (max-width:760px){
-    .login-wrap{grid-template-columns:1fr;}
-    .login-hero{min-height:220px; align-items:flex-end;}
-  }
-</style>
 
 <!-- ============ NOT AUTHORIZED SCREEN ============ -->
 <div id="notAuthorizedGate" style="display:none; max-width:460px; margin:80px auto; padding:36px 30px; text-align:center; background:#FFFDF8; border:1px solid #D9CFB8; border-radius:10px; box-shadow:0 4px 18px rgba(27,42,58,0.10); font-family:Arial,sans-serif;">
@@ -758,6 +691,7 @@
   <div class="tabs">
     <button class="tab-btn active" data-tab="form" onclick="switchTab('form')">New Entry</button>
     <button class="tab-btn" data-tab="register" onclick="switchTab('register')">Register (Long Roll)</button>
+    <button class="tab-btn" data-tab="instructions" onclick="switchTab('instructions')">📘 Instructions</button>
     <button class="tab-btn" data-tab="admin" id="adminTabBtn" style="display:none;" onclick="switchTab('admin')">Admin: Access</button>
   </div>
   <div class="actions">
@@ -915,6 +849,13 @@
         <input class="search-input" id="searchBox" placeholder="Search by name, CNIC, client, supervisor..." oninput="renderTable()">
         <span class="count-pill" id="rowCountPill">0 entries</span>
       </div>
+      <div id="paginationBar" style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:10px 0 14px;">
+        <div style="font-size:12px;color:var(--ink-soft);" id="pageInfo">Loading records...</div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button type="button" class="btn btn-sm" id="prevPageBtn" onclick="prevRecordsPage()" disabled>← Previous</button>
+          <button type="button" class="btn btn-sm" id="nextPageBtn" onclick="nextRecordsPage()" disabled>Next →</button>
+        </div>
+      </div>
       <div class="table-wrap">
         <table class="register" id="registerTable">
           <thead>
@@ -929,24 +870,90 @@
       </div>
     </div>
 
+    <!-- ============ INSTRUCTIONS VIEW ============ -->
+    <div id="view-instructions" style="display:none;">
+      <div class="helper-note">
+        <strong>Complete User Guide:</strong> This page explains the access pattern for the Parent/Admin and for all other authorized users. Everyone uses the same website link; access is controlled by the Gmail account that signs in.
+      </div>
+
+      <div class="form-section-title"><span class="idx">01</span>Parent / Admin User</div>
+      <div class="helper-note" style="text-align:left;">
+        <ol style="margin:0;padding-left:20px;line-height:1.75;">
+          <li>Open the website link: <strong>https://sjalalhs7.github.io/employee-register/</strong></li>
+          <li>Sign in with the <strong>authorized Parent Gmail</strong> that was created in Firestore as <strong>role = parent</strong>.</li>
+          <li>The Parent can see the complete register, including all clients, departments and sectors.</li>
+          <li>Open <strong>Admin: Access</strong> to add or remove authorized user Gmail accounts.</li>
+          <li>For each user, assign the exact <strong>Client / Project</strong> name that should be used for that user's records.</li>
+          <li>The Parent account is protected and cannot be removed from the website.</li>
+        </ol>
+      </div>
+
+      <div class="form-section-title"><span class="idx">02</span>Department / Sector / Client User</div>
+      <div class="helper-note" style="text-align:left;">
+        <ol style="margin:0;padding-left:20px;line-height:1.75;">
+          <li>The Parent first adds the user's Gmail in <strong>Admin: Access</strong>.</li>
+          <li>The user then opens the <strong>same website link</strong>: <strong>https://sjalalhs7.github.io/employee-register/</strong></li>
+          <li>The user signs in with the <strong>same Gmail address</strong> that the Parent authorized.</li>
+          <li>The system automatically identifies the user's assigned Client / Project.</li>
+          <li>The user can add and manage only records belonging to that assigned Client / Project.</li>
+          <li>The user cannot change their Client / Project to access another client's data.</li>
+          <li>If the Gmail has not been authorized, access is denied until the Parent adds it.</li>
+        </ol>
+      </div>
+
+      <div class="form-section-title"><span class="idx">03</span>Website Access Pattern</div>
+      <div class="helper-note" style="text-align:left;">
+        <p style="margin-top:0;"><strong>There is only one main website URL.</strong> There is no separate website URL required for every department, sector or client.</p>
+        <div style="background:var(--paper-dark);border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;word-break:break-all;">
+          https://sjalalhs7.github.io/employee-register/
+        </div>
+        <p style="margin-bottom:0;">Access is controlled by <strong>Google Sign-In + authorized Gmail + assigned Client / Project</strong>. This means users can use the system from mobile, laptop or desktop anywhere they have internet access.</p>
+      </div>
+
+      <div class="form-section-title"><span class="idx">04</span>Daily Data Entry &amp; Printing</div>
+      <div class="helper-note" style="text-align:left;">
+        <ol style="margin:0;padding-left:20px;line-height:1.75;">
+          <li>Open <strong>New Entry</strong> and enter the employee information.</li>
+          <li>Upload the employee photo.</li>
+          <li>Use <strong>Adjust Photo</strong> for manual crop/zoom/position, or <strong>Auto Fit</strong> for automatic passport-box fitting.</li>
+          <li>Save the employee to the Long Roll.</li>
+          <li>Use <strong>Register (Long Roll)</strong> to search, edit or print an existing employee.</li>
+          <li>Print generates the enrollment pages and the uploaded Police Verification document when available.</li>
+        </ol>
+      </div>
+
+      <div class="form-section-title"><span class="idx">05</span>Important Security Rules</div>
+      <div class="helper-note" style="text-align:left;margin-bottom:0;">
+        <ul style="margin:0;padding-left:20px;line-height:1.75;">
+          <li>Never share the Parent/Admin Gmail account.</li>
+          <li>Each department / sector / client should use its own authorized Gmail.</li>
+          <li>Do not manually edit the Client / Project field to another client's name when logged in as a client user.</li>
+          <li>If a user's access must be stopped, the Parent removes that Gmail from <strong>Admin: Access</strong>.</li>
+          <li>The database remains protected by Firebase Firestore security rules in addition to the website interface.</li>
+        </ul>
+      </div>
+    </div>
+
     <!-- ============ ADMIN: ACCESS VIEW (parent role only) ============ -->
     <div id="view-admin" style="display:none;">
       <div class="helper-note">
-        Add the Gmail address of every client / location / sector that should be able to sign in. Give each
-        one a <strong>Client / Project</strong> name that exactly matches what you type in the
+        Only an authorized Parent Gmail can manage access. Parent/Admin accounts are protected from removal.
+        Add the Gmail address of every department / sector / client / location that should be able to sign in.
+        Give each one a <strong>Client / Project</strong> name that exactly matches what you type in the
         "Client / Project" field on entries for that location — that's how their view gets filtered to only
         their own data. Your own Parent account (role = Parent) can see everything, across all locations.
       </div>
       <div class="form-section-title"><span class="idx">+</span>Add authorized Gmail</div>
       <div class="grid">
         <div class="field"><label>Gmail address</label><input id="adm_email" type="email" placeholder="location@gmail.com"></div>
-        <div class="field"><label>Role</label>
-          <select id="adm_role" onchange="document.getElementById('adm_clientRow').style.display = this.value==='client' ? 'flex' : 'none';">
-            <option value="client">Client / Location (sees only their own data)</option>
-            <option value="parent">Parent (sees everything)</option>
-          </select>
+        <div class="field">
+          <label>Access Type</label>
+          <input value="Client / Department / Sector" readonly style="background:var(--paper-dark);">
         </div>
-        <div class="field" id="adm_clientRow"><label>Client / Project name</label><input id="adm_clientproject" placeholder="must match the Client / Project field exactly"></div>
+        <div class="field" id="adm_clientRow">
+          <label>Client / Project name</label>
+          <input id="adm_clientproject" placeholder="must match the Client / Project field exactly">
+        </div>
       </div>
       <div style="margin-top:14px;"><button class="btn btn-primary" onclick="addAuthorizedUser()">+ Add Gmail access</button></div>
 
@@ -1102,13 +1109,14 @@ function initFirebase(){
   auth.onAuthStateChanged(async (user) => {
     if(recordsUnsub){ recordsUnsub(); recordsUnsub=null; }
     if(adminUsersUnsub){ adminUsersUnsub(); adminUsersUnsub=null; }
-    if(!user){ currentUser=null; currentAccess=null; showOnly('loginGate'); return; }
+    if(!user){ currentUser=null; currentAccess=null; const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='none'; showOnly('loginGate'); return; }
     currentUser = user;
     const email = (user.email||'').toLowerCase();
     try{
       const doc = await db.collection('authorizedUsers').doc(email).get();
       if(!doc.exists){
         document.getElementById('notAuthorizedEmail').textContent = email;
+        const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='block';
         showOnly('notAuthorizedGate');
         return;
       }
@@ -1125,14 +1133,9 @@ function initFirebase(){
 
 function doGoogleSignIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
-  // Pre-fill Google's own sign-in screen with whatever email the person typed in
-  // the "Email" field, so it opens straight to that Gmail account (this is what
-  // makes the Email field on the login page actually do something useful).
-  const hint = (document.getElementById('loginEmailHint').value || '').trim();
-  if(hint) provider.setCustomParameters({ login_hint: hint });
-  document.getElementById('loginError').style.display='none';
+  document.getElementById('msmLoginError').style.display='none';
   auth.signInWithPopup(provider).catch(err=>{
-    const el = document.getElementById('loginError');
+    const el = document.getElementById('msmLoginError');
     el.textContent = 'Sign-in failed: ' + err.message;
     el.style.display='block';
   });
@@ -1191,6 +1194,15 @@ const META_KEY = 'longRollRegister_branding_v1'; // branding only (logo/company 
 let records = [];
 let editingId = null;
 
+// Step 1 scalability: only a small page of records is loaded into the browser.
+const PAGE_SIZE = 50;
+let recordsQueryBase = null;
+let recordsPageCursor = null;
+let recordsPageStartCursor = null;
+let recordsPageHistory = [];
+let recordsHasNextPage = false;
+let recordsLoading = false;
+
 function safeLoad(key, fallback){
   try{ const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : fallback; }
   catch(e){ return fallback; }
@@ -1210,6 +1222,7 @@ function isParent(){ return currentAccess && currentAccess.role === 'parent'; }
 function myClientProject(){ return currentAccess ? (currentAccess.clientproject||'') : ''; }
 
 function startApp(){
+  const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='none';
   editingId = null;
   const meta = safeLoad(META_KEY, {});
   if(meta.companyName) document.getElementById('companyName').value = meta.companyName;
@@ -1234,17 +1247,67 @@ function startApp(){
 }
 
 function subscribeRecords(){
-  let q = db.collection(RECORDS_COLLECTION);
-  if(!isParent()) q = q.where('clientproject','==', myClientProject());
+  if(recordsUnsub){ recordsUnsub(); recordsUnsub=null; }
+  recordsPageCursor = null;
+  recordsPageStartCursor = null;
+  recordsPageHistory = [];
+  recordsQueryBase = db.collection(RECORDS_COLLECTION);
+  if(!isParent()) recordsQueryBase = recordsQueryBase.where('clientproject','==', myClientProject());
+  loadRecordsPage(null, false);
+}
+
+function loadRecordsPage(cursor, pushHistory){
+  if(recordsLoading || !recordsQueryBase) return;
+  recordsLoading = true;
+  updatePaginationUI();
+  let q = recordsQueryBase.orderBy('sno','asc').limit(PAGE_SIZE + 1);
+  if(cursor) q = q.startAfter(cursor);
+
+  // Use a one-page snapshot instead of subscribing to the entire collection.
+  // This keeps the browser fast even when the database grows to thousands of records.
   recordsUnsub = q.onSnapshot(snap=>{
-    records = snap.docs.map(d=>({id:d.id, ...d.data()}));
-    records.sort((a,b)=>(Number(a.sno)||0)-(Number(b.sno)||0));
+    const docs = snap.docs;
+    recordsHasNextPage = docs.length > PAGE_SIZE;
+    const pageDocs = recordsHasNextPage ? docs.slice(0, PAGE_SIZE) : docs;
+    records = pageDocs.map(d=>({id:d.id, ...d.data()}));
+    recordsPageStartCursor = cursor;
+    recordsPageCursor = pageDocs.length ? pageDocs[pageDocs.length-1] : cursor;
+    recordsLoading = false;
     updateStamp();
     renderTable();
+    updatePaginationUI();
   }, err=>{
+    recordsLoading = false;
     console.error(err);
     showToast('Could not load the register: ' + err.message);
+    updatePaginationUI();
   });
+}
+
+function nextRecordsPage(){
+  if(recordsLoading || !recordsHasNextPage || !recordsPageCursor) return;
+  // Remember where the current page started so Previous can return to it.
+  recordsPageHistory.push(recordsPageStartCursor);
+  if(recordsUnsub){ recordsUnsub(); recordsUnsub=null; }
+  loadRecordsPage(recordsPageCursor, true);
+}
+
+function prevRecordsPage(){
+  if(recordsLoading || !recordsPageHistory.length) return;
+  if(recordsUnsub){ recordsUnsub(); recordsUnsub=null; }
+  const previousStart = recordsPageHistory.pop() || null;
+  loadRecordsPage(previousStart, false);
+}
+
+function updatePaginationUI(){
+  const info=document.getElementById('pageInfo');
+  const prev=document.getElementById('prevPageBtn');
+  const next=document.getElementById('nextPageBtn');
+  if(!info || !prev || !next) return;
+  const pageNo = recordsPageHistory.length + 1;
+  info.textContent = recordsLoading ? 'Loading records…' : `Page ${pageNo} · ${records.length} records loaded`;
+  prev.disabled = recordsLoading || recordsPageHistory.length===0;
+  next.disabled = recordsLoading || !recordsHasNextPage;
 }
 
 /* ===================== Admin: Access (parent role only) ===================== */
@@ -1257,18 +1320,26 @@ function subscribeAdminUsers(){
         <td>${escapeHtml(r.email)}</td>
         <td>${r.role==='parent'?'Parent':'Client / Location'}</td>
         <td>${escapeHtml(r.clientproject||'')}</td>
-        <td class="row-actions">${r.role==='parent' ? '<span style="color:var(--ink-soft);font-size:12px;">Protected</span>' : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
+        <td class="row-actions">${r.role==='parent'
+          ? '<span style="font-size:11px;color:var(--ink-soft);font-weight:600;">Protected Parent</span>'
+          : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
       </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:20px;">No one added yet.</td></tr>`;
   });
 }
 
 function addAuthorizedUser(){
+  if(!isParent()){
+    showToast('Only an authorized Parent Gmail account can manage access.');
+    return;
+  }
   const email = document.getElementById('adm_email').value.trim().toLowerCase();
-  const role = document.getElementById('adm_role').value;
   const clientproject = document.getElementById('adm_clientproject').value.trim();
   if(!email || !email.includes('@')){ showToast('Enter a valid Gmail address.'); return; }
-  if(role==='client' && !clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
-  const payload = role==='parent' ? {role:'parent'} : {role:'client', clientproject};
+  if(!clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
+
+  // Parent/Admin is deliberately NOT editable from the web UI.
+  // It is the protected account created in Firestore during first-time setup.
+  const payload = {role:'client', clientproject};
   db.collection(AUTHUSERS_COLLECTION).doc(email).set(payload)
     .then(()=>{
       showToast(`Added access for ${email}.`);
@@ -1277,27 +1348,38 @@ function addAuthorizedUser(){
     })
     .catch(err=>showToast('Could not add: ' + err.message));
 }
-function removeAuthorizedUser(email){
-  // Safety check: Parent/Admin accounts can never be removed from here, even if this
-  // function is invoked directly, so the company always keeps at least one Parent account.
-  db.collection(AUTHUSERS_COLLECTION).doc(email).get().then(doc=>{
-    if(doc.exists && doc.data().role === 'parent'){
-      showToast('Parent accounts are protected and cannot be removed here.');
+async function removeAuthorizedUser(email){
+  if(!isParent() || !currentUser){
+    showToast('Only an authorized Parent Gmail account can manage access.');
+    return;
+  }
+  const targetEmail=String(email||'').trim().toLowerCase();
+  try{
+    const target=await db.collection(AUTHUSERS_COLLECTION).doc(targetEmail).get();
+    if(!target.exists){
+      showToast('This Gmail account is already removed.');
       return;
     }
-    if(!confirm(`Remove access for ${email}?`)) return;
-    db.collection(AUTHUSERS_COLLECTION).doc(email).delete()
-      .then(()=>showToast(`Removed ${email}.`))
-      .catch(err=>showToast('Could not remove: ' + err.message));
-  }).catch(err=>showToast('Could not check user: ' + err.message));
+    if(target.data().role==='parent'){
+      showToast('Parent/Admin Gmail is protected and cannot be removed here.');
+      return;
+    }
+    if(!confirm(`Remove access for ${targetEmail}?`)) return;
+    await db.collection(AUTHUSERS_COLLECTION).doc(targetEmail).delete();
+    showToast(`Removed ${targetEmail}.`);
+  }catch(err){
+    console.error(err);
+    showToast('Could not remove: ' + err.message);
+  }
 }
 
 /* ===================== Tabs ===================== */
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-  document.getElementById('view-form').style.display = tab==='form' ? 'block' : 'none';
-  document.getElementById('view-register').style.display = tab==='register' ? 'block' : 'none';
-  document.getElementById('view-admin').style.display = tab==='admin' ? 'block' : 'none';
+  ['form','register','instructions','admin'].forEach(v=>{
+    const el=document.getElementById('view-'+v);
+    if(el) el.style.display = tab===v ? 'block' : 'none';
+  });
   if(tab==='register') renderTable();
 }
 
@@ -1385,38 +1467,51 @@ function clearPhoto(key, previewImgId, emptyId, btnId, fileInputId){
 function normalizePhotoSettings(v){
   v = v || {};
   return {
-    scale: Math.min(3, Math.max(1, Number(v.scale) || 1)),
+    scale: Math.min(3, Math.max(0.75, Number(v.scale) || 1)),
     x: Math.min(100, Math.max(-100, Number(v.x) || 0)),
     y: Math.min(100, Math.max(-100, Number(v.y) || 0))
   };
 }
 function getPhotoSettings(){ return normalizePhotoSettings(uploadState.photoSettings); }
 function setPhotoSettings(v){ uploadState.photoSettings = normalizePhotoSettings(v); }
+
 function autoFitPhoto(){
   setPhotoSettings({scale:1,x:0,y:0});
+  photoEditorState = {...getPhotoSettings()};
   syncPhotoEditorControls();
   updatePhotoPreviewUI('photoData','photoPreview','photoPreviewEmpty','photoClearBtn');
   if(document.getElementById('photoEditorBackdrop').style.display==='flex') renderPhotoEditor();
-  showToast('Photo reset to Auto Fit.');
+  showToast('Photo fitted automatically inside the passport-size box.');
 }
 function resetPhotoPositionOnly(){
-  const s=getPhotoSettings(); setPhotoSettings({scale:s.scale,x:0,y:0}); syncPhotoEditorControls(); renderPhotoEditor();
+  photoEditorState = {scale:getPhotoSettings().scale,x:0,y:0};
+  syncPhotoEditorControls();
+  renderPhotoEditor();
 }
 function openPhotoAdjuster(){
-  if(!uploadState.photoData || !uploadState.photoData.startsWith('data:image')){ showToast('Please upload an employee photo first.'); return; }
+  if(!uploadState.photoData || !uploadState.photoData.startsWith('data:image')){
+    showToast('Please upload an employee photo first.');
+    return;
+  }
   photoEditorState = {...getPhotoSettings()};
   const backdrop=document.getElementById('photoEditorBackdrop');
   backdrop.style.display='flex';
+  document.body.style.overflow='hidden';
   const img=document.getElementById('photoEditorImage');
-  img.onload=()=>{ calculatePhotoEditorBase(); renderPhotoEditor(); };
+  img.onload=()=>{ requestAnimationFrame(()=>{ calculatePhotoEditorBase(); renderPhotoEditor(); }); };
   img.src=uploadState.photoData;
-  if(img.complete) { calculatePhotoEditorBase(); renderPhotoEditor(); }
+  if(img.complete && img.naturalWidth) requestAnimationFrame(()=>{ calculatePhotoEditorBase(); renderPhotoEditor(); });
 }
-function closePhotoAdjuster(){ document.getElementById('photoEditorBackdrop').style.display='none'; }
+function closePhotoAdjuster(){
+  document.getElementById('photoEditorBackdrop').style.display='none';
+  document.body.style.overflow='';
+}
 function calculatePhotoEditorBase(){
   const img=document.getElementById('photoEditorImage'), stage=document.getElementById('photoEditorStage');
-  if(!img.naturalWidth || !stage.clientWidth) return;
-  const sx=stage.clientWidth/img.naturalWidth, sy=stage.clientHeight/img.naturalHeight;
+  if(!img.naturalWidth || !img.naturalHeight || !stage.clientWidth || !stage.clientHeight) return;
+  // Base scale makes the whole photo cover the crop area without leaving blank space.
+  const sx=stage.clientWidth/img.naturalWidth;
+  const sy=stage.clientHeight/img.naturalHeight;
   photoEditorBase.scale=Math.max(sx,sy);
 }
 function syncPhotoEditorControls(){
@@ -1430,13 +1525,13 @@ function syncPhotoEditorControls(){
 }
 function renderPhotoEditor(){
   const img=document.getElementById('photoEditorImage');
-  if(!img || !img.naturalWidth) return;
-  img.style.width=img.naturalWidth+'px';
-  img.style.height=img.naturalHeight+'px';
   const stage=document.getElementById('photoEditorStage');
+  if(!img || !img.naturalWidth || !stage.clientWidth) return;
   const px=(Number(photoEditorState.x)||0)*stage.clientWidth/100;
   const py=(Number(photoEditorState.y)||0)*stage.clientHeight/100;
   const scale=photoEditorBase.scale*(Number(photoEditorState.scale)||1);
+  img.style.width=img.naturalWidth+'px';
+  img.style.height=img.naturalHeight+'px';
   img.style.transform=`translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) scale(${scale})`;
   syncPhotoEditorControls();
 }
@@ -1444,7 +1539,7 @@ function applyPhotoAdjuster(){
   setPhotoSettings(photoEditorState);
   closePhotoAdjuster();
   updatePhotoPreviewUI('photoData','photoPreview','photoPreviewEmpty','photoClearBtn');
-  showToast('Photo adjustment saved with this employee record.');
+  showToast('Photo adjustment saved. Save the employee record to keep it permanently.');
 }
 ['photoZoomRange','photoXRange','photoYRange'].forEach(id=>{
   document.addEventListener('input',e=>{
@@ -1456,17 +1551,45 @@ function applyPhotoAdjuster(){
   });
 });
 (function enablePhotoDragging(){
-  const stage=()=>document.getElementById('photoEditorStage'), img=()=>document.getElementById('photoEditorImage');
+  const stage=()=>document.getElementById('photoEditorStage');
+  const img=()=>document.getElementById('photoEditorImage');
   let dragging=false,sx=0,sy=0,ox=0,oy=0;
-  function down(e){ if(!img().src) return; dragging=true; img().classList.add('dragging'); const p=e.touches?e.touches[0]:e; sx=p.clientX; sy=p.clientY; ox=photoEditorState.x; oy=photoEditorState.y; e.preventDefault(); }
-  function move(e){ if(!dragging) return; const p=e.touches?e.touches[0]:e; const st=stage(); photoEditorState.x=Math.max(-100,Math.min(100,ox+(p.clientX-sx)*100/st.clientWidth)); photoEditorState.y=Math.max(-100,Math.min(100,oy+(p.clientY-sy)*100/st.clientHeight)); renderPhotoEditor(); e.preventDefault(); }
+  function down(e){
+    if(!img().src) return;
+    dragging=true;
+    img().classList.add('dragging');
+    const p=e;
+    sx=p.clientX; sy=p.clientY;
+    ox=photoEditorState.x; oy=photoEditorState.y;
+    try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_e){}
+    e.preventDefault();
+  }
+  function move(e){
+    if(!dragging) return;
+    const st=stage();
+    photoEditorState.x=Math.max(-100,Math.min(100,ox+(e.clientX-sx)*100/st.clientWidth));
+    photoEditorState.y=Math.max(-100,Math.min(100,oy+(e.clientY-sy)*100/st.clientHeight));
+    renderPhotoEditor();
+    e.preventDefault();
+  }
   function up(){ dragging=false; img().classList.remove('dragging'); }
-  document.addEventListener('mousedown',e=>{if(e.target.id==='photoEditorImage')down(e);});
-  document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
-  document.addEventListener('touchstart',e=>{if(e.target.id==='photoEditorImage')down(e);},{passive:false});
-  document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',up);
+  document.addEventListener('pointerdown',e=>{if(e.target.id==='photoEditorImage') down(e);});
+  document.addEventListener('pointermove',move,{passive:false});
+  document.addEventListener('pointerup',up);
+  document.addEventListener('pointercancel',up);
+  document.addEventListener('wheel',e=>{
+    if(e.target.id!=='photoEditorImage') return;
+    e.preventDefault();
+    photoEditorState.scale=Math.max(0.75,Math.min(3,photoEditorState.scale+(e.deltaY<0?0.05:-0.05)));
+    renderPhotoEditor();
+  },{passive:false});
 })();
-window.addEventListener('resize',()=>{ if(document.getElementById('photoEditorBackdrop').style.display==='flex'){calculatePhotoEditorBase();renderPhotoEditor();} });
+window.addEventListener('resize',()=>{
+  if(document.getElementById('photoEditorBackdrop').style.display==='flex'){
+    calculatePhotoEditorBase();
+    renderPhotoEditor();
+  }
+});
 
 /* ===================== Form <-> record mapping ===================== */
 function readForm(){
@@ -1577,9 +1700,16 @@ function saveEntry(){
       .then(()=>{ showToast('Record updated in the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
   } else {
-    const nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
-    db.collection(RECORDS_COLLECTION).add({sno: nextSno, ...data})
-      .then(()=>{ showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
+    // Do not calculate S.No. from the current page; pagination means the browser
+    // intentionally does not have every record loaded. Ask Firestore for the highest S.No.
+    let maxQuery = db.collection(RECORDS_COLLECTION).orderBy('sno','desc').limit(1);
+    if(!isParent()) maxQuery = maxQuery.where('clientproject','==', myClientProject());
+    maxQuery.get().then(snap=>{
+      const maxSno = snap.empty ? 0 : (Number(snap.docs[0].data().sno)||0);
+      const nextSno = maxSno + 1;
+      return db.collection(RECORDS_COLLECTION).add({sno: nextSno, ...data});
+    })
+      .then(()=>{ showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); subscribeRecords(); })
       .catch(err=>showToast('Could not save: ' + err.message));
   }
 }
@@ -1634,7 +1764,7 @@ function renderTable(){
     </td></tr>`;
   }).join('');
 
-  document.getElementById('rowCountPill').textContent = `${filtered.length} of ${records.length} entries`;
+  document.getElementById('rowCountPill').textContent = `${filtered.length} shown on this page`;
   document.getElementById('emptyState').style.display = records.length ? 'none' : 'block';
   document.getElementById('registerTable').style.display = records.length ? 'table' : 'none';
 }
@@ -1851,41 +1981,35 @@ function printRecordForm(id){
   doPrint();
 }
 async function doPrint(){
-  populatePrintTemplate();
-  document.getElementById('printFormTemplate').style.display='block';
-  fitPrintValues();
-  // Wait for an uploaded police-verification document to finish rendering before
-  // opening the browser print dialog, preventing a blank third page. This covers
-  // BOTH cases: a PDF (rendered to <canvas> by PDF.js) and a plain JPG/PNG image
-  // (which needs its own decode to complete before the print snapshot is taken).
-  await new Promise(resolve=>setTimeout(resolve,120));
-  const pdfPage=document.getElementById('pf_policeVerifPage');
-  const verifDoc = getPrintData().policeVerifDoc;
-  if(pdfPage && verifDoc && verifDoc.startsWith('data:application/pdf')){
-    await new Promise(resolve=>{
-      const check=()=>{ if(pdfPage.querySelector('canvas') || pdfPage.textContent.includes('could not be rendered')) resolve(); else setTimeout(check,80); };
-      check();
-    });
-  } else if(pdfPage && verifDoc && verifDoc.startsWith('data:image')){
-    await new Promise(resolve=>{
-      const check=()=>{
-        const img = pdfPage.querySelector('img');
-        if(img && img.complete && img.naturalWidth > 0) resolve(); else setTimeout(check,60);
-      };
-      check();
-    });
+  try{
+    await populatePrintTemplate();
+    const template=document.getElementById('printFormTemplate');
+    template.style.display='block';
+
+    // Wait for every image used by the print layout and for browser fonts.
+    const images=[...template.querySelectorAll('img')];
+    await Promise.all(images.map(img=>{
+      if(img.complete){
+        return img.decode ? img.decode().catch(()=>{}) : Promise.resolve();
+      }
+      return new Promise(resolve=>{
+        img.onload=resolve; img.onerror=resolve;
+      });
+    }));
+    if(document.fonts && document.fonts.ready) await document.fonts.ready;
+
+    fitPrintValues();
+
+    // Give the browser one paint cycle so dynamically created verification
+    // pages/canvases are included in the print tree before opening the dialog.
+    await new Promise(requestAnimationFrame);
+    await new Promise(resolve=>setTimeout(resolve,80));
+
+    window.print();
+  }catch(err){
+    console.error('Print preparation failed:',err);
+    showToast('Print could not be prepared. Please try again.');
   }
-  // Also make sure the employee photo (if any) has finished decoding into the
-  // passport-photo box before printing, using the same completeness check.
-  const photoEl = document.getElementById('pf_employeePhoto');
-  if(photoEl && photoEl.getAttribute('src')){
-    await new Promise(resolve=>{
-      const check=()=>{ if(photoEl.complete && photoEl.naturalWidth > 0) resolve(); else setTimeout(check,60); };
-      check();
-    });
-  }
-  fitPrintValues();
-  setTimeout(()=>{ window.print(); }, 80);
 }
 
 function getPrintData(){
@@ -1897,7 +2021,7 @@ function getPrintData(){
   return readForm();
 }
 
-function populatePrintTemplate(){
+async function populatePrintTemplate(){
   const d = getPrintData();
   const formatDate = (val) => {
     if(!val) return '';
@@ -1921,28 +2045,14 @@ function populatePrintTemplate(){
   const photoEl = document.getElementById('pf_employeePhoto');
   if(d.photoData && d.photoData.startsWith('data:image')){
     photoFrame.style.display='block';
-    const ps = normalizePhotoSettings(d.photoSettings);
-    // Mirror the New Entry photo adjuster's own math exactly, using the actual
-    // frame pixel size (not object-fit:cover), so the passport photo always lands
-    // fully inside the printed box at the right zoom/position, never overflowing it.
-    const img = new Image();
-    img.onload = () => {
-      const frameW = photoFrame.clientWidth || photoFrame.offsetWidth;
-      const frameH = photoFrame.clientHeight || photoFrame.offsetHeight;
-      const baseScale = Math.max(frameW / img.naturalWidth, frameH / img.naturalHeight);
-      const scale = baseScale * ps.scale;
-      const px = (ps.x/100) * frameW;
-      const py = (ps.y/100) * frameH;
-      photoEl.style.width = img.naturalWidth + 'px';
-      photoEl.style.height = img.naturalHeight + 'px';
-      photoEl.style.left = '50%';
-      photoEl.style.top = '50%';
-      photoEl.style.objectFit = 'unset';
-      photoEl.style.transformOrigin = 'center center';
-      photoEl.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) scale(${scale})`;
-    };
-    img.src = d.photoData;
     photoEl.src = d.photoData;
+    const ps = normalizePhotoSettings(d.photoSettings);
+    photoEl.style.objectPosition='50% 50%';
+    photoEl.style.transform=`translate(${ps.x/2}%, ${ps.y/2}%) scale(${ps.scale})`;
+    photoEl.style.transformOrigin='center center';
+    photoEl.style.width='100%';
+    photoEl.style.height='100%';
+    photoEl.style.objectFit='cover';
   } else {
     photoEl.removeAttribute('src');
     photoFrame.style.display = 'none';
@@ -1964,8 +2074,16 @@ function populatePrintTemplate(){
     document.getElementById('printFormTemplate').appendChild(page);
     if(d.policeVerifDoc.startsWith('data:image')){
       img.src=d.policeVerifDoc;
+      if(img.decode){
+        try{ await img.decode(); }catch(_e){}
+      } else {
+        await new Promise(resolve=>{
+          if(img.complete) resolve();
+          else { img.onload=resolve; img.onerror=resolve; }
+        });
+      }
     } else {
-      renderPolicePdfForPrint(d.policeVerifDoc, img, page);
+      await renderPolicePdfForPrint(d.policeVerifDoc, img, page);
     }
   }
 }
@@ -1974,61 +2092,83 @@ async function renderPolicePdfForPrint(dataUrl, imgEl, pageEl){
   try{
     if(!window.pdfjsLib) throw new Error('PDF renderer is not loaded');
     pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-    const raw=atob(dataUrl.split(',')[1]); const bytes=new Uint8Array(raw.length); for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+
+    const raw=atob(dataUrl.split(',')[1]);
+    const bytes=new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+
     const pdf=await pdfjsLib.getDocument({data:bytes}).promise;
-    // First page is the official printable verification page. If the certificate
-    // itself has multiple pages, add each page as another print page automatically.
+
+    // Render every PDF page into an actual print page. Nothing is sent to
+    // window.print() until all canvases have finished rendering.
     for(let i=1;i<=pdf.numPages;i++){
       const target=i===1?pageEl:document.createElement('div');
-      if(i>1){target.className='pf-print-page'; target.style.background='#fff'; target.id='pf_policeVerifPage_'+i; document.getElementById('printFormTemplate').appendChild(target);}
+
+      if(i>1){
+        target.className='pf-print-page';
+        target.style.background='#fff';
+        target.id='pf_policeVerifPage_'+i;
+        document.getElementById('printFormTemplate').appendChild(target);
+      }
+
       const canvas=document.createElement('canvas');
       const page=await pdf.getPage(i);
       const base=page.getViewport({scale:1});
       const scale=Math.min(816/base.width,1056/base.height);
       const viewport=page.getViewport({scale});
-      canvas.width=Math.ceil(viewport.width); canvas.height=Math.ceil(viewport.height);
-      canvas.style.position='absolute'; canvas.style.left='50%'; canvas.style.top='50%'; canvas.style.transform='translate(-50%,-50%)'; canvas.style.maxWidth='100%'; canvas.style.maxHeight='100%';
+
+      canvas.width=Math.ceil(viewport.width);
+      canvas.height=Math.ceil(viewport.height);
+      canvas.style.position='absolute';
+      canvas.style.left='50%';
+      canvas.style.top='50%';
+      canvas.style.transform='translate(-50%,-50%)';
+      canvas.style.maxWidth='100%';
+      canvas.style.maxHeight='100%';
+
       await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-      if(i===1){ imgEl.replaceWith(canvas); } else target.appendChild(canvas);
+
+      if(i===1) imgEl.replaceWith(canvas);
+      else target.appendChild(canvas);
+
+      target.dataset.ready='1';
     }
   }catch(err){
     pageEl.innerHTML='<div style="padding:36px;font-family:Arial,sans-serif;color:#9B3A31;font-size:16px;text-align:center;">Police Verification PDF could not be rendered for printing.<br><small>Please re-upload the certificate or use an image (JPG/PNG).</small></div>';
+    pageEl.dataset.ready='error';
     console.error('Police verification PDF render error:',err);
   }
 }
 
-/* PRINT_FONT_CONFIG: change ONLY these two numbers to fine-tune how the
-   manually typed data matches the printed form's own label font size —
-   no other code needs to change. Compare a fresh print to the paper form
-   and nudge baseSize up/down by 0.5px steps until they line up visually. */
-const PRINT_FONT_CONFIG = { baseSize: 12, minSize: 9 };
-
 function fitPrintValues(){
-  // Letter print width is 8.5in = 816 CSS px.
-  // Entered data starts at PRINT_FONT_CONFIG.baseSize (matched to the
-  // enrollment form's own printed field size) and is reduced only when the
-  // actual value is too long for its own printed line, preventing overlap.
+  // The supplied artwork is 1232px wide and prints at 8.5in (816 CSS px).
+  // Keep entered values close to the artwork's own label font, then shrink
+  // only when a value would overflow its allotted printed line.
   const PAGE_PX = 816;
-  const { baseSize, minSize } = PRINT_FONT_CONFIG;
+  const baseSize = 11;
+  const minSize = 8.5;
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
+
   document.querySelectorAll('#printFormTemplate .pf-value').forEach(el=>{
     const m = (el.getAttribute('style')||'').match(/width\s*:\s*([0-9.]+)%/);
     const maxWidth = m ? PAGE_PX * parseFloat(m[1]) / 100 : PAGE_PX;
-    let size = baseSize;
     const text = el.textContent || '';
+    let size = baseSize;
+
     while(size > minSize){
       ctx.font = `400 ${size}px Arial`;
       if(ctx.measureText(text).width <= maxWidth - 3) break;
       size -= 0.25;
     }
+
     el.style.fontSize = size.toFixed(2) + 'px';
-    el.style.transform = 'translateY(-2px)';
+    el.style.lineHeight = '1.05';
+    el.style.transform = 'translateY(-1px)';
   });
 }
 
 window.addEventListener('beforeprint', ()=>{
-  populatePrintTemplate();
   document.getElementById('printFormTemplate').style.display='block';
   fitPrintValues();
 });
