@@ -3,9 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Employee Enrollment &amp; Long Roll Register</title>
+<title>MSM Security Guard Database | Employee Enrollment &amp; Long Roll Register</title>
+<meta name="description" content="MSM Security Guards (Pvt) Ltd — secure, searchable employee enrollment and long roll database for managing guard records, deployments, and client rosters.">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://sjalalhs7.github.io/employee-register/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="MSM Security Guard Database">
+<meta property="og:description" content="Secure, searchable employee enrollment and long roll database for MSM Security Guards (Pvt) Ltd.">
+<meta property="og:url" content="https://sjalalhs7.github.io/employee-register/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "MSM Security Guard Database",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Any (Web Browser)",
+  "description": "Secure, searchable employee enrollment and long roll database for MSM Security Guards (Pvt) Ltd.",
+  "publisher": {
+    "@type": "Organization",
+    "name": "MSM Security Guards (Pvt) Ltd"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Syed Jalal Hussain Shah"
+  }
+}
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <!-- Firebase (Google Sign-In + shared cloud database) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -25,6 +52,21 @@
     --danger:#9B3A31;
     --success:#3F6B4A;
     --white:#FFFDF8;
+  }
+  body.dark-mode{
+    --paper:#151B24;
+    --paper-dark:#0F141B;
+    --ink:#EDEAE0;
+    --ink-soft:#A8ADB8;
+    --navy:#E8C87A;
+    --navy-soft:#C9A253;
+    --steel:#8FAFCB;
+    --brass:#D4AF5A;
+    --brass-soft:#E8C87A;
+    --line:#31394A;
+    --danger:#E0736A;
+    --success:#6FCB8E;
+    --white:#1C2430;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -756,12 +798,13 @@
 
 <div class="tabbar">
   <div class="tabs">
-    <button class="tab-btn active" data-tab="form" onclick="switchTab('form')">New Entry</button>
+    <button class="tab-btn active" data-tab="form" id="newEntryTabBtn" onclick="switchTab('form')">New Entry</button>
     <button class="tab-btn" data-tab="register" onclick="switchTab('register')">Register (Long Roll)</button>
     <button class="tab-btn" data-tab="admin" id="adminTabBtn" style="display:none;" onclick="switchTab('admin')">Admin: Access</button>
   </div>
   <div class="actions">
     <span class="count-pill" id="userBadge" style="margin-right:4px;"></span>
+    <button class="btn btn-sm" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
     <button class="btn btn-sm" onclick="doSignOut()">Sign out</button>
     <button class="btn" onclick="printLiveForm()">🖨 Print Enrollment Form (2 + Verification)</button>
     <button class="btn btn-brass" onclick="exportExcel()">⬇ Export Long Roll (.xlsx)</button>
@@ -808,6 +851,7 @@
           <div class="field wide">
             <label>Employee Photo</label>
             <input id="f_photoFile" type="file" accept="image/*" onchange="handlePhotoUpload(this,'photoData','photoPreview')">
+            <button type="button" class="btn btn-sm" style="margin-top:8px;" onclick="openCameraCapture('photoData','photoPreview')">📷 Take Photo (Camera)</button>
             <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
               <img id="photoPreview" style="display:none;max-height:110px;max-width:110px;border:1px solid var(--line);border-radius:6px;object-fit:cover;">
               <span id="photoPreviewEmpty" style="font-size:12px;color:var(--ink-soft);">No photo uploaded yet.</span>
@@ -919,6 +963,19 @@
           <input class="search-input" id="searchBox" list="searchSuggestions" placeholder="Search by name, CNIC, mobile, deployment ID..." oninput="onSearchInput()" style="flex:1; min-width:220px;">
           <datalist id="searchSuggestions"></datalist>
           <span class="count-pill" id="rowCountPill">0 entries</span>
+          <button type="button" class="btn btn-sm" id="exportFilteredBtn" onclick="exportCsv('filtered')">⬇ Export filtered (CSV)</button>
+          <button type="button" class="btn btn-sm" id="exportAllBtn" onclick="exportCsv('all')">⬇ Export all (CSV)</button>
+          <button type="button" class="btn btn-sm" id="exportFilteredPdfBtn" onclick="exportPdf('filtered')">⬇ Export filtered (PDF)</button>
+        </div>
+        <div id="registerErrorBox" style="display:none; background:#FBEAE8; border:1px solid #E3B3AC; color:#9B3A31; padding:10px 14px; border-radius:8px; font-size:12.5px;"></div>
+        <div id="bulkActionsBar" style="display:none; align-items:center; gap:10px; background:#F3E9D6; border:1px solid var(--line); border-radius:8px; padding:8px 12px; flex-wrap:wrap;">
+          <span id="bulkSelectedCount" style="font-size:12.5px; font-weight:700; color:var(--navy);"></span>
+          <button type="button" class="btn btn-sm" onclick="exportCsv('selected')">⬇ Export selected (CSV)</button>
+          <button type="button" class="btn btn-sm" onclick="exportPdf('selected')">⬇ Export selected (PDF)</button>
+          <button type="button" class="btn btn-sm" onclick="bulkSetStatus('Active')">Mark Active</button>
+          <button type="button" class="btn btn-sm" onclick="bulkSetStatus('On-Leave')">Mark On-Leave</button>
+          <button type="button" class="btn btn-sm" onclick="bulkSetStatus('Terminated')">Mark Terminated</button>
+          <button type="button" class="btn btn-sm btn-danger" onclick="bulkDelete()">Delete selected</button>
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
           <div>
@@ -934,10 +991,30 @@
             <select id="filterStatus" class="login-input" style="width:auto; min-width:150px; margin:0; padding:6px;" multiple size="4" onchange="onFilterChange()"></select>
           </div>
           <button type="button" class="btn btn-sm" onclick="clearFilters()">Clear filters</button>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;">SORT BY</div>
+            <select id="sortField" class="login-input" style="width:auto; margin:0; padding:8px 10px;" onchange="onSortChange()">
+              <option value="doe">Date of Employment</option>
+              <option value="name">Employee Name</option>
+              <option value="msmno">MSM No. (ID)</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;">ORDER</div>
+            <select id="sortDir" class="login-input" style="width:auto; margin:0; padding:8px 10px;" onchange="onSortChange()">
+              <option value="desc">Newest First (Default)</option>
+              <option value="asc">Oldest First</option>
+            </select>
+          </div>
           <span class="count-pill" id="filterCounterBadge" style="display:none;"></span>
         </div>
       </div>
       <div class="table-wrap">
+        <div id="registerLoading" style="display:none; text-align:center; padding:40px; color:var(--ink-soft); font-size:13.5px;">
+          <div style="font-size:22px; margin-bottom:8px;">⏳</div>
+          Loading register…
+        </div>
         <table class="register" id="registerTable">
           <thead>
             <tr id="theadRow"></tr>
@@ -975,9 +1052,10 @@
       <div class="grid">
         <div class="field"><label>Gmail address</label><input id="adm_email" type="email" placeholder="location@gmail.com"></div>
         <div class="field"><label>Role</label>
-          <select id="adm_role" onchange="document.getElementById('adm_clientRow').style.display = this.value==='client' ? 'flex' : 'none';">
-            <option value="client">Client / Location (sees only their own data)</option>
-            <option value="parent">Parent (sees everything)</option>
+          <select id="adm_role" onchange="document.getElementById('adm_clientRow').style.display = this.value==='parent' ? 'none' : 'flex';">
+            <option value="manager">Manager (their client's data — can add/edit/delete/export)</option>
+            <option value="viewer">Standard User (their client's data — view only, no edit/delete/export)</option>
+            <option value="parent">Admin / Parent (sees everything, full control)</option>
           </select>
         </div>
         <div class="field" id="adm_clientRow"><label>Client / Project name</label><input id="adm_clientproject" placeholder="must match the Client / Project field exactly"></div>
@@ -989,6 +1067,15 @@
         <table class="register">
           <thead><tr><th>Gmail</th><th>Role</th><th>Client / Project</th><th>Actions</th></tr></thead>
           <tbody id="adminUsersTbody"></tbody>
+        </table>
+      </div>
+
+      <div class="form-section-title" style="margin-top:30px;"><span class="idx">📋</span>Audit Trail — recent activity</div>
+      <div class="helper-note">Every add, edit, delete, and status change across all clients/locations is logged here with who did it and when.</div>
+      <div class="table-wrap">
+        <table class="register">
+          <thead><tr><th>When</th><th>Action</th><th>Record</th><th>By</th><th>Role</th><th>Details</th></tr></thead>
+          <tbody id="auditLogTbody"><tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:16px;">Loading…</td></tr></tbody>
         </table>
       </div>
     </div>
@@ -1221,6 +1308,60 @@ const EXTRA_KEYS = ['co','mother','domicile','education2','blood','height','mari
 /* ===================== Storage (Firestore, shared across authorized Gmail accounts) ===================== */
 const RECORDS_COLLECTION = 'records';
 const AUTHUSERS_COLLECTION = 'authorizedUsers';
+const AUDITLOG_COLLECTION = 'auditLogs';
+
+/* ===================== Dark / Light Mode ===================== */
+function toggleDarkMode(){
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('msm_dark_mode', isDark ? '1' : '0');
+  document.getElementById('darkModeToggle').textContent = isDark ? '☀ Light Mode' : '🌙 Dark Mode';
+}
+(function applyStoredDarkMode(){
+  if(localStorage.getItem('msm_dark_mode') === '1'){
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('dark-mode');
+      const btn = document.getElementById('darkModeToggle');
+      if(btn) btn.textContent = '☀ Light Mode';
+    });
+  }
+})();
+
+/* ===================== PDF Export (bulk / filtered / all) ===================== */
+function exportPdf(scope){
+  if(!canExport()){ showToast('You do not have permission to export.'); return; }
+  let rows;
+  if(scope === 'selected'){
+    if(!selectedIds.size){ showToast('No rows selected.'); return; }
+    rows = records.filter(r => selectedIds.has(r.id));
+  } else if(scope === 'filtered'){
+    rows = getFilteredSortedRecords();
+  } else {
+    rows = records;
+  }
+  if(!window.jspdf){ showToast('PDF library did not load — check your internet connection.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+  doc.setFontSize(14);
+  doc.text('MSM Security Guards — Long Roll Register', 40, 30);
+  const headers = [COLUMNS.map(c=>c.label).concat('Status')];
+  const body = rows.map(r => COLUMNS.map(c=>String(r[c.key] ?? '')).concat(r.status || 'Active'));
+  doc.autoTable({ head: headers, body, startY: 45, styles: { fontSize: 7 }, headStyles: { fillColor: [27,42,58] } });
+  doc.save(`msm-long-roll-${scope}-${new Date().toISOString().slice(0,10)}.pdf`);
+  showToast(`Exported ${rows.length} record(s) to PDF.`);
+}
+
+/* Writes one audit-trail entry: who did what, to which record, and when.
+   Fire-and-forget — a logging failure should never block the real action. */
+function logAudit(action, recordId, recordName, details){
+  if(!currentUser) return;
+  db.collection(AUDITLOG_COLLECTION).add({
+    action, recordId: recordId || '', recordName: recordName || '',
+    details: details || '',
+    byEmail: currentUser.email,
+    byRole: currentAccess ? currentAccess.role : 'unknown',
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(err => console.error('Audit log failed:', err));
+}
 const META_KEY = 'longRollRegister_branding_v1'; // branding only (logo/company name) — not sensitive, kept per-device
 let records = [];
 let editingId = null;
@@ -1239,8 +1380,15 @@ function persistMeta(){
 document.getElementById('companyName').addEventListener('change', persistMeta);
 
 /* isParent() = full visibility across every client/location.
-   For a 'client' role user, every record they can see/write is locked to their own clientproject. */
+   For a 'manager'/'client'(legacy)/'viewer' role user, every record they can see/write is locked to their own clientproject.
+   RBAC tiers: parent = Admin (everything) · manager/client(legacy) = full CRUD scoped to their client · viewer = read-only scoped to their client. */
 function isParent(){ return currentAccess && currentAccess.role === 'parent'; }
+function isViewer(){ return currentAccess && currentAccess.role === 'viewer'; }
+function isManager(){ return currentAccess && (currentAccess.role === 'manager' || currentAccess.role === 'client'); }
+function canEdit(){ return isParent() || isManager(); }
+function canDelete(){ return isParent() || isManager(); }
+function canExport(){ return isParent() || isManager(); }
+function canBulkActions(){ return isParent() || isManager(); }
 function myClientProject(){ return currentAccess ? (currentAccess.clientproject||'') : ''; }
 
 function startApp(){
@@ -1248,11 +1396,12 @@ function startApp(){
   const meta = safeLoad(META_KEY, {});
   if(meta.companyName) document.getElementById('companyName').value = meta.companyName;
 
-  document.getElementById('userBadge').textContent = `${currentUser.email} · ${isParent()?'Parent (all data)':('Client: '+myClientProject())}`;
+  const roleLabel = isParent() ? 'Admin (all data)' : (isViewer() ? `Standard User (view only) · ${myClientProject()}` : `Manager · ${myClientProject()}`);
+  document.getElementById('userBadge').textContent = `${currentUser.email} · ${roleLabel}`;
   document.getElementById('adminTabBtn').style.display = isParent() ? '' : 'none';
 
   if(!isParent()){
-    // Lock the top Client/Project field for client-role users so every entry they create stays theirs.
+    // Lock the top Client/Project field for scoped-role users so every entry they create stays theirs.
     const clientNameEl = document.getElementById('clientName');
     clientNameEl.value = myClientProject();
     clientNameEl.readOnly = true;
@@ -1261,23 +1410,43 @@ function startApp(){
     f_clientproject.readOnly = true;
   }
 
+  if(isViewer()){
+    // Standard User / viewer: read-only everywhere — hide the New Entry tab
+    // entirely and never let a save go through, even if triggered directly.
+    const newEntryTabBtn = document.getElementById('newEntryTabBtn');
+    if(newEntryTabBtn) newEntryTabBtn.style.display = 'none';
+    switchTab('register');
+  }
+  if(!canExport()){
+    const efb = document.getElementById('exportFilteredBtn'); if(efb) efb.style.display = 'none';
+    const eab = document.getElementById('exportAllBtn'); if(eab) eab.style.display = 'none';
+    const epb = document.getElementById('exportFilteredPdfBtn'); if(epb) epb.style.display = 'none';
+  }
+
   subscribeRecords();
-  if(isParent()) subscribeAdminUsers();
+  if(isParent()) { subscribeAdminUsers(); subscribeAuditLog(); }
   resetForm();
-  switchTab('form');
+  switchTab(isViewer() ? 'register' : 'form');
 }
 
+let recordsLoaded = false;
 function subscribeRecords(){
+  recordsLoaded = false;
   let q = db.collection(RECORDS_COLLECTION);
   if(!isParent()) q = q.where('clientproject','==', myClientProject());
   recordsUnsub = q.onSnapshot(snap=>{
     records = snap.docs.map(d=>({id:d.id, ...d.data()}));
     records.sort((a,b)=>(Number(a.sno)||0)-(Number(b.sno)||0));
+    recordsLoaded = true;
     updateStamp();
     renderTable();
   }, err=>{
     console.error(err);
+    recordsLoaded = true;
     showToast('Could not load the register: ' + err.message);
+    const errBox = document.getElementById('registerErrorBox');
+    if(errBox){ errBox.style.display='block'; errBox.textContent = 'Error loading records: ' + err.message; }
+    renderTable();
   });
 }
 
@@ -1289,20 +1458,46 @@ function subscribeAdminUsers(){
     document.getElementById('adminUsersTbody').innerHTML = rows.map(r=>`
       <tr>
         <td>${escapeHtml(r.email)}</td>
-        <td>${r.role==='parent'?'Parent':'Client / Location'}</td>
+        <td>${r.role==='parent'?'Admin / Parent':(r.role==='viewer'?'Standard User (view only)':'Manager')}</td>
         <td>${escapeHtml(r.clientproject||'')}</td>
         <td class="row-actions">${r.role==='parent' ? '<span style="color:var(--ink-soft);font-size:12px;">Protected</span>' : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
       </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:20px;">No one added yet.</td></tr>`;
   });
 }
 
+let auditLogUnsub = null;
+function subscribeAuditLog(){
+  if(auditLogUnsub) auditLogUnsub();
+  auditLogUnsub = db.collection(AUDITLOG_COLLECTION).orderBy('timestamp','desc').limit(200).onSnapshot(snap=>{
+    const rows = snap.docs.map(d=>d.data());
+    const tbody = document.getElementById('auditLogTbody');
+    if(!tbody) return;
+    tbody.innerHTML = rows.map(r=>{
+      const when = r.timestamp && r.timestamp.toDate ? r.timestamp.toDate().toLocaleString() : '—';
+      const actionColor = r.action==='delete'||r.action==='bulk-delete' ? '#9B3A31' : (r.action==='create' ? '#2E7D4F' : 'var(--navy)');
+      return `<tr>
+        <td>${escapeHtml(when)}</td>
+        <td><span style="color:${actionColor}; font-weight:700; font-size:12px; text-transform:uppercase;">${escapeHtml(r.action)}</span></td>
+        <td>${escapeHtml(r.recordName||'—')}</td>
+        <td>${escapeHtml(r.byEmail||'—')}</td>
+        <td>${escapeHtml(r.byRole||'—')}</td>
+        <td>${escapeHtml(r.details||'')}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:16px;">No activity logged yet.</td></tr>`;
+  }, err=>{
+    console.error('Audit log load failed:', err);
+    const tbody = document.getElementById('auditLogTbody');
+    if(tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9B3A31;padding:16px;">Could not load audit log: ${escapeHtml(err.message)}</td></tr>`;
+  });
+}
+
 function addAuthorizedUser(){
   const email = document.getElementById('adm_email').value.trim().toLowerCase();
-  const role = document.getElementById('adm_role').value;
+  const role = document.getElementById('adm_role').value; // 'parent' | 'manager' | 'viewer'
   const clientproject = document.getElementById('adm_clientproject').value.trim();
   if(!email || !email.includes('@')){ showToast('Enter a valid Gmail address.'); return; }
-  if(role==='client' && !clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
-  const payload = role==='parent' ? {role:'parent'} : {role:'client', clientproject};
+  if(role!=='parent' && !clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
+  const payload = role==='parent' ? {role:'parent'} : {role, clientproject};
   db.collection(AUTHUSERS_COLLECTION).doc(email).set(payload)
     .then(()=>{
       showToast(`Added access for ${email}.`);
@@ -1386,19 +1581,31 @@ function handlePhotoUpload(inputEl, key, previewImgId){
     return;
   }
 
-  // Image: compress via canvas before storing, so records stay small and fast to sync.
+  // Image: compress via canvas before storing, so records stay small and fast
+  // to sync. Iteratively lowers quality/size until the encoded data is under
+  // ~200KB (Base64 data URL), same target as a typical enrollment-form scan.
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      const maxDim = 700;
-      let w = img.width, h = img.height;
-      if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
-      else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
-      const canvas = document.createElement('canvas');
-      canvas.width = w; canvas.height = h;
-      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-      const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+      const TARGET_BYTES = 200 * 1024;
+      let maxDim = 900;
+      let quality = 0.85;
+      let dataUrl = '';
+      for(let attempt = 0; attempt < 8; attempt++){
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const approxBytes = dataUrl.length * 0.75; // base64 -> raw byte estimate
+        if(approxBytes <= TARGET_BYTES) break;
+        // Still too big: shrink dimensions first, then drop quality, and retry.
+        if(maxDim > 300) maxDim = Math.round(maxDim * 0.85);
+        else quality = Math.max(0.4, quality - 0.1);
+      }
       uploadState[key] = dataUrl;
       if(key === 'photoData') uploadState.photoSettings = {scale:1,x:0,y:0};
       updatePhotoPreviewUI(key, previewImgId, emptyId, btnId);
@@ -1406,6 +1613,42 @@ function handlePhotoUpload(inputEl, key, previewImgId){
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+/* ===================== Live Camera Capture ===================== */
+let cameraStream = null;
+function openCameraCapture(key, previewImgId){
+  const modal = document.getElementById('cameraModal');
+  const video = document.getElementById('cameraVideo');
+  modal.dataset.targetKey = key;
+  modal.dataset.targetPreview = previewImgId;
+  modal.style.display = 'flex';
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+    .then(stream => { cameraStream = stream; video.srcObject = stream; })
+    .catch(err => { showToast('Could not access camera: ' + err.message); closeCameraCapture(); });
+}
+function closeCameraCapture(){
+  const modal = document.getElementById('cameraModal');
+  modal.style.display = 'none';
+  if(cameraStream){ cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+}
+function captureCameraPhoto(){
+  const modal = document.getElementById('cameraModal');
+  const video = document.getElementById('cameraVideo');
+  const key = modal.dataset.targetKey;
+  const previewImgId = modal.dataset.targetPreview;
+  const emptyId = previewImgId + 'Empty';
+  const btnId = previewImgId.replace('Preview','') + 'ClearBtn';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  uploadState[key] = dataUrl;
+  if(key === 'photoData') uploadState.photoSettings = {scale:1,x:0,y:0};
+  updatePhotoPreviewUI(key, previewImgId, emptyId, btnId);
+  closeCameraCapture();
+  showToast('Photo captured from camera.');
 }
 
 function clearPhoto(key, previewImgId, emptyId, btnId, fileInputId){
@@ -1598,6 +1841,7 @@ function cancelEdit(){
 
 /* ===================== Save / Edit / Delete (Firestore) ===================== */
 function saveEntry(){
+  if(!canEdit()){ showToast('You do not have permission to add or edit records.'); return; }
   const name = document.getElementById('f_name').value.trim();
   if(!name){
     showToast('Employee Name is required.');
@@ -1605,21 +1849,22 @@ function saveEntry(){
     return;
   }
   const data = readForm();
-  if(!isParent()) data.clientproject = myClientProject(); // client role can never save into another tenant
+  if(!isParent()) data.clientproject = myClientProject(); // scoped roles can never save into another tenant
 
   if(editingId){
     db.collection(RECORDS_COLLECTION).doc(editingId).update(data)
-      .then(()=>{ showToast('Record updated in the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
+      .then(()=>{ logAudit('edit', editingId, name, 'Record updated'); showToast('Record updated in the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
   } else {
     const nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
     db.collection(RECORDS_COLLECTION).add({sno: nextSno, ...data})
-      .then(()=>{ showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
+      .then(docRef=>{ logAudit('create', docRef.id, name, 'New record added'); showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
   }
 }
 
 function editRecord(id){
+  if(!canEdit()){ showToast('You do not have permission to edit records.'); return; }
   const rec = records.find(r=>r.id===id);
   if(!rec) return;
   editingId = id;
@@ -1631,11 +1876,12 @@ function editRecord(id){
 }
 
 function deleteRecord(id){
+  if(!canDelete()){ showToast('You do not have permission to delete records.'); return; }
   const rec = records.find(r=>r.id===id);
   if(!rec) return;
   if(!confirm(`Delete record #${rec.sno} — ${rec.name}? This cannot be undone.`)) return;
   db.collection(RECORDS_COLLECTION).doc(id).delete()
-    .then(()=>showToast('Record deleted.'))
+    .then(()=>{ logAudit('delete', id, rec.name, 'Record deleted'); showToast('Record deleted.'); })
     .catch(err=>showToast('Could not delete: ' + err.message));
 }
 
@@ -1655,12 +1901,50 @@ function goToPage(p){
   currentPage = Math.min(Math.max(1, p), totalPages);
   renderTable();
 }
+let sortField = 'doe';
+let sortDir = 'desc'; // 'desc' = Newest/Z-A first (default), 'asc' = Oldest/A-Z first
+
+function onSortChange(){
+  sortField = document.getElementById('sortField').value;
+  sortDir = document.getElementById('sortDir').value;
+  currentPage = 1;
+  renderTable();
+}
+
+function compareForSort(a, b){
+  let va, vb;
+  if(sortField === 'doe'){
+    // Dates in this register are typically DD/MM/YYYY or similar free text;
+    // fall back to string compare if they don't parse as real dates.
+    const da = new Date(a.doe), db_ = new Date(b.doe);
+    const validA = !isNaN(da), validB = !isNaN(db_);
+    if(validA && validB){ va = da.getTime(); vb = db_.getTime(); }
+    else { va = (a.doe||''); vb = (b.doe||''); }
+  } else if(sortField === 'msmno'){
+    // Numeric-aware compare when both sides look like numbers, else string compare.
+    const na = parseFloat(a.msmno), nb = parseFloat(b.msmno);
+    if(!isNaN(na) && !isNaN(nb)){ va = na; vb = nb; }
+    else { va = (a.msmno||'').toLowerCase(); vb = (b.msmno||'').toLowerCase(); }
+  } else if(sortField === 'status'){
+    va = (a.status||'Active').toLowerCase(); vb = (b.status||'Active').toLowerCase();
+  } else {
+    va = (a.name||'').toLowerCase(); vb = (b.name||'').toLowerCase();
+  }
+  let cmp;
+  if(typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+  else cmp = String(va).localeCompare(String(vb));
+  return sortDir === 'asc' ? cmp : -cmp;
+}
+
 function clearFilters(){
   document.getElementById('searchBox').value = '';
   ['filterClient','filterLocation','filterStatus'].forEach(id=>{
     const sel = document.getElementById(id);
     Array.from(sel.options).forEach(o=>o.selected=false);
   });
+  document.getElementById('sortField').value = 'doe';
+  document.getElementById('sortDir').value = 'desc';
+  sortField = 'doe'; sortDir = 'desc';
   currentPage = 1;
   renderTable();
 }
@@ -1702,13 +1986,86 @@ function refreshSearchSuggestions(){
 }
 
 let lastFilteredCount = 0;
+let selectedIds = new Set();
 
-function renderTable(){
-  const thead = document.getElementById('theadRow');
-  thead.innerHTML = COLUMNS.map(c=>`<th>${c.label}</th>`).join('') + '<th>Status</th><th>Actions</th>';
+function toggleSelectAll(checkbox){
+  const pageCheckboxes = document.querySelectorAll('#tbody .rowSelectBox');
+  pageCheckboxes.forEach(cb=>{
+    cb.checked = checkbox.checked;
+    if(checkbox.checked) selectedIds.add(cb.dataset.id); else selectedIds.delete(cb.dataset.id);
+  });
+  updateBulkBar();
+}
+function toggleRowSelect(cb){
+  if(cb.checked) selectedIds.add(cb.dataset.id); else selectedIds.delete(cb.dataset.id);
+  updateBulkBar();
+}
+function updateBulkBar(){
+  const bar = document.getElementById('bulkActionsBar');
+  if(!bar) return;
+  if(selectedIds.size > 0){
+    bar.style.display = 'flex';
+    document.getElementById('bulkSelectedCount').textContent = `${selectedIds.size} selected`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+function bulkDelete(){
+  if(!canDelete()){ showToast('You do not have permission to delete records.'); return; }
+  if(!selectedIds.size) return;
+  if(!confirm(`Delete ${selectedIds.size} selected record(s)? This cannot be undone.`)) return;
+  const batch = db.batch();
+  selectedIds.forEach(id => batch.delete(db.collection(RECORDS_COLLECTION).doc(id)));
+  batch.commit()
+    .then(()=>{
+      selectedIds.forEach(id => { const rec = records.find(r=>r.id===id); logAudit('bulk-delete', id, rec ? rec.name : '', 'Deleted via bulk action'); });
+      showToast(`Deleted ${selectedIds.size} record(s).`); selectedIds.clear(); updateBulkBar();
+    })
+    .catch(err=>showToast('Bulk delete failed: ' + err.message));
+}
+function bulkSetStatus(newStatus){
+  if(!canEdit()){ showToast('You do not have permission to edit records.'); return; }
+  if(!selectedIds.size) return;
+  const batch = db.batch();
+  selectedIds.forEach(id => batch.update(db.collection(RECORDS_COLLECTION).doc(id), {status:newStatus}));
+  batch.commit()
+    .then(()=>{
+      selectedIds.forEach(id => { const rec = records.find(r=>r.id===id); logAudit('status-change', id, rec ? rec.name : '', 'Status set to ' + newStatus); });
+      showToast(`Marked ${selectedIds.size} record(s) as ${newStatus}.`); selectedIds.clear(); updateBulkBar();
+    })
+    .catch(err=>showToast('Bulk status update failed: ' + err.message));
+}
+function exportCsv(scope){
+  // scope: 'selected' | 'filtered' | 'all'
+  if(!canExport()){ showToast('You do not have permission to export.'); return; }
+  let rows;
+  if(scope === 'selected'){
+    if(!selectedIds.size){ showToast('No rows selected.'); return; }
+    rows = records.filter(r => selectedIds.has(r.id));
+  } else if(scope === 'filtered'){
+    rows = getFilteredSortedRecords();
+  } else {
+    rows = records;
+  }
+  const headers = COLUMNS.map(c=>c.label).concat('Status');
+  const escapeCsv = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  const lines = [headers.map(escapeCsv).join(',')];
+  rows.forEach(r=>{
+    const vals = COLUMNS.map(c=>r[c.key] ?? '').concat(r.status || 'Active');
+    lines.push(vals.map(escapeCsv).join(','));
+  });
+  const csv = lines.join('\r\n');
+  const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `msm-long-roll-${scope}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Exported ${rows.length} record(s) to CSV.`);
+}
 
-  populateFilterOptions();
-
+function getFilteredSortedRecords(){
   const q = document.getElementById('searchBox').value.trim().toLowerCase();
   const clientSel = getSelectedValues('filterClient');
   const locationSel = getSelectedValues('filterLocation');
@@ -1725,6 +2082,26 @@ function renderTable(){
   if(locationSel.length) filtered = filtered.filter(r => locationSel.includes(r.location));
   if(statusSel.length) filtered = filtered.filter(r => statusSel.includes(r.status || 'Active'));
 
+  filtered = filtered.slice().sort(compareForSort);
+  return filtered;
+}
+
+function renderTable(){
+  const thead = document.getElementById('theadRow');
+  const selectAllTh = canBulkActions() ? `<th style="width:28px;"><input type="checkbox" onclick="toggleSelectAll(this)"></th>` : '';
+  thead.innerHTML = selectAllTh + COLUMNS.map(c=>`<th>${c.label}</th>`).join('') + '<th>Status</th><th>Actions</th>';
+
+  populateFilterOptions();
+
+  const clientSel = getSelectedValues('filterClient');
+  const locationSel = getSelectedValues('filterLocation');
+  const statusSel = getSelectedValues('filterStatus');
+
+  // Show loading state briefly while the first snapshot is still pending.
+  const loadingEl = document.getElementById('registerLoading');
+  if(loadingEl) loadingEl.style.display = recordsLoaded ? 'none' : 'block';
+
+  const filtered = getFilteredSortedRecords();
   lastFilteredCount = filtered.length;
 
   // Dynamic counter badge, e.g. "Total Guards Deployed at Acme: 42" when
@@ -1748,8 +2125,15 @@ function renderTable(){
   const pageRows = filtered.slice(startIdx, startIdx + pageSize);
 
   const tbody = document.getElementById('tbody');
-  tbody.innerHTML = pageRows.map(r=>{
-    const cells = COLUMNS.map(c=>`<td>${escapeHtml(r[c.key] ?? '')}</td>`).join('');
+  tbody.innerHTML = pageRows.map((r, i)=>{
+    // Dynamic S No: always reflects the row's position in the current
+    // filtered + sorted view (continues across pages), never the raw
+    // backend/document id or a stale stored serial number.
+    const displayIndex = startIdx + i + 1;
+    const cells = COLUMNS.map(c => c.key === 'sno'
+      ? `<td>${displayIndex}</td>`
+      : `<td>${escapeHtml(r[c.key] ?? '')}</td>`
+    ).join('');
     const photoLink = r.photoData
       ? `<a href="${r.photoData}" target="_blank" rel="noopener" title="View photo"><img src="${r.photoData}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>`
       : '';
@@ -1760,18 +2144,22 @@ function renderTable(){
       : '';
     const status = r.status || 'Active';
     const statusColor = status === 'Active' ? '#2E7D4F' : status === 'On-Leave' ? '#B8860B' : '#9B3A31';
-    return `<tr>${cells}<td><span style="color:${statusColor}; font-weight:700; font-size:12px;">${escapeHtml(status)}</span></td><td class="row-actions">
-      <button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button>
+    const selectTd = canBulkActions() ? `<td><input type="checkbox" class="rowSelectBox" data-id="${r.id}" ${selectedIds.has(r.id)?'checked':''} onclick="toggleRowSelect(this)"></td>` : '';
+    const editBtn = canEdit() ? `<button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button>` : '';
+    const deleteBtn = canDelete() ? `<button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button>` : '';
+    return `<tr>${selectTd}${cells}<td><span style="color:${statusColor}; font-weight:700; font-size:12px;">${escapeHtml(status)}</span></td><td class="row-actions">
+      ${editBtn}
       <button class="btn btn-sm" onclick="printRecordForm('${r.id}')">🖨 Print</button>
       ${photoLink}${verifLink}
-      <button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button>
+      ${deleteBtn}
     </td></tr>`;
   }).join('');
 
   document.getElementById('rowCountPill').textContent = `${filtered.length} of ${records.length} entries`;
-  document.getElementById('emptyState').style.display = records.length ? 'none' : 'block';
+  document.getElementById('emptyState').style.display = (records.length || !recordsLoaded) ? 'none' : 'block';
   document.getElementById('registerTable').style.display = records.length ? 'table' : 'none';
   document.getElementById('pagerLabel').textContent = `Page ${currentPage} of ${totalPages}`;
+  updateBulkBar();
 }
 
 function escapeHtml(str){
@@ -2189,5 +2577,17 @@ function showToast(msg){
    confirmed, which itself subscribes to the live Firestore data and
    renders the table. */
 </script>
+
+<!-- ============ CAMERA CAPTURE MODAL ============ -->
+<div id="cameraModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(20,25,32,0.82); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#fff; border-radius:14px; padding:20px; max-width:480px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="font-family:Georgia,serif; font-size:16px; color:var(--navy); font-weight:700; margin-bottom:12px;">Take Photo</div>
+    <video id="cameraVideo" autoplay playsinline style="width:100%; border-radius:8px; background:#000; max-height:360px; object-fit:cover;"></video>
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:14px;">
+      <button type="button" class="btn btn-primary" onclick="captureCameraPhoto()">📸 Capture</button>
+      <button type="button" class="btn btn-sm" onclick="closeCameraCapture()">Cancel</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
