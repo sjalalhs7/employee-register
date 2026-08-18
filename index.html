@@ -598,6 +598,13 @@
 }
 #msmLoginError{display:none;margin-top:13px;color:#9B3A31;font-size:12px;font-weight:650;line-height:1.45}
 
+
+  /* ===== Audit Trail ===== */
+  .audit-toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0;}
+  .audit-toolbar input{min-width:260px;flex:1;max-width:520px;}
+  .audit-table td,.audit-table th{font-size:12px;vertical-align:top;}
+  .audit-action{font-weight:700;color:var(--navy);white-space:nowrap;}
+  .audit-meta{color:var(--ink-soft);font-size:11px;line-height:1.45;}
 </style>
 </head>
 <body>
@@ -693,6 +700,7 @@
     <button class="tab-btn" data-tab="register" onclick="switchTab('register')">Register (Long Roll)</button>
     <button class="tab-btn" data-tab="instructions" onclick="switchTab('instructions')">📘 Instructions</button>
     <button class="tab-btn" data-tab="admin" id="adminTabBtn" style="display:none;" onclick="switchTab('admin')">Admin: Access</button>
+    <button class="tab-btn" data-tab="audit" id="auditTabBtn" style="display:none;" onclick="switchTab('audit')">Audit Trail</button>
   </div>
   <div class="actions">
     <span class="count-pill" id="userBadge" style="margin-right:4px;"></span>
@@ -964,6 +972,23 @@
       </div>
     </div>
 
+    <!-- ============ AUDIT TRAIL VIEW (parent only) ============ -->
+    <div id="view-audit" style="display:none;">
+      <div class="helper-note">
+        <strong>Audit Trail:</strong> Parent/Admin only. This records successful sign-ins, record create/update/delete actions, and access-management changes with the acting Gmail and server timestamp.
+      </div>
+      <div class="audit-toolbar">
+        <input id="auditSearch" placeholder="Search action, Gmail, employee, CNIC, client/project..." oninput="renderAuditLogs()">
+        <button class="btn btn-sm" onclick="loadAuditLogs()">↻ Refresh</button>
+      </div>
+      <div class="table-wrap">
+        <table class="register audit-table">
+          <thead><tr><th>Date / Time</th><th>Action</th><th>User</th><th>Record / Target</th><th>Details</th></tr></thead>
+          <tbody id="auditTbody"><tr><td colspan="5">Loading audit trail…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
   </div>
 </main>
 
@@ -1090,7 +1115,7 @@ const firebaseConfig = {
 const FIREBASE_READY = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
 
 let auth, db, currentUser = null, currentAccess = null; // currentAccess = {role:'parent'|'client', clientproject?}
-let recordsUnsub = null, adminUsersUnsub = null;
+let recordsUnsub = null, adminUsersUnsub = null, auditUnsub = null;
 
 function showOnly(id){
   ['setupGate','loginGate','notAuthorizedGate','appRoot'].forEach(g=>{
@@ -1107,6 +1132,7 @@ function initFirebase(){
   auth.onAuthStateChanged(async (user) => {
     if(recordsUnsub){ recordsUnsub(); recordsUnsub=null; }
     if(adminUsersUnsub){ adminUsersUnsub(); adminUsersUnsub=null; }
+    if(auditUnsub){ auditUnsub(); auditUnsub=null; }
     if(!user){ currentUser=null; currentAccess=null; const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='none'; showOnly('loginGate'); return; }
     currentUser = user;
     const email = (user.email||'').toLowerCase();
@@ -1121,6 +1147,7 @@ function initFirebase(){
       currentAccess = doc.data(); // {role, clientproject}
       showOnly('appRoot');
       startApp();
+      writeAuditLog('SIGN_IN', '', {email, method:'Google Sign-In'});
     }catch(err){
       console.error(err);
       document.getElementById('notAuthorizedEmail').textContent = email + ' — error checking access: ' + err.message;
@@ -1188,6 +1215,7 @@ const EXTRA_KEYS = ['co','mother','domicile','education2','blood','height','mari
 /* ===================== Storage (Firestore, shared across authorized Gmail accounts) ===================== */
 const RECORDS_COLLECTION = 'records';
 const AUTHUSERS_COLLECTION = 'authorizedUsers';
+const AUDIT_COLLECTION = 'auditLogs';
 const META_KEY = 'longRollRegister_branding_v1'; // branding only (logo/company name) — not sensitive, kept per-device
 let records = [];
 let editingId = null;
@@ -1218,6 +1246,7 @@ function startApp(){
 
   document.getElementById('userBadge').textContent = `${currentUser.email} · ${isParent()?'Parent (all data)':('Client: '+myClientProject())}`;
   document.getElementById('adminTabBtn').style.display = isParent() ? '' : 'none';
+  document.getElementById('auditTabBtn').style.display = isParent() ? '' : 'none';
 
   if(!isParent()){
     // Lock the top Client/Project field for client-role users so every entry they create stays theirs.
@@ -1230,7 +1259,7 @@ function startApp(){
   }
 
   subscribeRecords();
-  if(isParent()) subscribeAdminUsers();
+  if(isParent()){ subscribeAdminUsers(); subscribeAuditLogs(); }
   resetForm();
   switchTab('form');
 }
@@ -1280,6 +1309,7 @@ function addAuthorizedUser(){
   // It is the protected account created in Firestore during first-time setup.
   const payload = {role:'client', clientproject};
   db.collection(AUTHUSERS_COLLECTION).doc(email).set(payload)
+    .then(()=>writeAuditLog('ADD_ACCESS', email, {targetEmail:email, clientproject}))
     .then(()=>{
       showToast(`Added access for ${email}.`);
       document.getElementById('adm_email').value='';
@@ -1305,6 +1335,7 @@ async function removeAuthorizedUser(email){
     }
     if(!confirm(`Remove access for ${targetEmail}?`)) return;
     await db.collection(AUTHUSERS_COLLECTION).doc(targetEmail).delete();
+    await writeAuditLog('REMOVE_ACCESS', targetEmail, {targetEmail});
     showToast(`Removed ${targetEmail}.`);
   }catch(err){
     console.error(err);
@@ -1315,11 +1346,12 @@ async function removeAuthorizedUser(email){
 /* ===================== Tabs ===================== */
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-  ['form','register','instructions','admin'].forEach(v=>{
+  ['form','register','instructions','admin','audit'].forEach(v=>{
     const el=document.getElementById('view-'+v);
     if(el) el.style.display = tab===v ? 'block' : 'none';
   });
   if(tab==='register') renderTable();
+  if(tab==='audit') renderAuditLogs();
 }
 
 /* ===================== Photo / document uploads ===================== */
@@ -1679,6 +1711,69 @@ function cancelEdit(){
   document.getElementById('editBanner').style.display = 'none';
 }
 
+/* ===================== Audit Trail ===================== */
+function auditDetailsText(details){
+  if(!details) return '';
+  try{return typeof details==='string' ? details : JSON.stringify(details);}
+  catch(e){return String(details);}
+}
+
+function writeAuditLog(action, targetId, details){
+  if(!currentUser || !currentAccess || !db) return Promise.resolve();
+  const payload = {
+    action: String(action||'').slice(0,80),
+    targetId: String(targetId||''),
+    details: auditDetailsText(details).slice(0,4000),
+    userEmail: (currentUser.email||'').toLowerCase(),
+    role: currentAccess.role || '',
+    clientproject: currentAccess.clientproject || '',
+    createdAt: firebase.firestore.FieldValue.serverTimestamp()
+  };
+  return db.collection(AUDIT_COLLECTION).add(payload).catch(err=>{
+    console.warn('Audit log write failed:', err);
+  });
+}
+
+function formatAuditTime(v){
+  if(!v) return 'Pending…';
+  let d=null;
+  if(v.toDate) d=v.toDate(); else if(v.seconds) d=new Date(v.seconds*1000); else d=new Date(v);
+  if(!d || isNaN(d.getTime())) return '—';
+  return d.toLocaleString();
+}
+
+function subscribeAuditLogs(){
+  if(auditUnsub){auditUnsub(); auditUnsub=null;}
+  if(!isParent()) return;
+  auditUnsub = db.collection(AUDIT_COLLECTION).orderBy('createdAt','desc').limit(300).onSnapshot(snap=>{
+    window.auditLogs = snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderAuditLogs();
+  }, err=>{
+    console.error(err);
+    const el=document.getElementById('auditTbody');
+    if(el) el.innerHTML=`<tr><td colspan="5">Could not load audit trail: ${escapeHtml(err.message||'Unknown error')}</td></tr>`;
+  });
+}
+
+function loadAuditLogs(){ subscribeAuditLogs(); }
+
+function renderAuditLogs(){
+  const tbody=document.getElementById('auditTbody');
+  if(!tbody) return;
+  const q=(document.getElementById('auditSearch')?.value||'').trim().toLowerCase();
+  const rows=(window.auditLogs||[]).filter(x=>{
+    if(!q) return true;
+    return [x.action,x.userEmail,x.targetId,x.details,x.clientproject,x.role].some(v=>String(v||'').toLowerCase().includes(q));
+  });
+  tbody.innerHTML=rows.map(x=>`<tr>
+    <td>${escapeHtml(formatAuditTime(x.createdAt))}</td>
+    <td class="audit-action">${escapeHtml(x.action||'—')}</td>
+    <td>${escapeHtml(x.userEmail||'—')}<div class="audit-meta">${escapeHtml(x.role||'')}</div></td>
+    <td>${escapeHtml(x.targetId||'—')}</td>
+    <td>${escapeHtml(x.details||'—')}<div class="audit-meta">${escapeHtml(x.clientproject||'')}</div></td>
+  </tr>`).join('') || '<tr><td colspan="5">No audit entries found.</td></tr>';
+}
+
 /* ===================== Save / Edit / Delete (Firestore) ===================== */
 function saveEntry(){
   const name = document.getElementById('f_name').value.trim();
@@ -1691,12 +1786,15 @@ function saveEntry(){
   if(!isParent()) data.clientproject = myClientProject(); // client role can never save into another tenant
 
   if(editingId){
-    db.collection(RECORDS_COLLECTION).doc(editingId).update(data)
+    const targetId=editingId;
+    db.collection(RECORDS_COLLECTION).doc(targetId).update(data)
+      .then(()=>writeAuditLog('UPDATE_RECORD', targetId, {name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||''}))
       .then(()=>{ showToast('Record updated in the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
   } else {
     const nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
     db.collection(RECORDS_COLLECTION).add({sno: nextSno, ...data})
+      .then(docRef=>writeAuditLog('CREATE_RECORD', docRef.id, {sno:nextSno, name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||''}))
       .then(()=>{ showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
   }
@@ -1718,6 +1816,7 @@ function deleteRecord(id){
   if(!rec) return;
   if(!confirm(`Delete record #${rec.sno} — ${rec.name}? This cannot be undone.`)) return;
   db.collection(RECORDS_COLLECTION).doc(id).delete()
+    .then(()=>writeAuditLog('DELETE_RECORD', id, {sno:rec.sno||'', name:rec.name||'', cnic:rec.cnic||'', clientproject:rec.clientproject||''}))
     .then(()=>showToast('Record deleted.'))
     .catch(err=>showToast('Could not delete: ' + err.message));
 }
