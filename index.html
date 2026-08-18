@@ -605,6 +605,17 @@
   .audit-table td,.audit-table th{font-size:12px;vertical-align:top;}
   .audit-action{font-weight:700;color:var(--navy);white-space:nowrap;}
   .audit-meta{color:var(--ink-soft);font-size:11px;line-height:1.45;}
+  .register-controls{display:grid;grid-template-columns:minmax(240px,2fr) repeat(4,minmax(150px,1fr));gap:10px;margin:12px 0;align-items:end;}
+  .register-controls .control{display:flex;flex-direction:column;gap:5px;}
+  .register-controls label{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
+  .register-controls input,.register-controls select{width:100%;box-sizing:border-box;}
+  .bulk-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;}
+  .bulk-toolbar .selected-count{font-size:12px;color:var(--ink-soft);margin-left:auto;}
+  .sort-head{cursor:pointer;user-select:none;white-space:nowrap;}
+  .sort-head:hover{background:var(--paper-dark);}
+  .row-check{width:16px;height:16px;}
+  @media(max-width:1000px){.register-controls{grid-template-columns:1fr 1fr;}}
+  @media(max-width:650px){.register-controls{grid-template-columns:1fr;}.bulk-toolbar .selected-count{margin-left:0;width:100%;}}
 </style>
 </head>
 <body>
@@ -707,7 +718,7 @@
     <button class="btn btn-sm" onclick="doSignOut()">Sign out</button>
     <button class="btn" onclick="printLiveForm()">🖨 Print Enrollment Form (2 + Verification)</button>
     <button class="btn btn-brass" onclick="exportExcel()">⬇ Export Long Roll (.xlsx)</button>
-    <button class="btn" onclick="document.getElementById('longRollImport').click()">⬆ Import Long Roll (.xlsx)</button>
+    <button class="btn" id="importLongRollBtn" style="display:none;" onclick="document.getElementById('longRollImport').click()">⬆ Import Long Roll (.xlsx)</button>
     <input id="longRollImport" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importLongRoll(this.files[0])">
   </div>
 </div>
@@ -859,8 +870,27 @@
     <!-- ============ REGISTER VIEW ============ -->
     <div id="view-register" style="display:none;">
       <div class="register-toolbar">
-        <input class="search-input" id="searchBox" placeholder="Search by name, CNIC, client, supervisor..." oninput="renderTable()">
         <span class="count-pill" id="rowCountPill">0 entries</span>
+      </div>
+      <div class="register-controls">
+        <div class="control"><label>Global Search</label><input class="search-input" id="searchBox" placeholder="Name, CNIC, MSM No., client, location, mobile..." oninput="renderTable()"></div>
+        <div class="control"><label>Client / Project</label><select id="filterClient" onchange="renderTable()"><option value="">All Clients</option></select></div>
+        <div class="control"><label>Location</label><select id="filterLocation" onchange="renderTable()"><option value="">All Locations</option></select></div>
+        <div class="control"><label>Supervisor</label><select id="filterSupervisor" onchange="renderTable()"><option value="">All Supervisors</option></select></div>
+        <div class="control"><label>Status / Type</label><select id="filterStatus" onchange="renderTable()"><option value="">All Status</option><option value="active">Active</option><option value="on-leave">On Leave</option><option value="terminated">Terminated</option><option value="new">New</option><option value="old">Old</option></select></div>
+        <div class="control"><label>Sort By</label><select id="sortField" onchange="renderTable()">
+          <option value="sno">S No.</option><option value="name">Guard Name</option><option value="clientproject">Client Name</option><option value="location">Location</option><option value="supervisor">Supervisor</option><option value="msmno">MSM No.</option><option value="cnic">CNIC</option><option value="doe">Employment Date</option><option value="createdAt">Created Date/Time</option><option value="updatedAt">Updated Date/Time</option>
+        </select></div>
+        <div class="control"><label>Order</label><select id="sortOrder" onchange="renderTable()"><option value="asc">Ascending ↑</option><option value="desc">Descending ↓</option></select></div>
+        <div class="control"><label>Date From</label><input id="filterDateFrom" type="date" onchange="renderTable()"></div>
+        <div class="control"><label>Date To</label><input id="filterDateTo" type="date" onchange="renderTable()"></div>
+      </div>
+      <div class="bulk-toolbar">
+        <button class="btn btn-sm" onclick="selectAllVisible(true)">☑ Select All Visible</button>
+        <button class="btn btn-sm" onclick="selectAllVisible(false)">☐ Clear Selection</button>
+        <button class="btn btn-sm btn-danger" id="bulkDeleteBtn" style="display:none;" onclick="bulkDeleteSelected()">🗑 Delete Selected</button>
+        <button class="btn btn-sm" onclick="resetRegisterFilters()">↺ Reset Filters</button>
+        <span class="selected-count" id="selectedCount">0 selected</span>
       </div>
       <div class="table-wrap">
         <table class="register" id="registerTable">
@@ -1247,6 +1277,7 @@ function startApp(){
   document.getElementById('userBadge').textContent = `${currentUser.email} · ${isParent()?'Parent (all data)':('Client: '+myClientProject())}`;
   document.getElementById('adminTabBtn').style.display = isParent() ? '' : 'none';
   document.getElementById('auditTabBtn').style.display = isParent() ? '' : 'none';
+  const importBtn=document.getElementById('importLongRollBtn'); if(importBtn) importBtn.style.display=isParent()?'inline-flex':'none';
 
   if(!isParent()){
     // Lock the top Client/Project field for client-role users so every entry they create stays theirs.
@@ -1783,6 +1814,7 @@ function saveEntry(){
     return;
   }
   const data = readForm();
+  data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
   if(!isParent()) data.clientproject = myClientProject(); // client role can never save into another tenant
 
   if(editingId){
@@ -1793,7 +1825,7 @@ function saveEntry(){
       .catch(err=>showToast('Could not save: ' + err.message));
   } else {
     const nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
-    db.collection(RECORDS_COLLECTION).add({sno: nextSno, ...data})
+    db.collection(RECORDS_COLLECTION).add({sno: nextSno, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...data})
       .then(docRef=>writeAuditLog('CREATE_RECORD', docRef.id, {sno:nextSno, name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||''}))
       .then(()=>{ showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
@@ -1822,38 +1854,107 @@ function deleteRecord(id){
 }
 
 /* ===================== Table render ===================== */
+function recordTimestampValue(v){
+  if(!v) return 0;
+  try{ if(v.toDate) return v.toDate().getTime(); if(v.seconds) return Number(v.seconds)*1000; const t=Date.parse(v); return isNaN(t)?0:t; }catch(e){ return 0; }
+}
+function normalizedStatus(r){
+  const v=String(r.status||r.newold||'').trim().toLowerCase();
+  if(['active','on leave','on-leave','terminated'].includes(v)) return v.replace(' ','-');
+  if(v==='new') return 'new'; if(v==='old') return 'old'; return '';
+}
+function uniqueFilterValues(key){
+  return [...new Set(records.map(r=>String(r[key]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+}
+function refreshRegisterFilters(){
+  const defs=[['filterClient','clientproject','All Clients'],['filterLocation','location','All Locations'],['filterSupervisor','supervisor','All Supervisors']];
+  defs.forEach(([id,key,label])=>{
+    const el=document.getElementById(id); if(!el) return;
+    const current=el.value; const vals=uniqueFilterValues(key);
+    el.innerHTML=`<option value="">${label}</option>`+vals.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+    if(vals.includes(current)) el.value=current;
+  });
+}
+function getSortValue(r,key){
+  if(key==='createdAt'||key==='updatedAt') return recordTimestampValue(r[key]);
+  if(key==='sno') return Number(r[key])||0;
+  if(key==='doe') { const t=Date.parse(String(r[key]||'')); return isNaN(t)?String(r[key]||'').toLowerCase():t; }
+  return String(r[key]??'').toLowerCase();
+}
 function renderTable(){
   const thead = document.getElementById('theadRow');
-  thead.innerHTML = COLUMNS.map(c=>`<th>${c.label}</th>`).join('') + '<th>Actions</th>';
-
-  const q = document.getElementById('searchBox').value.trim().toLowerCase();
-  const filtered = !q ? records : records.filter(r=>{
-    return [r.name, r.cnic, r.clientproject, r.supervisor, r.msmno, r.location]
-      .some(v => (v||'').toLowerCase().includes(q));
+  thead.innerHTML = `<th><input class="row-check" type="checkbox" title="Select all visible" onchange="selectAllVisible(this.checked)"></th>` + COLUMNS.map(c=>`<th class="sort-head">${escapeHtml(c.label)}</th>`).join('') + '<th>Actions</th>';
+  refreshRegisterFilters();
+  const q = (document.getElementById('searchBox')?.value||'').trim().toLowerCase();
+  const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
+  const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
+  const searchKeys=['name','cnic','clientproject','supervisor','msmno','location','cell','deployloc','unitrank'];
+  let filtered=records.filter(r=>{
+    if(q && !searchKeys.some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
+    if(fc && String(r.clientproject||'')!==fc) return false;
+    if(fl && String(r.location||'')!==fl) return false;
+    if(fs && String(r.supervisor||'')!==fs) return false;
+    if(fst && normalizedStatus(r)!==fst) return false;
+    const dateVal=String(r.doe||'').slice(0,10);
+    if(from && dateVal && dateVal<from) return false;
+    if(to && dateVal && dateVal>to) return false;
+    return true;
   });
-
+  const sortField=document.getElementById('sortField')?.value||'sno';
+  const sortOrder=document.getElementById('sortOrder')?.value||'asc';
+  filtered.sort((a,b)=>{
+    const av=getSortValue(a,sortField), bv=getSortValue(b,sortField);
+    let cmp=0;
+    if(typeof av==='number'&&typeof bv==='number') cmp=av-bv; else cmp=String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'});
+    return sortOrder==='desc' ? -cmp : cmp;
+  });
+  const selected=new Set(window.selectedRecordIds||[]);
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = filtered.map(r=>{
     const cells = COLUMNS.map(c=>`<td>${escapeHtml(r[c.key] ?? '')}</td>`).join('');
-    const photoLink = r.photoData
-      ? `<a href="${r.photoData}" target="_blank" rel="noopener" title="View photo"><img src="${r.photoData}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>`
-      : '';
-    const verifLink = r.policeVerifDoc
-      ? (r.policeVerifDoc.startsWith('data:image')
-          ? `<a href="${r.policeVerifDoc}" target="_blank" rel="noopener" title="View police verification document"><img src="${r.policeVerifDoc}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>`
-          : `<a class="btn btn-sm" href="${r.policeVerifDoc}" target="_blank" rel="noopener">🛡 Verif Doc</a>`)
-      : '';
-    return `<tr>${cells}<td class="row-actions">
-      <button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button>
-      <button class="btn btn-sm" onclick="printRecordForm('${r.id}')">🖨 Print</button>
-      ${photoLink}${verifLink}
-      <button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button>
-    </td></tr>`;
+    const photoLink = r.photoData ? `<a href="${r.photoData}" target="_blank" rel="noopener" title="View photo"><img src="${r.photoData}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>` : '';
+    const verifLink = r.policeVerifDoc ? (r.policeVerifDoc.startsWith('data:image') ? `<a href="${r.policeVerifDoc}" target="_blank" rel="noopener" title="View police verification document"><img src="${r.policeVerifDoc}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>` : `<a class="btn btn-sm" href="${r.policeVerifDoc}" target="_blank" rel="noopener">🛡 Verif Doc</a>`) : '';
+    return `<tr><td><input class="row-check record-check" type="checkbox" value="${escapeHtml(r.id)}" ${selected.has(r.id)?'checked':''} onchange="toggleRecordSelection('${r.id}',this.checked)"></td>${cells}<td class="row-actions"><button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button><button class="btn btn-sm" onclick="printRecordForm('${r.id}')">🖨 Print</button>${photoLink}${verifLink}<button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button></td></tr>`;
   }).join('');
-
   document.getElementById('rowCountPill').textContent = `${filtered.length} of ${records.length} entries`;
   document.getElementById('emptyState').style.display = records.length ? 'none' : 'block';
   document.getElementById('registerTable').style.display = records.length ? 'table' : 'none';
+  updateSelectionUI();
+}
+function toggleRecordSelection(id,checked){
+  if(!isParent()) { showToast('Only Parent can select records for bulk actions.'); return; }
+  window.selectedRecordIds=window.selectedRecordIds||new Set(); checked?window.selectedRecordIds.add(id):window.selectedRecordIds.delete(id); updateSelectionUI();
+}
+function selectAllVisible(checked){
+  if(!isParent()){ showToast('Only Parent can use bulk selection.'); return; }
+  const q=(document.getElementById('searchBox')?.value||'').trim().toLowerCase();
+  const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
+  const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
+  const arr=records.filter(r=>{
+    if(q && !['name','cnic','clientproject','supervisor','msmno','location','cell','deployloc','unitrank'].some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
+    if(fc&&String(r.clientproject||'')!==fc) return false; if(fl&&String(r.location||'')!==fl) return false; if(fs&&String(r.supervisor||'')!==fs) return false; if(fst&&normalizedStatus(r)!==fst) return false;
+    const d=String(r.doe||'').slice(0,10); if(from&&d&&d<from)return false; if(to&&d&&d>to)return false; return true;
+  });
+  window.selectedRecordIds=window.selectedRecordIds||new Set(); arr.forEach(r=>checked?window.selectedRecordIds.add(r.id):window.selectedRecordIds.delete(r.id)); renderTable();
+}
+function updateSelectionUI(){
+  const n=window.selectedRecordIds?window.selectedRecordIds.size:0; const el=document.getElementById('selectedCount'); if(el) el.textContent=`${n} selected`; const b=document.getElementById('bulkDeleteBtn'); if(b) b.style.display=isParent()&&n?'inline-flex':'none';
+}
+async function bulkDeleteSelected(){
+  if(!isParent()) return showToast('Only Parent can delete selected records.');
+  const ids=[...(window.selectedRecordIds||[])]; if(!ids.length) return;
+  if(!confirm(`Delete ${ids.length} selected record(s)? This cannot be undone.`)) return;
+  try{
+    for(let i=0;i<ids.length;i+=400){ const batch=db.batch(); ids.slice(i,i+400).forEach(id=>batch.delete(db.collection(RECORDS_COLLECTION).doc(id))); await batch.commit(); }
+    await writeAuditLog('BULK_DELETE', ids.length, {count:ids.length, ids:ids.slice(0,100)});
+    window.selectedRecordIds=new Set(); showToast(`${ids.length} records deleted.`); renderTable();
+  }catch(err){ console.error(err); showToast('Bulk delete failed: '+err.message); }
+}
+function resetRegisterFilters(){
+  ['searchBox','filterDateFrom','filterDateTo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['filterClient','filterLocation','filterSupervisor','filterStatus'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  const sf=document.getElementById('sortField'); if(sf) sf.value='sno'; const so=document.getElementById('sortOrder'); if(so) so.value='asc';
+  window.selectedRecordIds=new Set(); renderTable();
 }
 
 function escapeHtml(str){
@@ -1932,6 +2033,7 @@ function findImportColumn(headers, aliases){
 
 function importLongRoll(file){
   if(!file) return;
+  if(!isParent()){ showToast('Bulk import is restricted to the Parent user.'); const input=document.getElementById('longRollImport'); if(input) input.value=''; return; }
   if(typeof XLSX === 'undefined'){
     showToast('Excel library is not available.');
     return;
@@ -2007,7 +2109,7 @@ function importLongRoll(file){
       }
 
       runChunk().then(()=>{
-        showToast(`Imported ${imported.length} rows — ${added} added, ${updated} updated.`);
+        writeAuditLog('BULK_IMPORT', imported.length, {count:imported.length, added, updated, sourceFile:file.name||''}).then(()=>showToast(`Imported ${imported.length} rows — ${added} added, ${updated} updated.`));
       }).catch(err=>{
         console.error(err);
         showToast('Import partly failed: ' + err.message);
