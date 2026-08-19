@@ -3,16 +3,36 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MSM Security Guards — Employee Enrollment &amp; Long Roll Register</title>
-<meta name="description" content="MSM Security Guards employee enrollment and long roll register. Authorized Parent, department, sector and client access with secure Google Sign-In.">
-<meta name="robots" content="index,follow">
+<title>MSM Security Guard Database | Employee Enrollment &amp; Long Roll Register</title>
+<meta name="description" content="MSM Security Guards (Pvt) Ltd — secure, searchable employee enrollment and long roll database for managing guard records, deployments, and client rosters.">
+<meta name="robots" content="index, follow">
 <link rel="canonical" href="https://sjalalhs7.github.io/employee-register/">
-<meta property="og:title" content="MSM Security Guards — Employee Register">
-<meta property="og:description" content="Secure employee enrollment and long roll register for authorized users.">
 <meta property="og:type" content="website">
+<meta property="og:title" content="MSM Security Guard Database">
+<meta property="og:description" content="Secure, searchable employee enrollment and long roll database for MSM Security Guards (Pvt) Ltd.">
 <meta property="og:url" content="https://sjalalhs7.github.io/employee-register/">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "MSM Security Guard Database",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Any (Web Browser)",
+  "description": "Secure, searchable employee enrollment and long roll database for MSM Security Guards (Pvt) Ltd.",
+  "publisher": {
+    "@type": "Organization",
+    "name": "MSM Security Guards (Pvt) Ltd"
+  },
+  "author": {
+    "@type": "Person",
+    "name": "Syed Jalal Hussain Shah"
+  }
+}
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <!-- Firebase (Google Sign-In + shared cloud database) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
@@ -32,6 +52,21 @@
     --danger:#9B3A31;
     --success:#3F6B4A;
     --white:#FFFDF8;
+  }
+  body.dark-mode{
+    --paper:#151B24;
+    --paper-dark:#0F141B;
+    --ink:#EDEAE0;
+    --ink-soft:#A8ADB8;
+    --navy:#E8C87A;
+    --navy-soft:#C9A253;
+    --steel:#8FAFCB;
+    --brass:#D4AF5A;
+    --brass-soft:#E8C87A;
+    --line:#31394A;
+    --danger:#E0736A;
+    --success:#6FCB8E;
+    --white:#1C2430;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
@@ -422,18 +457,15 @@
     display:block;
     image-rendering:auto;
   }
-  /* Official photo area on the supplied MSM enrollment artwork.
-     The source artwork is 1232x1584; these percentages map to the
-     printed passport-photo rectangle (roughly x=982..1125, y=190..373). */
   .pf-photo-frame{
     position:absolute;
     z-index:6;
-    top:12.00%;
-    left:79.71%;
-    width:11.61%;
-    height:11.55%;
+    top:2.4%;
+    left:75.5%;
+    width:18.5%;
+    height:19%;
     overflow:hidden;
-    border:0;
+    border:1px solid #999;
     background:#fff;
   }
   .pf-photo-box{
@@ -450,8 +482,8 @@
   .photo-editor-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px;}
   .photo-editor-head h3{margin:0;color:var(--navy);font-family:Georgia,serif;font-size:20px;}
   .photo-editor-grid{display:grid;grid-template-columns:minmax(260px,360px) 1fr;gap:18px;align-items:start;}
-  .photo-editor-stage{width:100%;aspect-ratio:0.895/1;background:#111;border:2px solid var(--brass);border-radius:10px;overflow:hidden;position:relative;touch-action:none;}
-  .photo-editor-stage img{position:absolute;left:50%;top:50%;max-width:none;max-height:none;user-select:none;-webkit-user-drag:none;cursor:grab;touch-action:none;transform-origin:center center;}
+  .photo-editor-stage{width:100%;aspect-ratio:3/4;background:#111;border:2px solid var(--brass);border-radius:10px;overflow:hidden;position:relative;touch-action:none;}
+  .photo-editor-stage img{position:absolute;left:50%;top:50%;max-width:none;user-select:none;-webkit-user-drag:none;cursor:grab;transform-origin:center center;}
   .photo-editor-stage img.dragging{cursor:grabbing;}
   .photo-editor-controls{display:flex;flex-direction:column;gap:12px;}
   .photo-control{background:var(--paper-dark);border:1px solid var(--line);border-radius:8px;padding:10px;}
@@ -465,8 +497,8 @@
     z-index:5;
     color:#111;
     font-family:Arial,Helvetica,sans-serif;
-    font-size:11px;
-    line-height:1.05;
+    font-size:12px; /* kept in sync with PRINT_FONT_CONFIG.baseSize in the script below */
+    line-height:1;
     transform:translateY(-2px);
     white-space:nowrap;
     overflow:hidden;
@@ -478,7 +510,6 @@
   }
   @media print{
     @page{size:Letter portrait;margin:0;}
-    *{-webkit-print-color-adjust:exact !important;print-color-adjust:exact !important;}
     html,body{
       margin:0 !important;
       padding:0 !important;
@@ -515,117 +546,6 @@
     .tabbar{padding:14px 16px 0;}
     main{padding:0 16px 40px;}
   }
-#publicSeoInfo{display:block;}
-@media print{#publicSeoInfo{display:none !important;}}
-
-/* ===== MSM Premium Login Redesign ===== */
-#msmLoginPage{
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:32px 18px;
-  position:relative;
-  overflow:hidden;
-  background:
-    radial-gradient(circle at 15% 20%, rgba(201,162,83,.16), transparent 32%),
-    radial-gradient(circle at 85% 80%, rgba(76,108,135,.14), transparent 34%),
-    linear-gradient(135deg,#101c29 0%,#1B2A3A 48%,#28405A 100%);
-  font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
-}
-#msmLoginPage::before{
-  content:"";
-  position:absolute;inset:-20%;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.035' stroke-width='2'%3E%3Ccircle cx='210' cy='210' r='130'/%3E%3Ccircle cx='210' cy='210' r='105'/%3E%3Cpath d='M110 210h200M210 110v200'/%3E%3C/g%3E%3C/svg%3E");
-  transform:rotate(-8deg);
-  pointer-events:none;
-}
-.msm-login-card{
-  width:min(520px,100%);
-  position:relative;
-  z-index:2;
-  padding:42px 38px 32px;
-  border:1px solid rgba(255,255,255,.18);
-  border-radius:22px;
-  background:rgba(255,253,248,.97);
-  box-shadow:0 30px 80px rgba(0,0,0,.34);
-  text-align:center;
-}
-.msm-login-logo{
-  width:92px;height:92px;object-fit:contain;
-  background:#fff;border-radius:14px;
-  padding:7px;margin:0 auto 18px;
-  box-shadow:0 8px 24px rgba(27,42,58,.18);
-}
-.msm-login-kicker{
-  color:#A8802F;font-size:11px;font-weight:800;
-  letter-spacing:3px;text-transform:uppercase;margin-bottom:9px;
-}
-.msm-login-title{
-  margin:0;color:#1B2A3A;font-family:Georgia,serif;
-  font-size:clamp(25px,5vw,35px);line-height:1.12;
-  letter-spacing:.6px;text-transform:uppercase;
-}
-.msm-login-designer{
-  margin:12px 0 25px;color:#5B5A50;
-  font-size:12px;font-weight:800;letter-spacing:1.2px;
-  text-transform:uppercase;
-}
-.msm-login-divider{
-  height:1px;background:linear-gradient(90deg,transparent,#D9CFB8,transparent);
-  margin:0 0 24px;
-}
-.msm-google-btn{
-  width:100%;min-height:52px;border:1px solid #D9CFB8;
-  border-radius:10px;background:#fff;color:#1B2A3A;
-  font-size:14px;font-weight:750;cursor:pointer;
-  display:flex;align-items:center;justify-content:center;gap:12px;
-  transition:.2s ease;box-shadow:0 3px 12px rgba(27,42,58,.08);
-}
-.msm-google-btn:hover{transform:translateY(-1px);box-shadow:0 8px 22px rgba(27,42,58,.14);border-color:#A8802F;}
-.msm-google-icon{width:20px;height:20px}
-.msm-login-note{
-  margin:17px 0 0;color:#6b6a61;font-size:11.5px;line-height:1.55;
-}
-.msm-login-security{
-  margin-top:18px;padding:10px 12px;border-radius:9px;
-  background:#F6F2E8;border:1px solid #D9CFB8;
-  color:#5B5A50;font-size:11px;line-height:1.5;
-}
-.msm-login-footer{
-  margin-top:24px;padding-top:17px;border-top:1px solid #E7DFCF;
-  color:#77746b;font-size:10.5px;line-height:1.6;
-}
-#msmLoginError{display:none;margin-top:13px;color:#9B3A31;font-size:12px;font-weight:650;line-height:1.45}
-
-
-  /* ===== Audit Trail ===== */
-  .audit-toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0;}
-  .audit-toolbar input{min-width:260px;flex:1;max-width:520px;}
-  .audit-table td,.audit-table th{font-size:12px;vertical-align:top;}
-  .audit-action{font-weight:700;color:var(--navy);white-space:nowrap;}
-  .audit-meta{color:var(--ink-soft);font-size:11px;line-height:1.45;}
-  .register-controls{display:grid;grid-template-columns:minmax(240px,2fr) repeat(4,minmax(150px,1fr));gap:10px;margin:12px 0;align-items:end;}
-  .register-controls .control{display:flex;flex-direction:column;gap:5px;}
-  .register-controls label{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.04em;}
-  .register-controls input,.register-controls select{width:100%;box-sizing:border-box;}
-  .bulk-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:10px 0;}
-  .bulk-toolbar .selected-count{font-size:12px;color:var(--ink-soft);margin-left:auto;}
-  .sort-head{cursor:pointer;user-select:none;white-space:nowrap;}
-  .sort-head:hover{background:var(--paper-dark);}
-  .row-check{width:16px;height:16px;}
-  @media(max-width:1000px){.register-controls{grid-template-columns:1fr 1fr;}}
-  @media(max-width:650px){.register-controls{grid-template-columns:1fr;}.bulk-toolbar .selected-count{margin-left:0;width:100%;}}
-  .transfer-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0;}
-  .transfer-card{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);}
-  .transfer-card b{display:block;font-size:18px;margin-top:3px;}
-  .transfer-source-list{max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;}
-  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;}
-  .modal-card{width:min(720px,100%);max-height:92vh;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.25);padding:20px;}
-  @media(max-width:650px){.transfer-summary{grid-template-columns:1fr;}}
-
-
-.dashboard-grid{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:12px 0}.dash-card{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:0 4px 14px rgba(0,0,0,.05)}.dash-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}.dash-card strong{display:block;font-size:24px;margin-top:4px}@media(max-width:900px){.dashboard-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -643,47 +563,208 @@
   </p>
 </div>
 
-<!-- Public, indexable website description; no employee data is exposed here. -->
-<div id="publicSeoInfo" style="max-width:820px;margin:34px auto 0;padding:0 20px;font-family:Arial,sans-serif;color:#5B5A50;text-align:center;">
-  <div style="font-family:Georgia,serif;font-size:22px;color:#1B2A3A;font-weight:700;">MSM Security Guards — Employee Register</div>
-  <div style="font-size:13px;line-height:1.6;margin-top:6px;">Secure employee enrollment and long-roll management for authorized Parent, department, sector and client users.</div>
-</div>
-
-<!-- ============ PREMIUM MSM LOGIN SCREEN ============ -->
+<!-- ============ LOGIN SCREEN ============ -->
 <div id="loginGate" style="display:none;">
-  <div id="msmLoginPage">
-    <div class="msm-login-card">
-      <img class="msm-login-logo" src="data:image/png;base64,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" alt="MSM Security Guards Logo" id="msmLoginLogo">
-      <div class="msm-login-kicker">SECURE ACCESS PORTAL</div>
-      <h1 class="msm-login-title">WELCOME TO MSM<br>LONGROLL DATABASE</h1>
-      <div class="msm-login-designer">DESIGNED BY SYED JALAL HUSSAIN SHAH</div>
-      <div class="msm-login-divider"></div>
+  <div class="login-wrap">
+    <div class="login-card">
+      <img class="login-logo" src="data:image/png;base64,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" alt="MSM Security Guards Logo">
+      <div class="login-eyebrow">MSM SECURITY GUARDS (PVT) LTD</div>
+      <div class="login-heading">Welcome to MSM<br>Long Roll Database</div>
+      <div class="login-subheading">Sign in with the Gmail account authorized for your location or client.</div>
 
-      <button class="msm-google-btn" onclick="doGoogleSignIn()" type="button">
-        <svg class="msm-google-icon" viewBox="0 0 24 24" aria-hidden="true">
-          <path fill="#4285F4" d="M21.35 12.27c0-.73-.07-1.43-.2-2.1H12v3.98h5.24a4.48 4.48 0 0 1-1.94 2.94v2.45h3.14c1.84-1.69 2.91-4.18 2.91-7.27z"/>
-          <path fill="#34A853" d="M12 21.67c2.63 0 4.84-.87 6.45-2.35l-3.14-2.45c-.87.58-1.98.92-3.31.92-2.54 0-4.69-1.72-5.46-4.03H3.29v2.53A9.74 9.74 0 0 0 12 21.67z"/>
-          <path fill="#FBBC05" d="M6.54 13.76A5.86 5.86 0 0 1 6.23 12c0-.61.11-1.21.31-1.76V7.71H3.29A9.75 9.75 0 0 0 2.25 12c0 1.57.38 3.05 1.04 4.29l3.25-2.53z"/>
-          <path fill="#EA4335" d="M12 6.21c1.43 0 2.71.49 3.72 1.46l2.79-2.79C16.84 3.28 14.63 2.33 12 2.33a9.74 9.74 0 0 0-8.71 5.38l3.25 2.53C7.31 7.93 9.46 6.21 12 6.21z"/>
-        </svg>
-        Continue with Google / Gmail
-      </button>
+      <label class="login-label" for="loginEmailHint">Email</label>
+      <input id="loginEmailHint" class="login-input" type="email" placeholder="username@gmail.com" autocomplete="email">
 
-      <div id="msmLoginError"></div>
-      <div class="msm-login-note">
-        Sign in using the <strong>authorized Gmail account</strong> assigned to your sector, department or client.
+      <label class="login-label" for="loginPasswordDummy">Password</label>
+      <div class="login-pass-wrap">
+        <input id="loginPasswordDummy" class="login-input" type="password" placeholder="Secured by Google — no password needed" disabled>
       </div>
-      <div class="msm-login-security">
-        🔐 <strong>Authorized Access Only</strong><br>
-        Your Gmail is checked against the MSM authorized-user list. Unauthorized accounts cannot access the Long Roll database.
+      <div class="login-pass-note">Access is secured through Google, so there's no separate password — enter your email above, then continue with Google below.</div>
+
+      <button class="login-btn-primary" onclick="doGoogleSignIn()">Sign in with Google</button>
+
+      <div id="loginError" style="display:none; margin-top:12px; font-size:12.5px; color:#9B3A31; text-align:center;"></div>
+
+      <div class="login-footer">Designed By Syed Jalal Hussain Shah</div>
+    </div>
+    <div class="login-hero">
+      <div class="login-hero-watermark">
+        <img src="data:image/png;base64,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" alt="">
       </div>
-      <div class="msm-login-footer">
-        <strong>MSM Longroll Database © All Rights Reserved</strong><br>
-        Designed by Syed Jalal Hussain Shah
+      <div class="login-hero-content">
+        <div class="login-hero-badge">SECURITY GUARDS (PVT) LTD</div>
+        <h2 class="login-hero-title">Every guard.<br>One trusted record.</h2>
+        <p class="login-hero-text">A single, secure long roll register for every location — enrollment forms, verification, and records, all in one place.</p>
       </div>
     </div>
   </div>
+  <div id="loginErrorOuter" style="display:none;"></div>
 </div>
+
+<style>
+  #loginGate{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(160deg,#FBF6EC 0%,#F3E9D6 60%,#EFE0C4 100%);
+    font-family:Arial,Helvetica,sans-serif;
+    padding:32px 16px;
+  }
+  .login-wrap{
+    width:100%;
+    max-width:960px;
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    background:var(--white);
+    border-radius:20px;
+    overflow:hidden;
+    box-shadow:0 20px 60px rgba(27,42,58,0.16);
+    min-height:560px;
+  }
+  .login-card{
+    padding:44px 42px;
+    display:flex;
+    flex-direction:column;
+  }
+  .login-logo{
+    width:56px;
+    height:auto;
+    margin-bottom:14px;
+  }
+  .login-eyebrow{
+    font-family:Arial,sans-serif;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1.6px;
+    color:var(--brass);
+    text-transform:uppercase;
+    margin-bottom:10px;
+  }
+  .login-heading{
+    font-family:Georgia,serif;
+    font-size:28px;
+    line-height:1.22;
+    color:var(--navy);
+    font-weight:700;
+    margin-bottom:10px;
+  }
+  .login-subheading{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin-bottom:26px;
+  }
+  .login-label{
+    font-size:12px;
+    font-weight:700;
+    color:var(--ink);
+    margin-bottom:6px;
+    display:block;
+  }
+  .login-input{
+    width:100%;
+    box-sizing:border-box;
+    padding:11px 14px;
+    border:1px solid var(--line);
+    border-radius:9px;
+    font-size:13.5px;
+    font-family:Arial,sans-serif;
+    color:var(--ink);
+    background:#FFFFFF;
+    margin-bottom:16px;
+    transition:border-color .15s;
+  }
+  .login-input:focus{outline:none; border-color:var(--brass);}
+  .login-input:disabled{background:#F6F2E8; color:var(--ink-soft); cursor:not-allowed;}
+  .login-pass-wrap{margin-bottom:0;}
+  .login-pass-note{
+    font-size:11.5px;
+    color:var(--ink-soft);
+    line-height:1.5;
+    margin:-10px 0 22px;
+  }
+  .login-btn-primary{
+    width:100%;
+    padding:13px 16px;
+    border:none;
+    border-radius:9px;
+    background:var(--brass);
+    color:var(--white);
+    font-size:14px;
+    font-weight:700;
+    font-family:Arial,sans-serif;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+    transition:background .15s;
+  }
+  .login-btn-primary:hover{background:var(--brass-soft);}
+  .login-footer{
+    margin-top:auto;
+    padding-top:28px;
+    font-family:Georgia,serif;
+    font-size:12.5px;
+    font-weight:700;
+    letter-spacing:0.3px;
+    color:var(--navy);
+    text-align:center;
+  }
+  .login-hero{
+    position:relative;
+    background:linear-gradient(155deg,#2A4157 0%,#1B2A3A 60%,#141F2B 100%);
+    display:flex;
+    align-items:flex-end;
+    overflow:hidden;
+  }
+  .login-hero-watermark{
+    position:absolute;
+    inset:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    opacity:0.14;
+  }
+  .login-hero-watermark img{
+    width:78%;
+    max-width:380px;
+    filter:brightness(0) invert(1);
+  }
+  .login-hero-content{
+    position:relative;
+    z-index:2;
+    padding:42px 38px;
+    color:var(--white);
+  }
+  .login-hero-badge{
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:1.6px;
+    text-transform:uppercase;
+    color:var(--brass-soft);
+    margin-bottom:14px;
+  }
+  .login-hero-title{
+    font-family:Georgia,serif;
+    font-size:26px;
+    line-height:1.28;
+    margin:0 0 12px;
+    font-weight:700;
+  }
+  .login-hero-text{
+    font-size:13px;
+    line-height:1.6;
+    color:#C7D2DC;
+    margin:0;
+    max-width:340px;
+  }
+  @media (max-width:760px){
+    .login-wrap{grid-template-columns:1fr;}
+    .login-hero{min-height:220px; align-items:flex-end;}
+  }
+</style>
 
 <!-- ============ NOT AUTHORIZED SCREEN ============ -->
 <div id="notAuthorizedGate" style="display:none; max-width:460px; margin:80px auto; padding:36px 30px; text-align:center; background:#FFFDF8; border:1px solid #D9CFB8; border-radius:10px; box-shadow:0 4px 18px rgba(27,42,58,0.10); font-family:Arial,sans-serif;">
@@ -717,18 +798,18 @@
 
 <div class="tabbar">
   <div class="tabs">
-    <button class="tab-btn active" data-tab="form" onclick="switchTab('form')">New Entry</button>
+    <button class="tab-btn active" data-tab="form" id="newEntryTabBtn" onclick="switchTab('form')">New Entry</button>
     <button class="tab-btn" data-tab="register" onclick="switchTab('register')">Register (Long Roll)</button>
-    <button class="tab-btn" data-tab="instructions" onclick="switchTab('instructions')">📘 Instructions</button>
     <button class="tab-btn" data-tab="admin" id="adminTabBtn" style="display:none;" onclick="switchTab('admin')">Admin: Access</button>
-    <button class="tab-btn" data-tab="audit" id="auditTabBtn" style="display:none;" onclick="switchTab('audit')">Audit Trail</button>
+    <button class="tab-btn" data-tab="help" onclick="switchTab('help')">❓ Instructions / Help</button>
   </div>
   <div class="actions">
     <span class="count-pill" id="userBadge" style="margin-right:4px;"></span>
+    <button class="btn btn-sm" id="darkModeToggle" onclick="toggleDarkMode()">🌙 Dark Mode</button>
     <button class="btn btn-sm" onclick="doSignOut()">Sign out</button>
     <button class="btn" onclick="printLiveForm()">🖨 Print Enrollment Form (2 + Verification)</button>
     <button class="btn btn-brass" onclick="exportExcel()">⬇ Export Long Roll (.xlsx)</button>
-    <button class="btn" id="importLongRollBtn" style="display:none;" onclick="document.getElementById('longRollImport').click()">⬆ Import Long Roll (.xlsx)</button>
+    <button class="btn" onclick="document.getElementById('longRollImport').click()">⬆ Import Long Roll (.xlsx)</button>
     <input id="longRollImport" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importLongRoll(this.files[0])">
   </div>
 </div>
@@ -771,11 +852,7 @@
           <div class="field wide">
             <label>Employee Photo</label>
             <input id="f_photoFile" type="file" accept="image/*" onchange="handlePhotoUpload(this,'photoData','photoPreview')">
-             <input id="f_photoCamera" type="file" accept="image/*" capture="environment" onchange="handlePhotoUpload(this,'photoData','photoPreview')" style="display:none">
-             <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
-               <button type="button" class="btn btn-sm" onclick="document.getElementById('f_photoFile').click()">📁 Choose Photo</button>
-               <button type="button" class="btn btn-sm" onclick="document.getElementById('f_photoCamera').click()">📷 Camera</button>
-             </div>
+            <button type="button" class="btn btn-sm" style="margin-top:8px;" onclick="openCameraCapture('photoData','photoPreview')">📷 Take Photo (Camera)</button>
             <div style="margin-top:8px;display:flex;align-items:center;gap:10px;">
               <img id="photoPreview" style="display:none;max-height:110px;max-width:110px;border:1px solid var(--line);border-radius:6px;object-fit:cover;">
               <span id="photoPreviewEmpty" style="font-size:12px;color:var(--ink-soft);">No photo uploaded yet.</span>
@@ -864,6 +941,9 @@
           <div class="field"><label>Special Branch Form</label>
             <select id="f_specialbranch"><option value=""></option><option>Yes</option><option>No</option></select>
           </div>
+          <div class="field"><label>Guard Status</label>
+            <select id="f_status"><option value="Active" selected>Active</option><option value="On-Leave">On-Leave</option><option value="Terminated">Terminated</option></select>
+          </div>
           <div class="field wide"><label>Remarks</label><textarea id="f_remarks"></textarea></div>
         </div>
 
@@ -879,40 +959,63 @@
 
     <!-- ============ REGISTER VIEW ============ -->
     <div id="view-register" style="display:none;">
-      <div class="register-toolbar">
-        <span class="count-pill" id="rowCountPill">0 entries</span>
-      </div>
-      <div class="dashboard-grid" id="registerDashboard">
-        <div class="dash-card"><span>Total</span><strong id="dashTotal">0</strong></div>
-        <div class="dash-card"><span>Active</span><strong id="dashActive">0</strong></div>
-        <div class="dash-card"><span>On Leave</span><strong id="dashLeave">0</strong></div>
-        <div class="dash-card"><span>Terminated</span><strong id="dashTerminated">0</strong></div>
-        <div class="dash-card"><span>Filtered</span><strong id="dashFiltered">0</strong></div>
-      </div>
-      <div class="register-controls">
-        <div class="control"><label>Global Search</label><input class="search-input" id="searchBox" placeholder="Name, CNIC, MSM No., client, location, mobile..." oninput="renderTable()"></div>
-        <div class="control"><label>Client / Project</label><select id="filterClient" onchange="renderTable()"><option value="">All Clients</option></select></div>
-        <div class="control"><label>Location</label><select id="filterLocation" onchange="renderTable()"><option value="">All Locations</option></select></div>
-        <div class="control"><label>Supervisor</label><select id="filterSupervisor" onchange="renderTable()"><option value="">All Supervisors</option></select></div>
-        <div class="control"><label>Deployment Station</label><select id="filterStation" onchange="renderTable()"><option value="">All Stations</option></select></div>
-        <div class="control"><label>Rank / Unit</label><select id="filterRank" onchange="renderTable()"><option value="">All Ranks / Units</option></select></div>
-        <div class="control"><label>Status / Type</label><select id="filterStatus" onchange="renderTable()"><option value="">All Status</option><option value="active">Active</option><option value="on-leave">On Leave</option><option value="terminated">Terminated</option><option value="new">New</option><option value="old">Old</option></select></div>
-        <div class="control"><label>Sort By</label><select id="sortField" onchange="renderTable()">
-          <option value="sno">S No.</option><option value="name">Guard Name</option><option value="clientproject">Client Name</option><option value="location">Location</option><option value="supervisor">Supervisor</option><option value="msmno">MSM No.</option><option value="cnic">CNIC</option><option value="doe">Employment Date</option><option value="createdAt">Created Date/Time</option><option value="updatedAt">Updated Date/Time</option>
-        </select></div>
-        <div class="control"><label>Order</label><select id="sortOrder" onchange="renderTable()"><option value="asc">Ascending ↑</option><option value="desc">Descending ↓</option></select></div>
-        <div class="control"><label>Date From</label><input id="filterDateFrom" type="date" onchange="renderTable()"></div>
-        <div class="control"><label>Date To</label><input id="filterDateTo" type="date" onchange="renderTable()"></div>
-      </div>
-      <div class="bulk-toolbar">
-        <button class="btn btn-sm" onclick="selectAllVisible(true)">☑ Select All Visible</button>
-        <button class="btn btn-sm" onclick="selectAllVisible(false)">☐ Clear Selection</button>
-        <button class="btn btn-sm btn-danger" id="bulkDeleteBtn" style="display:none;" onclick="bulkDeleteSelected()">🗑 Delete Selected</button>
-        <button class="btn btn-sm btn-primary" id="bulkTransferBtn" style="display:none;" onclick="openTransferModal()">↔ Transfer Selected</button>
-        <button class="btn btn-sm" onclick="resetRegisterFilters()">↺ Reset Filters</button>
-        <span class="selected-count" id="selectedCount">0 selected</span>
+      <div class="register-toolbar" style="flex-direction:column; align-items:stretch; gap:12px;">
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+          <input class="search-input" id="searchBox" list="searchSuggestions" placeholder="Search by name, CNIC, mobile, deployment ID..." oninput="onSearchInput()" style="flex:1; min-width:220px;">
+          <datalist id="searchSuggestions"></datalist>
+          <span class="count-pill" id="rowCountPill">0 entries</span>
+          <button type="button" class="btn btn-sm" id="exportFilteredBtn" onclick="exportCsv('filtered')">⬇ Export filtered (CSV)</button>
+          <button type="button" class="btn btn-sm" id="exportAllBtn" onclick="exportCsv('all')">⬇ Export all (CSV)</button>
+          <button type="button" class="btn btn-sm" id="exportFilteredPdfBtn" onclick="exportPdf('filtered')">⬇ Export filtered (PDF)</button>
+        </div>
+        <div id="registerErrorBox" style="display:none; background:#FBEAE8; border:1px solid #E3B3AC; color:#9B3A31; padding:10px 14px; border-radius:8px; font-size:12.5px;"></div>
+        <div id="bulkActionsBar" style="display:none; align-items:center; gap:10px; background:#F3E9D6; border:1px solid var(--line); border-radius:8px; padding:8px 12px; flex-wrap:wrap;">
+          <span id="bulkSelectedCount" style="font-size:12.5px; font-weight:700; color:var(--navy);"></span>
+          <button type="button" class="btn btn-sm" onclick="exportCsv('selected')">⬇ Export selected (CSV)</button>
+          <button type="button" class="btn btn-sm" onclick="exportPdf('selected')">⬇ Export selected (PDF)</button>
+          <button type="button" class="btn btn-sm" onclick="bulkSetStatus('Active')">Mark Active</button>
+          <button type="button" class="btn btn-sm" onclick="bulkSetStatus('On-Leave')">Mark On-Leave</button>
+          <button type="button" class="btn btn-sm" onclick="bulkSetStatus('Terminated')">Mark Terminated</button>
+          <button type="button" class="btn btn-sm btn-danger" onclick="bulkDelete()">Delete selected</button>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;">CLIENT</div>
+            <select id="filterClient" class="login-input" style="width:auto; min-width:170px; margin:0; padding:6px;" multiple size="4" onchange="onFilterChange()"></select>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;">LOCATION</div>
+            <select id="filterLocation" class="login-input" style="width:auto; min-width:170px; margin:0; padding:6px;" multiple size="4" onchange="onFilterChange()"></select>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;">STATUS</div>
+            <select id="filterStatus" class="login-input" style="width:auto; min-width:150px; margin:0; padding:6px;" multiple size="4" onchange="onFilterChange()"></select>
+          </div>
+          <button type="button" class="btn btn-sm" onclick="clearFilters()">Clear filters</button>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;">SORT BY</div>
+            <select id="sortField" class="login-input" style="width:auto; margin:0; padding:8px 10px;" onchange="onSortChange()">
+              <option value="doe">Date of Employment</option>
+              <option value="name">Employee Name</option>
+              <option value="msmno">MSM No. (ID)</option>
+              <option value="status">Status</option>
+            </select>
+          </div>
+          <div>
+            <div style="font-size:11px; font-weight:700; color:var(--ink-soft); margin-bottom:4px;">ORDER</div>
+            <select id="sortDir" class="login-input" style="width:auto; margin:0; padding:8px 10px;" onchange="onSortChange()">
+              <option value="desc">Newest First (Default)</option>
+              <option value="asc">Oldest First</option>
+            </select>
+          </div>
+          <span class="count-pill" id="filterCounterBadge" style="display:none;"></span>
+        </div>
       </div>
       <div class="table-wrap">
+        <div id="registerLoading" style="display:none; text-align:center; padding:40px; color:var(--ink-soft); font-size:13.5px;">
+          <div style="font-size:22px; margin-bottom:8px;">⏳</div>
+          Loading register…
+        </div>
         <table class="register" id="registerTable">
           <thead>
             <tr id="theadRow"></tr>
@@ -924,92 +1027,39 @@
         <div class="glyph">—</div>
         No records yet. Add an entry from the <strong>New Entry</strong> tab and it will appear here automatically.
       </div>
-    </div>
-
-    <!-- ============ INSTRUCTIONS VIEW ============ -->
-    <div id="view-instructions" style="display:none;">
-      <div class="helper-note">
-        <strong>Complete User Guide:</strong> This page explains the access pattern for the Parent/Admin and for all other authorized users. Everyone uses the same website link; access is controlled by the Gmail account that signs in.
-      </div>
-
-      <div class="form-section-title"><span class="idx">01</span>Parent / Admin User</div>
-      <div class="helper-note" style="text-align:left;">
-        <ol style="margin:0;padding-left:20px;line-height:1.75;">
-          <li>Open the website link: <strong>https://sjalalhs7.github.io/employee-register/</strong></li>
-          <li>Sign in with the <strong>authorized Parent Gmail</strong> that was created in Firestore as <strong>role = parent</strong>.</li>
-          <li>The Parent can see the complete register, including all clients, departments and sectors.</li>
-          <li>Open <strong>Admin: Access</strong> to add or remove authorized user Gmail accounts.</li>
-          <li>For each user, assign the exact <strong>Client / Project</strong> name that should be used for that user's records.</li>
-          <li>The Parent account is protected and cannot be removed from the website.</li>
-        </ol>
-      </div>
-
-      <div class="form-section-title"><span class="idx">02</span>Department / Sector / Client User</div>
-      <div class="helper-note" style="text-align:left;">
-        <ol style="margin:0;padding-left:20px;line-height:1.75;">
-          <li>The Parent first adds the user's Gmail in <strong>Admin: Access</strong>.</li>
-          <li>The user then opens the <strong>same website link</strong>: <strong>https://sjalalhs7.github.io/employee-register/</strong></li>
-          <li>The user signs in with the <strong>same Gmail address</strong> that the Parent authorized.</li>
-          <li>The system automatically identifies the user's assigned Client / Project.</li>
-          <li>The user can add and manage only records belonging to that assigned Client / Project.</li>
-          <li>The user cannot change their Client / Project to access another client's data.</li>
-          <li>If the Gmail has not been authorized, access is denied until the Parent adds it.</li>
-        </ol>
-      </div>
-
-      <div class="form-section-title"><span class="idx">03</span>Website Access Pattern</div>
-      <div class="helper-note" style="text-align:left;">
-        <p style="margin-top:0;"><strong>There is only one main website URL.</strong> There is no separate website URL required for every department, sector or client.</p>
-        <div style="background:var(--paper-dark);border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;word-break:break-all;">
-          https://sjalalhs7.github.io/employee-register/
-        </div>
-        <p style="margin-bottom:0;">Access is controlled by <strong>Google Sign-In + authorized Gmail + assigned Client / Project</strong>. This means users can use the system from mobile, laptop or desktop anywhere they have internet access.</p>
-      </div>
-
-      <div class="form-section-title"><span class="idx">04</span>Daily Data Entry &amp; Printing</div>
-      <div class="helper-note" style="text-align:left;">
-        <ol style="margin:0;padding-left:20px;line-height:1.75;">
-          <li>Open <strong>New Entry</strong> and enter the employee information.</li>
-          <li>Upload the employee photo.</li>
-          <li>Use <strong>Adjust Photo</strong> for manual crop/zoom/position, or <strong>Auto Fit</strong> for automatic passport-box fitting.</li>
-          <li>Save the employee to the Long Roll.</li>
-          <li>Use <strong>Register (Long Roll)</strong> to search, edit or print an existing employee.</li>
-          <li>Print generates the enrollment pages and the uploaded Police Verification document when available.</li>
-        </ol>
-      </div>
-
-      <div class="form-section-title"><span class="idx">05</span>Important Security Rules</div>
-      <div class="helper-note" style="text-align:left;margin-bottom:0;">
-        <ul style="margin:0;padding-left:20px;line-height:1.75;">
-          <li>Never share the Parent/Admin Gmail account.</li>
-          <li>Each department / sector / client should use its own authorized Gmail.</li>
-          <li>Do not manually edit the Client / Project field to another client's name when logged in as a client user.</li>
-          <li>If a user's access must be stopped, the Parent removes that Gmail from <strong>Admin: Access</strong>.</li>
-          <li>The database remains protected by Firebase Firestore security rules in addition to the website interface.</li>
-        </ul>
+      <div id="pagerBar" style="display:flex; align-items:center; justify-content:center; gap:14px; padding:16px 0; font-size:13px; color:var(--ink-soft);">
+        <button type="button" class="btn btn-sm" onclick="goToPage(currentPage-1)">← Prev</button>
+        <span id="pagerLabel">Page 1 of 1</span>
+        <button type="button" class="btn btn-sm" onclick="goToPage(currentPage+1)">Next →</button>
+        <select id="pageSizeSelect" class="login-input" style="width:auto; margin:0; padding:6px 8px;" onchange="onPageSizeChange()">
+          <option value="50">50 / page</option>
+          <option value="100" selected>100 / page</option>
+          <option value="250">250 / page</option>
+          <option value="500">500 / page</option>
+        </select>
       </div>
     </div>
+
 
     <!-- ============ ADMIN: ACCESS VIEW (parent role only) ============ -->
     <div id="view-admin" style="display:none;">
       <div class="helper-note">
-        Only an authorized Parent Gmail can manage access. Parent/Admin accounts are protected from removal.
-        Add the Gmail address of every department / sector / client / location that should be able to sign in.
-        Give each one a <strong>Client / Project</strong> name that exactly matches what you type in the
+        Add the Gmail address of every client / location / sector that should be able to sign in. Give each
+        one a <strong>Client / Project</strong> name that exactly matches what you type in the
         "Client / Project" field on entries for that location — that's how their view gets filtered to only
         their own data. Your own Parent account (role = Parent) can see everything, across all locations.
       </div>
       <div class="form-section-title"><span class="idx">+</span>Add authorized Gmail</div>
       <div class="grid">
         <div class="field"><label>Gmail address</label><input id="adm_email" type="email" placeholder="location@gmail.com"></div>
-        <div class="field">
-          <label>Access Type</label>
-          <input value="Client / Department / Sector" readonly style="background:var(--paper-dark);">
+        <div class="field"><label>Role</label>
+          <select id="adm_role" onchange="document.getElementById('adm_clientRow').style.display = this.value==='parent' ? 'none' : 'flex';">
+            <option value="manager">Manager (their client's data — can add/edit/delete/export)</option>
+            <option value="viewer">Standard User (their client's data — view only, no edit/delete/export)</option>
+            <option value="parent">Admin / Parent (sees everything, full control)</option>
+          </select>
         </div>
-        <div class="field" id="adm_clientRow">
-          <label>Client / Project name</label>
-          <input id="adm_clientproject" placeholder="must match the Client / Project field exactly">
-        </div>
+        <div class="field" id="adm_clientRow"><label>Client / Project name</label><input id="adm_clientproject" placeholder="must match the Client / Project field exactly"></div>
       </div>
       <div style="margin-top:14px;"><button class="btn btn-primary" onclick="addAuthorizedUser()">+ Add Gmail access</button></div>
 
@@ -1020,81 +1070,69 @@
           <tbody id="adminUsersTbody"></tbody>
         </table>
       </div>
+
+      <div class="form-section-title" style="margin-top:30px;"><span class="idx">📋</span>Audit Trail — recent activity</div>
+      <div class="helper-note">Every add, edit, delete, and status change across all clients/locations is logged here with who did it and when.</div>
+      <div class="table-wrap">
+        <table class="register">
+          <thead><tr><th>When</th><th>Action</th><th>Record</th><th>By</th><th>Role</th><th>Details</th></tr></thead>
+          <tbody id="auditLogTbody"><tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:16px;">Loading…</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
-    <!-- ============ AUDIT TRAIL VIEW (parent only) ============ -->
-    <div id="view-audit" style="display:none;">
+    <!-- ============ HELP / INSTRUCTIONS VIEW ============ -->
+    <div id="view-help" style="display:none;">
+      <div class="form-section-title"><span class="idx">👋</span>Welcome — how this app works</div>
+      <div class="helper-note">This is the MSM Security Guard Database. Everything you enter is saved live to the shared cloud register — no separate "save file" step, and everyone with access sees the same up-to-date data.</div>
+
+      <div class="form-section-title" style="margin-top:26px;"><span class="idx">1</span>Signing in</div>
       <div class="helper-note">
-        <strong>Audit Trail:</strong> Parent/Admin only. This records successful sign-ins, record create/update/delete actions, and access-management changes with the acting Gmail and server timestamp.
+        Open this same web link on any phone, tablet, or computer, anywhere in the world — nothing to install.<br><br>
+        On the login screen, type the Gmail address you were given, then tap <strong>"Sign in with Google"</strong>. Security is handled entirely by Google, so there's no separate password to remember.<br><br>
+        If you see "You don't have access yet," it means your Gmail hasn't been added by your Admin — ask them to add it under <strong>Admin: Access</strong> (see below).
       </div>
-      <div class="audit-toolbar">
-        <input id="auditSearch" placeholder="Search action, Gmail, employee, CNIC, client/project..." oninput="renderAuditLogs()">
-        <button class="btn btn-sm" onclick="loadAuditLogs()">↻ Refresh</button>
+
+      <div class="form-section-title" style="margin-top:26px;"><span class="idx">2</span>Adding a new guard (New Entry tab)</div>
+      <div class="helper-note">
+        Fill in the employee's details, upload or capture their photo (📷 <strong>Take Photo</strong> uses your device camera directly — no need to save a file first), and attach the police verification document if you have it.<br><br>
+        Photos are automatically resized and compressed so the app stays fast even with thousands of records.<br><br>
+        Press <strong>Save</strong> at the bottom — the record appears instantly in the Register tab for every authorized user.
       </div>
-      <div class="table-wrap">
-        <table class="register audit-table">
-          <thead><tr><th>Date / Time</th><th>Action</th><th>User</th><th>Record / Target</th><th>Details</th></tr></thead>
-          <tbody id="auditTbody"><tr><td colspan="5">Loading audit trail…</td></tr></tbody>
-        </table>
+
+      <div class="form-section-title" style="margin-top:26px;"><span class="idx">3</span>Finding &amp; managing records (Register tab)</div>
+      <div class="helper-note">
+        Type a name, CNIC, mobile number, or deployment ID into the search box for instant suggestions.<br><br>
+        Use the <strong>Client / Location / Status</strong> filters (top of the table) to narrow the list — select more than one value in a box to include several at once. <strong>Clear filters</strong> resets everything back to the default view.<br><br>
+        Use <strong>Sort by</strong> and <strong>Order</strong> to arrange the list by date, name, ID, or status — Newest First is the default.<br><br>
+        Tick the checkbox next to a row (or the checkbox in the header to select the whole page) to reveal bulk actions: export, change status, or delete several records at once.<br><br>
+        <strong>Export filtered/all/selected (CSV or PDF)</strong> downloads a file you can open in Excel or print directly.
       </div>
-      <div class="helper-note" style="margin-top:24px;">
-        <strong>Transfer History:</strong> Permanent movement history for bulk client/sector transfers. Original client and deployment details are preserved in each history entry.
+
+      <div class="form-section-title" style="margin-top:26px;"><span class="idx">4</span>Roles — who can do what</div>
+      <div class="helper-note">
+        <strong>Admin / Parent</strong> — sees every client's data, full add/edit/delete/export, manages who has access, and can view the Audit Trail.<br>
+        <strong>Manager</strong> — full add/edit/delete/export, but only for their own client/location's records.<br>
+        <strong>Standard User (viewer)</strong> — can search and view their own client/location's records only; cannot add, edit, delete, or export.
       </div>
-      <div class="audit-toolbar">
-        <input id="transferHistorySearch" placeholder="Search from/to client, Gmail, guard or batch..." oninput="renderTransferHistory()">
-        <button class="btn btn-sm" onclick="loadTransferHistory()">↻ Refresh Transfer History</button>
+
+      <div class="form-section-title" style="margin-top:26px;"><span class="idx">5</span>Admin: giving someone access</div>
+      <div class="helper-note">
+        Only an Admin/Parent account can do this. Open <strong>Admin: Access</strong>, enter the person's Gmail address, choose their role (Manager / Standard User / Admin), and for Manager or Standard User, type their Client/Project name exactly as it should appear on records. Press <strong>+ Add Gmail access</strong> — that Gmail can now sign in immediately, from anywhere.<br><br>
+        To remove someone, use the <strong>Remove</strong> button next to their row (Admin/Parent accounts are protected and can't be removed here).
       </div>
-      <div class="table-wrap">
-        <table class="register audit-table">
-          <thead><tr><th>Date / Time</th><th>From</th><th>To</th><th>Guards</th><th>Performed By</th><th>Location Change</th></tr></thead>
-          <tbody id="transferHistoryTbody"><tr><td colspan="6">Loading transfer history…</td></tr></tbody>
-        </table>
+
+      <div class="form-section-title" style="margin-top:26px;"><span class="idx">6</span>Printing the official enrollment form</div>
+      <div class="helper-note">
+        From an existing record's row, press <strong>🖨 Print</strong> to generate the official 2-page enrollment form plus the police verification page, laid out exactly like the paper MSM form, ready to print or save as PDF from your browser's print dialog.
       </div>
+
+      <div class="form-section-title" style="margin-top:26px;"><span class="idx">7</span>Dark mode</div>
+      <div class="helper-note">Use the 🌙 <strong>Dark Mode</strong> button in the top-right at any time — your choice is remembered on that device.</div>
     </div>
 
   </div>
 </main>
-
-<!-- ============ PARENT BULK TRANSFER MODAL ============ -->
-<div id="importPreviewModal" class="modal-backdrop" role="dialog" aria-modal="true" style="display:none;z-index:10001;">
-  <div class="modal-card" style="max-width:980px;width:96%;max-height:90vh;overflow:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
-      <div><h2 style="margin:0 0 4px;">Bulk Import Preview</h2><div id="importPreviewSubtitle" class="muted"></div></div>
-      <button class="btn btn-sm" onclick="closeImportPreview()">Close</button>
-    </div>
-    <div id="importPreviewSummary" class="transfer-summary"></div>
-    <div style="overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:10px;">
-      <table class="data-table" style="min-width:760px;"><thead><tr><th>Row</th><th>Name</th><th>CNIC</th><th>MSM No.</th><th>Client</th><th>Result</th><th>Reason</th></tr></thead><tbody id="importPreviewTbody"></tbody></table>
-    </div>
-    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
-      <button class="btn" onclick="closeImportPreview()">Cancel</button>
-      <button id="confirmImportBtn" class="btn btn-brass" onclick="confirmLongRollImport()">Confirm Import</button>
-    </div>
-  </div>
-</div>
-<div id="transferModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="transferModalTitle">
-  <div class="modal-card">
-    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
-      <div>
-        <h2 id="transferModalTitle" style="margin:0 0 4px;">Bulk Guard Transfer</h2>
-        <div style="font-size:12px;color:var(--ink-soft);">Parent only — records are moved, not deleted or recreated.</div>
-      </div>
-      <button class="btn btn-sm" onclick="closeTransferModal()">✕ Close</button>
-    </div>
-    <div id="transferSummary" class="transfer-summary"></div>
-    <div class="grid">
-      <div class="field"><label>New Client / Sector <span class="req">*</span></label><select id="transferTargetClient"></select></div>
-      <div class="field"><label>New City / Region (optional)</label><input id="transferTargetLocation" placeholder="Leave blank to keep each guard's current location"></div>
-      <div class="field"><label>New Deployment Station (optional)</label><input id="transferTargetStation" placeholder="Leave blank to keep each guard's station"></div>
-      <div class="field wide"><label>Transfer Reason / Order Reference (optional)</label><input id="transferReason" placeholder="e.g. Sector redistribution / client instruction / deployment order"></div>
-    </div>
-    <div id="transferSourceList" class="transfer-source-list"></div>
-    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
-      <button class="btn" onclick="closeTransferModal()">Cancel</button>
-      <button class="btn btn-primary" onclick="confirmBulkTransfer()">↔ Confirm Transfer</button>
-    </div>
-  </div>
-</div>
 
 <footer class="foot">
   Data is saved to the shared cloud register and synced for every authorized Gmail account. Use <strong>Import Long Roll (.xlsx)</strong> to load an existing register (including hundreds of employees), or <strong>Export Long Roll (.xlsx)</strong> to save a copy or share it — rename the file per client using the Client / Project field above.
@@ -1219,7 +1257,7 @@ const firebaseConfig = {
 const FIREBASE_READY = !!(firebaseConfig.apiKey && firebaseConfig.projectId);
 
 let auth, db, currentUser = null, currentAccess = null; // currentAccess = {role:'parent'|'client', clientproject?}
-let recordsUnsub = null, adminUsersUnsub = null, auditUnsub = null;
+let recordsUnsub = null, adminUsersUnsub = null;
 
 function showOnly(id){
   ['setupGate','loginGate','notAuthorizedGate','appRoot'].forEach(g=>{
@@ -1236,22 +1274,19 @@ function initFirebase(){
   auth.onAuthStateChanged(async (user) => {
     if(recordsUnsub){ recordsUnsub(); recordsUnsub=null; }
     if(adminUsersUnsub){ adminUsersUnsub(); adminUsersUnsub=null; }
-    if(auditUnsub){ auditUnsub(); auditUnsub=null; }
-    if(!user){ currentUser=null; currentAccess=null; const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='none'; showOnly('loginGate'); return; }
+    if(!user){ currentUser=null; currentAccess=null; showOnly('loginGate'); return; }
     currentUser = user;
     const email = (user.email||'').toLowerCase();
     try{
       const doc = await db.collection('authorizedUsers').doc(email).get();
       if(!doc.exists){
         document.getElementById('notAuthorizedEmail').textContent = email;
-        const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='block';
         showOnly('notAuthorizedGate');
         return;
       }
       currentAccess = doc.data(); // {role, clientproject}
       showOnly('appRoot');
       startApp();
-      writeAuditLog('SIGN_IN', '', {email, method:'Google Sign-In'});
     }catch(err){
       console.error(err);
       document.getElementById('notAuthorizedEmail').textContent = email + ' — error checking access: ' + err.message;
@@ -1262,9 +1297,14 @@ function initFirebase(){
 
 function doGoogleSignIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
-  document.getElementById('msmLoginError').style.display='none';
+  // Pre-fill Google's own sign-in screen with whatever email the person typed in
+  // the "Email" field, so it opens straight to that Gmail account (this is what
+  // makes the Email field on the login page actually do something useful).
+  const hint = (document.getElementById('loginEmailHint').value || '').trim();
+  if(hint) provider.setCustomParameters({ login_hint: hint });
+  document.getElementById('loginError').style.display='none';
   auth.signInWithPopup(provider).catch(err=>{
-    const el = document.getElementById('msmLoginError');
+    const el = document.getElementById('loginError');
     el.textContent = 'Sign-in failed: ' + err.message;
     el.style.display='block';
   });
@@ -1314,15 +1354,65 @@ const COLUMNS = [
    hidden columns if you want them, and kept in local storage) */
 const EXTRA_KEYS = ['co','mother','domicile','education2','blood','height','marital','children',
   'cnicissue','unitrank','enrolldate','dischargedate_army','homecell','policestation',
-  'curraddr','joining','deployloc','acno','branchname','branchcode'];
+  'curraddr','joining','deployloc','acno','branchname','branchcode','status'];
 
 /* ===================== Storage (Firestore, shared across authorized Gmail accounts) ===================== */
 const RECORDS_COLLECTION = 'records';
 const AUTHUSERS_COLLECTION = 'authorizedUsers';
-const AUDIT_COLLECTION = 'auditLogs';
-const TRANSFER_HISTORY_COLLECTION = 'transferHistory';
-let transferHistoryUnsub = null;
-window.transferHistory = [];
+const AUDITLOG_COLLECTION = 'auditLogs';
+
+/* ===================== Dark / Light Mode ===================== */
+function toggleDarkMode(){
+  const isDark = document.body.classList.toggle('dark-mode');
+  localStorage.setItem('msm_dark_mode', isDark ? '1' : '0');
+  document.getElementById('darkModeToggle').textContent = isDark ? '☀ Light Mode' : '🌙 Dark Mode';
+}
+(function applyStoredDarkMode(){
+  if(localStorage.getItem('msm_dark_mode') === '1'){
+    document.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('dark-mode');
+      const btn = document.getElementById('darkModeToggle');
+      if(btn) btn.textContent = '☀ Light Mode';
+    });
+  }
+})();
+
+/* ===================== PDF Export (bulk / filtered / all) ===================== */
+function exportPdf(scope){
+  if(!canExport()){ showToast('You do not have permission to export.'); return; }
+  let rows;
+  if(scope === 'selected'){
+    if(!selectedIds.size){ showToast('No rows selected.'); return; }
+    rows = records.filter(r => selectedIds.has(r.id));
+  } else if(scope === 'filtered'){
+    rows = getFilteredSortedRecords();
+  } else {
+    rows = records;
+  }
+  if(!window.jspdf){ showToast('PDF library did not load — check your internet connection.'); return; }
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
+  doc.setFontSize(14);
+  doc.text('MSM Security Guards — Long Roll Register', 40, 30);
+  const headers = [COLUMNS.map(c=>c.label).concat('Status')];
+  const body = rows.map(r => COLUMNS.map(c=>String(r[c.key] ?? '')).concat(r.status || 'Active'));
+  doc.autoTable({ head: headers, body, startY: 45, styles: { fontSize: 7 }, headStyles: { fillColor: [27,42,58] } });
+  doc.save(`msm-long-roll-${scope}-${new Date().toISOString().slice(0,10)}.pdf`);
+  showToast(`Exported ${rows.length} record(s) to PDF.`);
+}
+
+/* Writes one audit-trail entry: who did what, to which record, and when.
+   Fire-and-forget — a logging failure should never block the real action. */
+function logAudit(action, recordId, recordName, details){
+  if(!currentUser) return;
+  db.collection(AUDITLOG_COLLECTION).add({
+    action, recordId: recordId || '', recordName: recordName || '',
+    details: details || '',
+    byEmail: currentUser.email,
+    byRole: currentAccess ? currentAccess.role : 'unknown',
+    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+  }).catch(err => console.error('Audit log failed:', err));
+}
 const META_KEY = 'longRollRegister_branding_v1'; // branding only (logo/company name) — not sensitive, kept per-device
 let records = [];
 let editingId = null;
@@ -1341,23 +1431,28 @@ function persistMeta(){
 document.getElementById('companyName').addEventListener('change', persistMeta);
 
 /* isParent() = full visibility across every client/location.
-   For a 'client' role user, every record they can see/write is locked to their own clientproject. */
+   For a 'manager'/'client'(legacy)/'viewer' role user, every record they can see/write is locked to their own clientproject.
+   RBAC tiers: parent = Admin (everything) · manager/client(legacy) = full CRUD scoped to their client · viewer = read-only scoped to their client. */
 function isParent(){ return currentAccess && currentAccess.role === 'parent'; }
+function isViewer(){ return currentAccess && currentAccess.role === 'viewer'; }
+function isManager(){ return currentAccess && (currentAccess.role === 'manager' || currentAccess.role === 'client'); }
+function canEdit(){ return isParent() || isManager(); }
+function canDelete(){ return isParent() || isManager(); }
+function canExport(){ return isParent() || isManager(); }
+function canBulkActions(){ return isParent() || isManager(); }
 function myClientProject(){ return currentAccess ? (currentAccess.clientproject||'') : ''; }
 
 function startApp(){
-  const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='none';
   editingId = null;
   const meta = safeLoad(META_KEY, {});
   if(meta.companyName) document.getElementById('companyName').value = meta.companyName;
 
-  document.getElementById('userBadge').textContent = `${currentUser.email} · ${isParent()?'Parent (all data)':('Client: '+myClientProject())}`;
+  const roleLabel = isParent() ? 'Admin (all data)' : (isViewer() ? `Standard User (view only) · ${myClientProject()}` : `Manager · ${myClientProject()}`);
+  document.getElementById('userBadge').textContent = `${currentUser.email} · ${roleLabel}`;
   document.getElementById('adminTabBtn').style.display = isParent() ? '' : 'none';
-  document.getElementById('auditTabBtn').style.display = isParent() ? '' : 'none';
-  const importBtn=document.getElementById('importLongRollBtn'); if(importBtn) importBtn.style.display=isParent()?'inline-flex':'none';
 
   if(!isParent()){
-    // Lock the top Client/Project field for client-role users so every entry they create stays theirs.
+    // Lock the top Client/Project field for scoped-role users so every entry they create stays theirs.
     const clientNameEl = document.getElementById('clientName');
     clientNameEl.value = myClientProject();
     clientNameEl.readOnly = true;
@@ -1366,23 +1461,43 @@ function startApp(){
     f_clientproject.readOnly = true;
   }
 
+  if(isViewer()){
+    // Standard User / viewer: read-only everywhere — hide the New Entry tab
+    // entirely and never let a save go through, even if triggered directly.
+    const newEntryTabBtn = document.getElementById('newEntryTabBtn');
+    if(newEntryTabBtn) newEntryTabBtn.style.display = 'none';
+    switchTab('register');
+  }
+  if(!canExport()){
+    const efb = document.getElementById('exportFilteredBtn'); if(efb) efb.style.display = 'none';
+    const eab = document.getElementById('exportAllBtn'); if(eab) eab.style.display = 'none';
+    const epb = document.getElementById('exportFilteredPdfBtn'); if(epb) epb.style.display = 'none';
+  }
+
   subscribeRecords();
-  if(isParent()){ subscribeAdminUsers(); subscribeAuditLogs(); subscribeTransferHistory(); }
+  if(isParent()) { subscribeAdminUsers(); subscribeAuditLog(); }
   resetForm();
-  switchTab('form');
+  switchTab(isViewer() ? 'register' : 'form');
 }
 
+let recordsLoaded = false;
 function subscribeRecords(){
+  recordsLoaded = false;
   let q = db.collection(RECORDS_COLLECTION);
   if(!isParent()) q = q.where('clientproject','==', myClientProject());
   recordsUnsub = q.onSnapshot(snap=>{
     records = snap.docs.map(d=>({id:d.id, ...d.data()}));
     records.sort((a,b)=>(Number(a.sno)||0)-(Number(b.sno)||0));
+    recordsLoaded = true;
     updateStamp();
     renderTable();
   }, err=>{
     console.error(err);
+    recordsLoaded = true;
     showToast('Could not load the register: ' + err.message);
+    const errBox = document.getElementById('registerErrorBox');
+    if(errBox){ errBox.style.display='block'; errBox.textContent = 'Error loading records: ' + err.message; }
+    renderTable();
   });
 }
 
@@ -1394,30 +1509,47 @@ function subscribeAdminUsers(){
     document.getElementById('adminUsersTbody').innerHTML = rows.map(r=>`
       <tr>
         <td>${escapeHtml(r.email)}</td>
-        <td>${r.role==='parent'?'Parent':'Client / Location'}</td>
+        <td>${r.role==='parent'?'Admin / Parent':(r.role==='viewer'?'Standard User (view only)':'Manager')}</td>
         <td>${escapeHtml(r.clientproject||'')}</td>
-        <td class="row-actions">${r.role==='parent'
-          ? '<span style="font-size:11px;color:var(--ink-soft);font-weight:600;">Protected Parent</span>'
-          : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
+        <td class="row-actions">${r.role==='parent' ? '<span style="color:var(--ink-soft);font-size:12px;">Protected</span>' : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
       </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:20px;">No one added yet.</td></tr>`;
   });
 }
 
+let auditLogUnsub = null;
+function subscribeAuditLog(){
+  if(auditLogUnsub) auditLogUnsub();
+  auditLogUnsub = db.collection(AUDITLOG_COLLECTION).orderBy('timestamp','desc').limit(200).onSnapshot(snap=>{
+    const rows = snap.docs.map(d=>d.data());
+    const tbody = document.getElementById('auditLogTbody');
+    if(!tbody) return;
+    tbody.innerHTML = rows.map(r=>{
+      const when = r.timestamp && r.timestamp.toDate ? r.timestamp.toDate().toLocaleString() : '—';
+      const actionColor = r.action==='delete'||r.action==='bulk-delete' ? '#9B3A31' : (r.action==='create' ? '#2E7D4F' : 'var(--navy)');
+      return `<tr>
+        <td>${escapeHtml(when)}</td>
+        <td><span style="color:${actionColor}; font-weight:700; font-size:12px; text-transform:uppercase;">${escapeHtml(r.action)}</span></td>
+        <td>${escapeHtml(r.recordName||'—')}</td>
+        <td>${escapeHtml(r.byEmail||'—')}</td>
+        <td>${escapeHtml(r.byRole||'—')}</td>
+        <td>${escapeHtml(r.details||'')}</td>
+      </tr>`;
+    }).join('') || `<tr><td colspan="6" style="text-align:center;color:var(--ink-soft);padding:16px;">No activity logged yet.</td></tr>`;
+  }, err=>{
+    console.error('Audit log load failed:', err);
+    const tbody = document.getElementById('auditLogTbody');
+    if(tbody) tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:#9B3A31;padding:16px;">Could not load audit log: ${escapeHtml(err.message)}</td></tr>`;
+  });
+}
+
 function addAuthorizedUser(){
-  if(!isParent()){
-    showToast('Only an authorized Parent Gmail account can manage access.');
-    return;
-  }
   const email = document.getElementById('adm_email').value.trim().toLowerCase();
+  const role = document.getElementById('adm_role').value; // 'parent' | 'manager' | 'viewer'
   const clientproject = document.getElementById('adm_clientproject').value.trim();
   if(!email || !email.includes('@')){ showToast('Enter a valid Gmail address.'); return; }
-  if(!clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
-
-  // Parent/Admin is deliberately NOT editable from the web UI.
-  // It is the protected account created in Firestore during first-time setup.
-  const payload = {role:'client', clientproject};
+  if(role!=='parent' && !clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
+  const payload = role==='parent' ? {role:'parent'} : {role, clientproject};
   db.collection(AUTHUSERS_COLLECTION).doc(email).set(payload)
-    .then(()=>writeAuditLog('ADD_ACCESS', email, {targetEmail:email, clientproject}))
     .then(()=>{
       showToast(`Added access for ${email}.`);
       document.getElementById('adm_email').value='';
@@ -1425,41 +1557,29 @@ function addAuthorizedUser(){
     })
     .catch(err=>showToast('Could not add: ' + err.message));
 }
-async function removeAuthorizedUser(email){
-  if(!isParent() || !currentUser){
-    showToast('Only an authorized Parent Gmail account can manage access.');
-    return;
-  }
-  const targetEmail=String(email||'').trim().toLowerCase();
-  try{
-    const target=await db.collection(AUTHUSERS_COLLECTION).doc(targetEmail).get();
-    if(!target.exists){
-      showToast('This Gmail account is already removed.');
+function removeAuthorizedUser(email){
+  // Safety check: Parent/Admin accounts can never be removed from here, even if this
+  // function is invoked directly, so the company always keeps at least one Parent account.
+  db.collection(AUTHUSERS_COLLECTION).doc(email).get().then(doc=>{
+    if(doc.exists && doc.data().role === 'parent'){
+      showToast('Parent accounts are protected and cannot be removed here.');
       return;
     }
-    if(target.data().role==='parent'){
-      showToast('Parent/Admin Gmail is protected and cannot be removed here.');
-      return;
-    }
-    if(!confirm(`Remove access for ${targetEmail}?`)) return;
-    await db.collection(AUTHUSERS_COLLECTION).doc(targetEmail).delete();
-    await writeAuditLog('REMOVE_ACCESS', targetEmail, {targetEmail});
-    showToast(`Removed ${targetEmail}.`);
-  }catch(err){
-    console.error(err);
-    showToast('Could not remove: ' + err.message);
-  }
+    if(!confirm(`Remove access for ${email}?`)) return;
+    db.collection(AUTHUSERS_COLLECTION).doc(email).delete()
+      .then(()=>showToast(`Removed ${email}.`))
+      .catch(err=>showToast('Could not remove: ' + err.message));
+  }).catch(err=>showToast('Could not check user: ' + err.message));
 }
 
 /* ===================== Tabs ===================== */
 function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab));
-  ['form','register','instructions','admin','audit'].forEach(v=>{
-    const el=document.getElementById('view-'+v);
-    if(el) el.style.display = tab===v ? 'block' : 'none';
-  });
+  document.getElementById('view-form').style.display = tab==='form' ? 'block' : 'none';
+  document.getElementById('view-register').style.display = tab==='register' ? 'block' : 'none';
+  document.getElementById('view-admin').style.display = tab==='admin' ? 'block' : 'none';
+  document.getElementById('view-help').style.display = tab==='help' ? 'block' : 'none';
   if(tab==='register') renderTable();
-  if(tab==='audit'){ renderAuditLogs(); renderTransferHistory(); }
 }
 
 /* ===================== Photo / document uploads ===================== */
@@ -1513,82 +1633,74 @@ function handlePhotoUpload(inputEl, key, previewImgId){
     return;
   }
 
+  // Image: compress via canvas before storing, so records stay small and fast
+  // to sync. Iteratively lowers quality/size until the encoded data is under
+  // ~200KB (Base64 data URL), same target as a typical enrollment-form scan.
   const reader = new FileReader();
   reader.onload = e => {
     const img = new Image();
     img.onload = () => {
-      /*
-       * Employee photos are normalized to a true passport portrait ratio (35:45).
-       * This prevents a landscape/oversized source image from escaping the
-       * enrollment photo box when printed.
-       */
-      const isEmployeePhoto = key === 'photoData';
-      const TARGET_W = isEmployeePhoto ? 350 : 700;
-      const TARGET_H = isEmployeePhoto ? 450 : null;
-
-      let sx=0, sy=0, sw=img.naturalWidth, sh=img.naturalHeight;
-      if(isEmployeePhoto){
-        const targetRatio = TARGET_W / TARGET_H;
-        const sourceRatio = sw / sh;
-        if(sourceRatio > targetRatio){
-          sw = Math.round(sh * targetRatio);
-          sx = Math.round((img.naturalWidth - sw) / 2);
-        }else{
-          sh = Math.round(sw / targetRatio);
-          sy = Math.round((img.naturalHeight - sh) / 2);
-        }
-      }else{
-        const maxDim = TARGET_W;
-        if(sw > sh && sw > maxDim){ sh = Math.round(sh * maxDim / sw); sw = maxDim; }
-        else if(sh > maxDim){ sw = Math.round(sw * maxDim / sh); sh = maxDim; }
+      const TARGET_BYTES = 200 * 1024;
+      let maxDim = 900;
+      let quality = 0.85;
+      let dataUrl = '';
+      for(let attempt = 0; attempt < 8; attempt++){
+        let w = img.width, h = img.height;
+        if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+        else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+        const canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        dataUrl = canvas.toDataURL('image/jpeg', quality);
+        const approxBytes = dataUrl.length * 0.75; // base64 -> raw byte estimate
+        if(approxBytes <= TARGET_BYTES) break;
+        // Still too big: shrink dimensions first, then drop quality, and retry.
+        if(maxDim > 300) maxDim = Math.round(maxDim * 0.85);
+        else quality = Math.max(0.4, quality - 0.1);
       }
-
-      const canvas = document.createElement('canvas');
-      canvas.width = isEmployeePhoto ? TARGET_W : sw;
-      canvas.height = isEmployeePhoto ? TARGET_H : sh;
-      const ctx = canvas.getContext('2d',{alpha:false});
-      ctx.fillStyle='#fff';
-      ctx.fillRect(0,0,canvas.width,canvas.height);
-      ctx.imageSmoothingEnabled=true;
-      ctx.imageSmoothingQuality='high';
-      ctx.drawImage(img,sx,sy,sw,sh,0,0,canvas.width,canvas.height);
-
-      // Compress employee photo aggressively enough to stay below ~200 KB.
-      let quality = isEmployeePhoto ? 0.82 : 0.70;
-      let dataUrl = canvas.toDataURL('image/jpeg', quality);
-      if(isEmployeePhoto){
-        while(dataUrl.length > 260000 && quality > 0.35){
-          quality -= 0.05;
-          dataUrl = canvas.toDataURL('image/jpeg', quality);
-        }
-        // Safety fallback: lower resolution if an unusual image still exceeds target.
-        if(dataUrl.length > 260000){
-          const small=document.createElement('canvas');
-          small.width=280; small.height=360;
-          const sctx=small.getContext('2d',{alpha:false});
-          sctx.fillStyle='#fff'; sctx.fillRect(0,0,280,360);
-          sctx.drawImage(canvas,0,0,280,360);
-          quality=0.72;
-          dataUrl=small.toDataURL('image/jpeg',quality);
-          while(dataUrl.length > 260000 && quality > 0.35){
-            quality -= 0.05;
-            dataUrl=small.toDataURL('image/jpeg',quality);
-          }
-        }
-      }
-
       uploadState[key] = dataUrl;
       if(key === 'photoData') uploadState.photoSettings = {scale:1,x:0,y:0};
       updatePhotoPreviewUI(key, previewImgId, emptyId, btnId);
-      if(isEmployeePhoto){
-        const kb=Math.round((dataUrl.length*3/4)/1024);
-        showToast(`Passport photo ready: 35×45 ratio, compressed to about ${kb} KB.`);
-      }
     };
-    img.onerror = () => showToast('Could not read this image. Please choose another photo.');
     img.src = e.target.result;
   };
   reader.readAsDataURL(file);
+}
+
+/* ===================== Live Camera Capture ===================== */
+let cameraStream = null;
+function openCameraCapture(key, previewImgId){
+  const modal = document.getElementById('cameraModal');
+  const video = document.getElementById('cameraVideo');
+  modal.dataset.targetKey = key;
+  modal.dataset.targetPreview = previewImgId;
+  modal.style.display = 'flex';
+  navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false })
+    .then(stream => { cameraStream = stream; video.srcObject = stream; })
+    .catch(err => { showToast('Could not access camera: ' + err.message); closeCameraCapture(); });
+}
+function closeCameraCapture(){
+  const modal = document.getElementById('cameraModal');
+  modal.style.display = 'none';
+  if(cameraStream){ cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+}
+function captureCameraPhoto(){
+  const modal = document.getElementById('cameraModal');
+  const video = document.getElementById('cameraVideo');
+  const key = modal.dataset.targetKey;
+  const previewImgId = modal.dataset.targetPreview;
+  const emptyId = previewImgId + 'Empty';
+  const btnId = previewImgId.replace('Preview','') + 'ClearBtn';
+
+  const canvas = document.createElement('canvas');
+  canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+  uploadState[key] = dataUrl;
+  if(key === 'photoData') uploadState.photoSettings = {scale:1,x:0,y:0};
+  updatePhotoPreviewUI(key, previewImgId, emptyId, btnId);
+  closeCameraCapture();
+  showToast('Photo captured from camera.');
 }
 
 function clearPhoto(key, previewImgId, emptyId, btnId, fileInputId){
@@ -1602,51 +1714,38 @@ function clearPhoto(key, previewImgId, emptyId, btnId, fileInputId){
 function normalizePhotoSettings(v){
   v = v || {};
   return {
-    scale: Math.min(3, Math.max(0.75, Number(v.scale) || 1)),
+    scale: Math.min(3, Math.max(1, Number(v.scale) || 1)),
     x: Math.min(100, Math.max(-100, Number(v.x) || 0)),
     y: Math.min(100, Math.max(-100, Number(v.y) || 0))
   };
 }
 function getPhotoSettings(){ return normalizePhotoSettings(uploadState.photoSettings); }
 function setPhotoSettings(v){ uploadState.photoSettings = normalizePhotoSettings(v); }
-
 function autoFitPhoto(){
   setPhotoSettings({scale:1,x:0,y:0});
-  photoEditorState = {...getPhotoSettings()};
   syncPhotoEditorControls();
   updatePhotoPreviewUI('photoData','photoPreview','photoPreviewEmpty','photoClearBtn');
   if(document.getElementById('photoEditorBackdrop').style.display==='flex') renderPhotoEditor();
-  showToast('Photo fitted automatically inside the passport-size box.');
+  showToast('Photo reset to Auto Fit.');
 }
 function resetPhotoPositionOnly(){
-  photoEditorState = {scale:getPhotoSettings().scale,x:0,y:0};
-  syncPhotoEditorControls();
-  renderPhotoEditor();
+  const s=getPhotoSettings(); setPhotoSettings({scale:s.scale,x:0,y:0}); syncPhotoEditorControls(); renderPhotoEditor();
 }
 function openPhotoAdjuster(){
-  if(!uploadState.photoData || !uploadState.photoData.startsWith('data:image')){
-    showToast('Please upload an employee photo first.');
-    return;
-  }
+  if(!uploadState.photoData || !uploadState.photoData.startsWith('data:image')){ showToast('Please upload an employee photo first.'); return; }
   photoEditorState = {...getPhotoSettings()};
   const backdrop=document.getElementById('photoEditorBackdrop');
   backdrop.style.display='flex';
-  document.body.style.overflow='hidden';
   const img=document.getElementById('photoEditorImage');
-  img.onload=()=>{ requestAnimationFrame(()=>{ calculatePhotoEditorBase(); renderPhotoEditor(); }); };
+  img.onload=()=>{ calculatePhotoEditorBase(); renderPhotoEditor(); };
   img.src=uploadState.photoData;
-  if(img.complete && img.naturalWidth) requestAnimationFrame(()=>{ calculatePhotoEditorBase(); renderPhotoEditor(); });
+  if(img.complete) { calculatePhotoEditorBase(); renderPhotoEditor(); }
 }
-function closePhotoAdjuster(){
-  document.getElementById('photoEditorBackdrop').style.display='none';
-  document.body.style.overflow='';
-}
+function closePhotoAdjuster(){ document.getElementById('photoEditorBackdrop').style.display='none'; }
 function calculatePhotoEditorBase(){
   const img=document.getElementById('photoEditorImage'), stage=document.getElementById('photoEditorStage');
-  if(!img.naturalWidth || !img.naturalHeight || !stage.clientWidth || !stage.clientHeight) return;
-  // Base scale makes the whole photo cover the crop area without leaving blank space.
-  const sx=stage.clientWidth/img.naturalWidth;
-  const sy=stage.clientHeight/img.naturalHeight;
+  if(!img.naturalWidth || !stage.clientWidth) return;
+  const sx=stage.clientWidth/img.naturalWidth, sy=stage.clientHeight/img.naturalHeight;
   photoEditorBase.scale=Math.max(sx,sy);
 }
 function syncPhotoEditorControls(){
@@ -1660,13 +1759,13 @@ function syncPhotoEditorControls(){
 }
 function renderPhotoEditor(){
   const img=document.getElementById('photoEditorImage');
+  if(!img || !img.naturalWidth) return;
+  img.style.width=img.naturalWidth+'px';
+  img.style.height=img.naturalHeight+'px';
   const stage=document.getElementById('photoEditorStage');
-  if(!img || !img.naturalWidth || !stage.clientWidth) return;
   const px=(Number(photoEditorState.x)||0)*stage.clientWidth/100;
   const py=(Number(photoEditorState.y)||0)*stage.clientHeight/100;
   const scale=photoEditorBase.scale*(Number(photoEditorState.scale)||1);
-  img.style.width=img.naturalWidth+'px';
-  img.style.height=img.naturalHeight+'px';
   img.style.transform=`translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) scale(${scale})`;
   syncPhotoEditorControls();
 }
@@ -1674,7 +1773,7 @@ function applyPhotoAdjuster(){
   setPhotoSettings(photoEditorState);
   closePhotoAdjuster();
   updatePhotoPreviewUI('photoData','photoPreview','photoPreviewEmpty','photoClearBtn');
-  showToast('Photo adjustment saved. Save the employee record to keep it permanently.');
+  showToast('Photo adjustment saved with this employee record.');
 }
 ['photoZoomRange','photoXRange','photoYRange'].forEach(id=>{
   document.addEventListener('input',e=>{
@@ -1686,45 +1785,17 @@ function applyPhotoAdjuster(){
   });
 });
 (function enablePhotoDragging(){
-  const stage=()=>document.getElementById('photoEditorStage');
-  const img=()=>document.getElementById('photoEditorImage');
+  const stage=()=>document.getElementById('photoEditorStage'), img=()=>document.getElementById('photoEditorImage');
   let dragging=false,sx=0,sy=0,ox=0,oy=0;
-  function down(e){
-    if(!img().src) return;
-    dragging=true;
-    img().classList.add('dragging');
-    const p=e;
-    sx=p.clientX; sy=p.clientY;
-    ox=photoEditorState.x; oy=photoEditorState.y;
-    try{ e.currentTarget.setPointerCapture(e.pointerId); }catch(_e){}
-    e.preventDefault();
-  }
-  function move(e){
-    if(!dragging) return;
-    const st=stage();
-    photoEditorState.x=Math.max(-100,Math.min(100,ox+(e.clientX-sx)*100/st.clientWidth));
-    photoEditorState.y=Math.max(-100,Math.min(100,oy+(e.clientY-sy)*100/st.clientHeight));
-    renderPhotoEditor();
-    e.preventDefault();
-  }
+  function down(e){ if(!img().src) return; dragging=true; img().classList.add('dragging'); const p=e.touches?e.touches[0]:e; sx=p.clientX; sy=p.clientY; ox=photoEditorState.x; oy=photoEditorState.y; e.preventDefault(); }
+  function move(e){ if(!dragging) return; const p=e.touches?e.touches[0]:e; const st=stage(); photoEditorState.x=Math.max(-100,Math.min(100,ox+(p.clientX-sx)*100/st.clientWidth)); photoEditorState.y=Math.max(-100,Math.min(100,oy+(p.clientY-sy)*100/st.clientHeight)); renderPhotoEditor(); e.preventDefault(); }
   function up(){ dragging=false; img().classList.remove('dragging'); }
-  document.addEventListener('pointerdown',e=>{if(e.target.id==='photoEditorImage') down(e);});
-  document.addEventListener('pointermove',move,{passive:false});
-  document.addEventListener('pointerup',up);
-  document.addEventListener('pointercancel',up);
-  document.addEventListener('wheel',e=>{
-    if(e.target.id!=='photoEditorImage') return;
-    e.preventDefault();
-    photoEditorState.scale=Math.max(0.75,Math.min(3,photoEditorState.scale+(e.deltaY<0?0.05:-0.05)));
-    renderPhotoEditor();
-  },{passive:false});
+  document.addEventListener('mousedown',e=>{if(e.target.id==='photoEditorImage')down(e);});
+  document.addEventListener('mousemove',move); document.addEventListener('mouseup',up);
+  document.addEventListener('touchstart',e=>{if(e.target.id==='photoEditorImage')down(e);},{passive:false});
+  document.addEventListener('touchmove',move,{passive:false}); document.addEventListener('touchend',up);
 })();
-window.addEventListener('resize',()=>{
-  if(document.getElementById('photoEditorBackdrop').style.display==='flex'){
-    calculatePhotoEditorBase();
-    renderPhotoEditor();
-  }
-});
+window.addEventListener('resize',()=>{ if(document.getElementById('photoEditorBackdrop').style.display==='flex'){calculatePhotoEditorBase();renderPhotoEditor();} });
 
 /* ===================== Form <-> record mapping ===================== */
 function readForm(){
@@ -1750,6 +1821,7 @@ function readForm(){
     permaddr: g('f_permaddr'),
     armyno: g('f_armyno'),
     photo: g('f_photo'),
+    status: g('f_status') || 'Active',
     policeverif: g('f_policeverif'),
     specialbranch: g('f_specialbranch'),
     apsaa: g('f_apsaa'),
@@ -1791,7 +1863,7 @@ function fillForm(rec){
   s('f_bank', rec.bank); s('f_branchname', rec.branchname); s('f_branchcode', rec.branchcode);
   s('f_msmno', rec.msmno); s('f_dischargemsm', rec.dischargemsm); s('f_cashreliever', rec.cashreliever);
   s('f_uniformdate', rec.uniformdate); s('f_newold', rec.newold); s('f_supervisor', rec.supervisor);
-  s('f_clientproject', rec.clientproject); s('f_photo', rec.photo); s('f_specialbranch', rec.specialbranch);
+  s('f_clientproject', rec.clientproject); s('f_photo', rec.photo); s('f_specialbranch', rec.specialbranch); s('f_status', rec.status || 'Active');
   s('f_remarks', rec.remarks);
 
   uploadState.photoData = rec.photoData || '';
@@ -1819,71 +1891,9 @@ function cancelEdit(){
   document.getElementById('editBanner').style.display = 'none';
 }
 
-/* ===================== Audit Trail ===================== */
-function auditDetailsText(details){
-  if(!details) return '';
-  try{return typeof details==='string' ? details : JSON.stringify(details);}
-  catch(e){return String(details);}
-}
-
-function writeAuditLog(action, targetId, details){
-  if(!currentUser || !currentAccess || !db) return Promise.resolve();
-  const payload = {
-    action: String(action||'').slice(0,80),
-    targetId: String(targetId||''),
-    details: auditDetailsText(details).slice(0,4000),
-    userEmail: (currentUser.email||'').toLowerCase(),
-    role: currentAccess.role || '',
-    clientproject: currentAccess.clientproject || '',
-    createdAt: firebase.firestore.FieldValue.serverTimestamp()
-  };
-  return db.collection(AUDIT_COLLECTION).add(payload).catch(err=>{
-    console.warn('Audit log write failed:', err);
-  });
-}
-
-function formatAuditTime(v){
-  if(!v) return 'Pending…';
-  let d=null;
-  if(v.toDate) d=v.toDate(); else if(v.seconds) d=new Date(v.seconds*1000); else d=new Date(v);
-  if(!d || isNaN(d.getTime())) return '—';
-  return d.toLocaleString();
-}
-
-function subscribeAuditLogs(){
-  if(auditUnsub){auditUnsub(); auditUnsub=null;}
-  if(!isParent()) return;
-  auditUnsub = db.collection(AUDIT_COLLECTION).orderBy('createdAt','desc').limit(300).onSnapshot(snap=>{
-    window.auditLogs = snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderAuditLogs();
-  }, err=>{
-    console.error(err);
-    const el=document.getElementById('auditTbody');
-    if(el) el.innerHTML=`<tr><td colspan="5">Could not load audit trail: ${escapeHtml(err.message||'Unknown error')}</td></tr>`;
-  });
-}
-
-function loadAuditLogs(){ subscribeAuditLogs(); }
-
-function renderAuditLogs(){
-  const tbody=document.getElementById('auditTbody');
-  if(!tbody) return;
-  const q=(document.getElementById('auditSearch')?.value||'').trim().toLowerCase();
-  const rows=(window.auditLogs||[]).filter(x=>{
-    if(!q) return true;
-    return [x.action,x.userEmail,x.targetId,x.details,x.clientproject,x.role].some(v=>String(v||'').toLowerCase().includes(q));
-  });
-  tbody.innerHTML=rows.map(x=>`<tr>
-    <td>${escapeHtml(formatAuditTime(x.createdAt))}</td>
-    <td class="audit-action">${escapeHtml(x.action||'—')}</td>
-    <td>${escapeHtml(x.userEmail||'—')}<div class="audit-meta">${escapeHtml(x.role||'')}</div></td>
-    <td>${escapeHtml(x.targetId||'—')}</td>
-    <td>${escapeHtml(x.details||'—')}<div class="audit-meta">${escapeHtml(x.clientproject||'')}</div></td>
-  </tr>`).join('') || '<tr><td colspan="5">No audit entries found.</td></tr>';
-}
-
 /* ===================== Save / Edit / Delete (Firestore) ===================== */
 function saveEntry(){
+  if(!canEdit()){ showToast('You do not have permission to add or edit records.'); return; }
   const name = document.getElementById('f_name').value.trim();
   if(!name){
     showToast('Employee Name is required.');
@@ -1891,25 +1901,22 @@ function saveEntry(){
     return;
   }
   const data = readForm();
-  data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-  if(!isParent()) data.clientproject = myClientProject(); // client role can never save into another tenant
+  if(!isParent()) data.clientproject = myClientProject(); // scoped roles can never save into another tenant
 
   if(editingId){
-    const targetId=editingId;
-    db.collection(RECORDS_COLLECTION).doc(targetId).update(data)
-      .then(()=>writeAuditLog('UPDATE_RECORD', targetId, {name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||''}))
-      .then(()=>{ showToast('Record updated in the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
+    db.collection(RECORDS_COLLECTION).doc(editingId).update(data)
+      .then(()=>{ logAudit('edit', editingId, name, 'Record updated'); showToast('Record updated in the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
   } else {
     const nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
-    db.collection(RECORDS_COLLECTION).add({sno: nextSno, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...data})
-      .then(docRef=>writeAuditLog('CREATE_RECORD', docRef.id, {sno:nextSno, name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||''}))
-      .then(()=>{ showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
+    db.collection(RECORDS_COLLECTION).add({sno: nextSno, ...data})
+      .then(docRef=>{ logAudit('create', docRef.id, name, 'New record added'); showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
   }
 }
 
 function editRecord(id){
+  if(!canEdit()){ showToast('You do not have permission to edit records.'); return; }
   const rec = records.find(r=>r.id===id);
   if(!rec) return;
   editingId = id;
@@ -1921,316 +1928,290 @@ function editRecord(id){
 }
 
 function deleteRecord(id){
+  if(!canDelete()){ showToast('You do not have permission to delete records.'); return; }
   const rec = records.find(r=>r.id===id);
   if(!rec) return;
   if(!confirm(`Delete record #${rec.sno} — ${rec.name}? This cannot be undone.`)) return;
   db.collection(RECORDS_COLLECTION).doc(id).delete()
-    .then(()=>writeAuditLog('DELETE_RECORD', id, {sno:rec.sno||'', name:rec.name||'', cnic:rec.cnic||'', clientproject:rec.clientproject||''}))
-    .then(()=>showToast('Record deleted.'))
+    .then(()=>{ logAudit('delete', id, rec.name, 'Record deleted'); showToast('Record deleted.'); })
     .catch(err=>showToast('Could not delete: ' + err.message));
 }
 
 /* ===================== Table render ===================== */
-function recordTimestampValue(v){
-  if(!v) return 0;
-  try{ if(v.toDate) return v.toDate().getTime(); if(v.seconds) return Number(v.seconds)*1000; const t=Date.parse(v); return isNaN(t)?0:t; }catch(e){ return 0; }
+let currentPage = 1;
+let pageSize = 100;
+let debounceTimer = null;
+
+function onSearchInput(){
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(()=>{ currentPage = 1; renderTable(); refreshSearchSuggestions(); }, 150);
 }
-function normalizedStatus(r){
-  const v=String(r.status||r.newold||'').trim().toLowerCase();
-  if(['active','on leave','on-leave','terminated'].includes(v)) return v.replace(' ','-');
-  if(v==='new') return 'new'; if(v==='old') return 'old'; return '';
+function onFilterChange(){ currentPage = 1; renderTable(); }
+function onPageSizeChange(){ pageSize = Number(document.getElementById('pageSizeSelect').value)||100; currentPage = 1; renderTable(); }
+function goToPage(p){
+  const totalPages = Math.max(1, Math.ceil(lastFilteredCount / pageSize));
+  currentPage = Math.min(Math.max(1, p), totalPages);
+  renderTable();
 }
-function uniqueFilterValues(key){
-  return [...new Set(records.map(r=>String(r[key]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+let sortField = 'doe';
+let sortDir = 'desc'; // 'desc' = Newest/Z-A first (default), 'asc' = Oldest/A-Z first
+
+function onSortChange(){
+  sortField = document.getElementById('sortField').value;
+  sortDir = document.getElementById('sortDir').value;
+  currentPage = 1;
+  renderTable();
 }
-function refreshRegisterFilters(){
-  const defs=[['filterClient','clientproject','All Clients'],['filterLocation','location','All Locations'],['filterSupervisor','supervisor','All Supervisors'],['filterStation','deployloc','All Stations'],['filterRank','unitrank','All Ranks / Units']];
-  defs.forEach(([id,key,label])=>{
-    const el=document.getElementById(id); if(!el) return;
-    const current=el.value; const vals=uniqueFilterValues(key);
-    el.innerHTML=`<option value="">${label}</option>`+vals.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-    if(vals.includes(current)) el.value=current;
+
+function compareForSort(a, b){
+  let va, vb;
+  if(sortField === 'doe'){
+    // Dates in this register are typically DD/MM/YYYY or similar free text;
+    // fall back to string compare if they don't parse as real dates.
+    const da = new Date(a.doe), db_ = new Date(b.doe);
+    const validA = !isNaN(da), validB = !isNaN(db_);
+    if(validA && validB){ va = da.getTime(); vb = db_.getTime(); }
+    else { va = (a.doe||''); vb = (b.doe||''); }
+  } else if(sortField === 'msmno'){
+    // Numeric-aware compare when both sides look like numbers, else string compare.
+    const na = parseFloat(a.msmno), nb = parseFloat(b.msmno);
+    if(!isNaN(na) && !isNaN(nb)){ va = na; vb = nb; }
+    else { va = (a.msmno||'').toLowerCase(); vb = (b.msmno||'').toLowerCase(); }
+  } else if(sortField === 'status'){
+    va = (a.status||'Active').toLowerCase(); vb = (b.status||'Active').toLowerCase();
+  } else {
+    va = (a.name||'').toLowerCase(); vb = (b.name||'').toLowerCase();
+  }
+  let cmp;
+  if(typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
+  else cmp = String(va).localeCompare(String(vb));
+  return sortDir === 'asc' ? cmp : -cmp;
+}
+
+function clearFilters(){
+  document.getElementById('searchBox').value = '';
+  ['filterClient','filterLocation','filterStatus'].forEach(id=>{
+    const sel = document.getElementById(id);
+    Array.from(sel.options).forEach(o=>o.selected=false);
   });
+  document.getElementById('sortField').value = 'doe';
+  document.getElementById('sortDir').value = 'desc';
+  sortField = 'doe'; sortDir = 'desc';
+  currentPage = 1;
+  renderTable();
 }
-function getSortValue(r,key){
-  if(key==='createdAt'||key==='updatedAt') return recordTimestampValue(r[key]);
-  if(key==='sno') return Number(r[key])||0;
-  if(key==='doe') { const t=Date.parse(String(r[key]||'')); return isNaN(t)?String(r[key]||'').toLowerCase():t; }
-  return String(r[key]??'').toLowerCase();
+function getSelectedValues(id){
+  return Array.from(document.getElementById(id).selectedOptions).map(o=>o.value);
 }
-function updateRegisterDashboard(filtered){
-  const all=records||[];
-  const count=(arr,status)=>arr.filter(r=>normalizedStatus(r)===status).length;
-  const set=(id,val)=>{const el=document.getElementById(id); if(el) el.textContent=String(val);};
-  set('dashTotal',all.length);
-  set('dashActive',count(all,'active'));
-  set('dashLeave',count(all,'on-leave'));
-  set('dashTerminated',count(all,'terminated'));
-  set('dashFiltered',filtered.length);
+function populateFilterOptions(){
+  // Rebuilds the Client/Location/Status dropdown option lists from whatever
+  // values actually exist in the currently loaded records, and keeps
+  // whatever the user already had selected.
+  const build = (id, values) => {
+    const sel = document.getElementById(id);
+    const prevSelected = new Set(getSelectedValues(id));
+    const sorted = Array.from(values).filter(Boolean).sort((a,b)=>a.localeCompare(b));
+    sel.innerHTML = sorted.map(v=>`<option value="${escapeHtml(v)}" ${prevSelected.has(v)?'selected':''}>${escapeHtml(v)}</option>`).join('');
+  };
+  build('filterClient', new Set(records.map(r=>r.clientproject)));
+  build('filterLocation', new Set(records.map(r=>r.location)));
+  build('filterStatus', new Set(records.map(r=>r.status || 'Active')));
 }
+function refreshSearchSuggestions(){
+  // Real-time auto-suggest: as the user types, offer up to 12 matching
+  // names/CNIC/mobile/deployment IDs pulled straight from live data.
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  const dl = document.getElementById('searchSuggestions');
+  if(!q){ dl.innerHTML=''; return; }
+  const seen = new Set();
+  const out = [];
+  for(const r of records){
+    for(const v of [r.name, r.cnic, r.cell, r.msmno]){
+      if(v && v.toLowerCase().includes(q) && !seen.has(v)){
+        seen.add(v); out.push(v);
+        if(out.length >= 12) break;
+      }
+    }
+    if(out.length >= 12) break;
+  }
+  dl.innerHTML = out.map(v=>`<option value="${escapeHtml(v)}">`).join('');
+}
+
+let lastFilteredCount = 0;
+let selectedIds = new Set();
+
+function toggleSelectAll(checkbox){
+  const pageCheckboxes = document.querySelectorAll('#tbody .rowSelectBox');
+  pageCheckboxes.forEach(cb=>{
+    cb.checked = checkbox.checked;
+    if(checkbox.checked) selectedIds.add(cb.dataset.id); else selectedIds.delete(cb.dataset.id);
+  });
+  updateBulkBar();
+}
+function toggleRowSelect(cb){
+  if(cb.checked) selectedIds.add(cb.dataset.id); else selectedIds.delete(cb.dataset.id);
+  updateBulkBar();
+}
+function updateBulkBar(){
+  const bar = document.getElementById('bulkActionsBar');
+  if(!bar) return;
+  if(selectedIds.size > 0){
+    bar.style.display = 'flex';
+    document.getElementById('bulkSelectedCount').textContent = `${selectedIds.size} selected`;
+  } else {
+    bar.style.display = 'none';
+  }
+}
+function bulkDelete(){
+  if(!canDelete()){ showToast('You do not have permission to delete records.'); return; }
+  if(!selectedIds.size) return;
+  if(!confirm(`Delete ${selectedIds.size} selected record(s)? This cannot be undone.`)) return;
+  const batch = db.batch();
+  selectedIds.forEach(id => batch.delete(db.collection(RECORDS_COLLECTION).doc(id)));
+  batch.commit()
+    .then(()=>{
+      selectedIds.forEach(id => { const rec = records.find(r=>r.id===id); logAudit('bulk-delete', id, rec ? rec.name : '', 'Deleted via bulk action'); });
+      showToast(`Deleted ${selectedIds.size} record(s).`); selectedIds.clear(); updateBulkBar();
+    })
+    .catch(err=>showToast('Bulk delete failed: ' + err.message));
+}
+function bulkSetStatus(newStatus){
+  if(!canEdit()){ showToast('You do not have permission to edit records.'); return; }
+  if(!selectedIds.size) return;
+  const batch = db.batch();
+  selectedIds.forEach(id => batch.update(db.collection(RECORDS_COLLECTION).doc(id), {status:newStatus}));
+  batch.commit()
+    .then(()=>{
+      selectedIds.forEach(id => { const rec = records.find(r=>r.id===id); logAudit('status-change', id, rec ? rec.name : '', 'Status set to ' + newStatus); });
+      showToast(`Marked ${selectedIds.size} record(s) as ${newStatus}.`); selectedIds.clear(); updateBulkBar();
+    })
+    .catch(err=>showToast('Bulk status update failed: ' + err.message));
+}
+function exportCsv(scope){
+  // scope: 'selected' | 'filtered' | 'all'
+  if(!canExport()){ showToast('You do not have permission to export.'); return; }
+  let rows;
+  if(scope === 'selected'){
+    if(!selectedIds.size){ showToast('No rows selected.'); return; }
+    rows = records.filter(r => selectedIds.has(r.id));
+  } else if(scope === 'filtered'){
+    rows = getFilteredSortedRecords();
+  } else {
+    rows = records;
+  }
+  const headers = COLUMNS.map(c=>c.label).concat('Status');
+  const escapeCsv = v => `"${String(v ?? '').replace(/"/g,'""')}"`;
+  const lines = [headers.map(escapeCsv).join(',')];
+  rows.forEach(r=>{
+    const vals = COLUMNS.map(c=>r[c.key] ?? '').concat(r.status || 'Active');
+    lines.push(vals.map(escapeCsv).join(','));
+  });
+  const csv = lines.join('\r\n');
+  const blob = new Blob(['\ufeff' + csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `msm-long-roll-${scope}-${new Date().toISOString().slice(0,10)}.csv`;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`Exported ${rows.length} record(s) to CSV.`);
+}
+
+function getFilteredSortedRecords(){
+  const q = document.getElementById('searchBox').value.trim().toLowerCase();
+  const clientSel = getSelectedValues('filterClient');
+  const locationSel = getSelectedValues('filterLocation');
+  const statusSel = getSelectedValues('filterStatus');
+
+  let filtered = records;
+  if(q){
+    filtered = filtered.filter(r =>
+      [r.name, r.cnic, r.cell, r.msmno, r.clientproject, r.supervisor, r.location]
+        .some(v => (v||'').toLowerCase().includes(q))
+    );
+  }
+  if(clientSel.length) filtered = filtered.filter(r => clientSel.includes(r.clientproject));
+  if(locationSel.length) filtered = filtered.filter(r => locationSel.includes(r.location));
+  if(statusSel.length) filtered = filtered.filter(r => statusSel.includes(r.status || 'Active'));
+
+  filtered = filtered.slice().sort(compareForSort);
+  return filtered;
+}
+
 function renderTable(){
   const thead = document.getElementById('theadRow');
-  thead.innerHTML = `<th><input class="row-check" type="checkbox" title="Select all visible" onchange="selectAllVisible(this.checked)"></th>` + COLUMNS.map(c=>`<th class="sort-head">${escapeHtml(c.label)}</th>`).join('') + '<th>Actions</th>';
-  refreshRegisterFilters();
-  const q = (document.getElementById('searchBox')?.value||'').trim().toLowerCase();
-  const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fstation=document.getElementById('filterStation')?.value||'', frank=document.getElementById('filterRank')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
-  const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
-  const searchKeys=['name','cnic','clientproject','supervisor','msmno','location','cell','deployloc','unitrank'];
-  let filtered=records.filter(r=>{
-    if(q && !searchKeys.some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
-    if(fc && String(r.clientproject||'')!==fc) return false;
-    if(fl && String(r.location||'')!==fl) return false;
-    if(fs && String(r.supervisor||'')!==fs) return false;
-    if(fstation && String(r.deployloc||'')!==fstation) return false;
-    if(frank && String(r.unitrank||'')!==frank) return false;
-    if(fst && normalizedStatus(r)!==fst) return false;
-    const dateVal=String(r.doe||'').slice(0,10);
-    if(from && dateVal && dateVal<from) return false;
-    if(to && dateVal && dateVal>to) return false;
-    return true;
-  });
-  const sortField=document.getElementById('sortField')?.value||'sno';
-  const sortOrder=document.getElementById('sortOrder')?.value||'asc';
-  filtered.sort((a,b)=>{
-    const av=getSortValue(a,sortField), bv=getSortValue(b,sortField);
-    let cmp=0;
-    if(typeof av==='number'&&typeof bv==='number') cmp=av-bv; else cmp=String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'});
-    return sortOrder==='desc' ? -cmp : cmp;
-  });
-  updateRegisterDashboard(filtered);
-  const selected=new Set(window.selectedRecordIds||[]);
+  const selectAllTh = canBulkActions() ? `<th style="width:28px;"><input type="checkbox" onclick="toggleSelectAll(this)"></th>` : '';
+  thead.innerHTML = selectAllTh + COLUMNS.map(c=>`<th>${c.label}</th>`).join('') + '<th>Status</th><th>Actions</th>';
+
+  populateFilterOptions();
+
+  const clientSel = getSelectedValues('filterClient');
+  const locationSel = getSelectedValues('filterLocation');
+  const statusSel = getSelectedValues('filterStatus');
+
+  // Show loading state briefly while the first snapshot is still pending.
+  const loadingEl = document.getElementById('registerLoading');
+  if(loadingEl) loadingEl.style.display = recordsLoaded ? 'none' : 'block';
+
+  const filtered = getFilteredSortedRecords();
+  lastFilteredCount = filtered.length;
+
+  // Dynamic counter badge, e.g. "Total Guards Deployed at Acme: 42" when
+  // exactly one client is selected; otherwise shows the active filter count.
+  const badge = document.getElementById('filterCounterBadge');
+  if(clientSel.length === 1){
+    badge.style.display = '';
+    badge.textContent = `Total Guards Deployed at ${clientSel[0]}: ${filtered.length}`;
+  } else if(clientSel.length || locationSel.length || statusSel.length){
+    badge.style.display = '';
+    badge.textContent = `${filtered.length} guards match current filters`;
+  } else {
+    badge.style.display = 'none';
+  }
+
+  // Pagination: only the current page's rows are ever built into the DOM,
+  // so the table stays fast even with 9,000+ records loaded in memory.
+  const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
+  if(currentPage > totalPages) currentPage = totalPages;
+  const startIdx = (currentPage - 1) * pageSize;
+  const pageRows = filtered.slice(startIdx, startIdx + pageSize);
+
   const tbody = document.getElementById('tbody');
-  tbody.innerHTML = filtered.map(r=>{
-    const cells = COLUMNS.map(c=>`<td>${escapeHtml(r[c.key] ?? '')}</td>`).join('');
-    const photoLink = r.photoData ? `<a href="${r.photoData}" target="_blank" rel="noopener" title="View photo"><img src="${r.photoData}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>` : '';
-    const verifLink = r.policeVerifDoc ? (r.policeVerifDoc.startsWith('data:image') ? `<a href="${r.policeVerifDoc}" target="_blank" rel="noopener" title="View police verification document"><img src="${r.policeVerifDoc}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>` : `<a class="btn btn-sm" href="${r.policeVerifDoc}" target="_blank" rel="noopener">🛡 Verif Doc</a>`) : '';
-    return `<tr><td><input class="row-check record-check" type="checkbox" value="${escapeHtml(r.id)}" ${selected.has(r.id)?'checked':''} onchange="toggleRecordSelection('${r.id}',this.checked)"></td>${cells}<td class="row-actions"><button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button><button class="btn btn-sm" onclick="printRecordForm('${r.id}')">🖨 Print</button>${photoLink}${verifLink}<button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button></td></tr>`;
+  tbody.innerHTML = pageRows.map((r, i)=>{
+    // Dynamic S No: always reflects the row's position in the current
+    // filtered + sorted view (continues across pages), never the raw
+    // backend/document id or a stale stored serial number.
+    const displayIndex = startIdx + i + 1;
+    const cells = COLUMNS.map(c => c.key === 'sno'
+      ? `<td>${displayIndex}</td>`
+      : `<td>${escapeHtml(r[c.key] ?? '')}</td>`
+    ).join('');
+    const photoLink = r.photoData
+      ? `<a href="${r.photoData}" target="_blank" rel="noopener" title="View photo"><img src="${r.photoData}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>`
+      : '';
+    const verifLink = r.policeVerifDoc
+      ? (r.policeVerifDoc.startsWith('data:image')
+          ? `<a href="${r.policeVerifDoc}" target="_blank" rel="noopener" title="View police verification document"><img src="${r.policeVerifDoc}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>`
+          : `<a class="btn btn-sm" href="${r.policeVerifDoc}" target="_blank" rel="noopener">🛡 Verif Doc</a>`)
+      : '';
+    const status = r.status || 'Active';
+    const statusColor = status === 'Active' ? '#2E7D4F' : status === 'On-Leave' ? '#B8860B' : '#9B3A31';
+    const selectTd = canBulkActions() ? `<td><input type="checkbox" class="rowSelectBox" data-id="${r.id}" ${selectedIds.has(r.id)?'checked':''} onclick="toggleRowSelect(this)"></td>` : '';
+    const editBtn = canEdit() ? `<button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button>` : '';
+    const deleteBtn = canDelete() ? `<button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button>` : '';
+    return `<tr>${selectTd}${cells}<td><span style="color:${statusColor}; font-weight:700; font-size:12px;">${escapeHtml(status)}</span></td><td class="row-actions">
+      ${editBtn}
+      <button class="btn btn-sm" onclick="printRecordForm('${r.id}')">🖨 Print</button>
+      ${photoLink}${verifLink}
+      ${deleteBtn}
+    </td></tr>`;
   }).join('');
+
   document.getElementById('rowCountPill').textContent = `${filtered.length} of ${records.length} entries`;
-  document.getElementById('emptyState').style.display = records.length ? 'none' : 'block';
+  document.getElementById('emptyState').style.display = (records.length || !recordsLoaded) ? 'none' : 'block';
   document.getElementById('registerTable').style.display = records.length ? 'table' : 'none';
-  updateSelectionUI();
-}
-function toggleRecordSelection(id,checked){
-  if(!isParent()) { showToast('Only Parent can select records for bulk actions.'); return; }
-  window.selectedRecordIds=window.selectedRecordIds||new Set(); checked?window.selectedRecordIds.add(id):window.selectedRecordIds.delete(id); updateSelectionUI();
-}
-function selectAllVisible(checked){
-  if(!isParent()){ showToast('Only Parent can use bulk selection.'); return; }
-  const q=(document.getElementById('searchBox')?.value||'').trim().toLowerCase();
-  const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fstation=document.getElementById('filterStation')?.value||'', frank=document.getElementById('filterRank')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
-  const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
-  const arr=records.filter(r=>{
-    if(q && !['name','cnic','clientproject','supervisor','msmno','location','cell','deployloc','unitrank'].some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
-    if(fc&&String(r.clientproject||'')!==fc) return false; if(fl&&String(r.location||'')!==fl) return false; if(fs&&String(r.supervisor||'')!==fs) return false; if(fstation&&String(r.deployloc||'')!==fstation) return false; if(frank&&String(r.unitrank||'')!==frank) return false; if(fst&&normalizedStatus(r)!==fst) return false;
-    const d=String(r.doe||'').slice(0,10); if(from&&d&&d<from)return false; if(to&&d&&d>to)return false; return true;
-  });
-  window.selectedRecordIds=window.selectedRecordIds||new Set(); arr.forEach(r=>checked?window.selectedRecordIds.add(r.id):window.selectedRecordIds.delete(r.id)); renderTable();
-}
-function updateSelectionUI(){
-  const n=window.selectedRecordIds?window.selectedRecordIds.size:0; const el=document.getElementById('selectedCount'); if(el) el.textContent=`${n} selected`; const b=document.getElementById('bulkDeleteBtn'); if(b) b.style.display=isParent()&&n?'inline-flex':'none'; const t=document.getElementById('bulkTransferBtn'); if(t) t.style.display=isParent()&&n?'inline-flex':'none';
-}
-async function bulkDeleteSelected(){
-  if(!isParent()) return showToast('Only Parent can delete selected records.');
-  const ids=[...(window.selectedRecordIds||[])]; if(!ids.length) return;
-  if(!confirm(`Delete ${ids.length} selected record(s)? This cannot be undone.`)) return;
-  try{
-    for(let i=0;i<ids.length;i+=400){ const batch=db.batch(); ids.slice(i,i+400).forEach(id=>batch.delete(db.collection(RECORDS_COLLECTION).doc(id))); await batch.commit(); }
-    await writeAuditLog('BULK_DELETE', ids.length, {count:ids.length, ids:ids.slice(0,100)});
-    window.selectedRecordIds=new Set(); showToast(`${ids.length} records deleted.`); renderTable();
-  }catch(err){ console.error(err); showToast('Bulk delete failed: '+err.message); }
-}
-/* ===================== Parent: Bulk Client/Sector Transfer ===================== */
-function transferSourceSummary(selectedRecords){
-  const counts={};
-  selectedRecords.forEach(r=>{ const k=String(r.clientproject||'Unassigned').trim()||'Unassigned'; counts[k]=(counts[k]||0)+1; });
-  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
-}
-
-async function populateTransferTargets(){
-  const el=document.getElementById('transferTargetClient');
-  if(!el) return;
-  const values=new Set(records.map(r=>String(r.clientproject||'').trim()).filter(Boolean));
-  try{
-    const snap=await db.collection(AUTHUSERS_COLLECTION).get();
-    snap.docs.forEach(d=>{ const v=String((d.data()||{}).clientproject||'').trim(); if(v) values.add(v); });
-  }catch(e){ console.warn('Could not load authorized client list for transfer:',e); }
-  const current=[...values].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
-  el.innerHTML='<option value="">Select new client / sector…</option>'+current.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-}
-
-function openTransferModal(){
-  if(!isParent()) return showToast('Only Parent can transfer guards between clients/sectors.');
-  const ids=[...(window.selectedRecordIds||[])];
-  const selected=records.filter(r=>ids.includes(r.id));
-  if(!selected.length) return showToast('Select at least one guard first.');
-  const summary=transferSourceSummary(selected);
-  const total=selected.length;
-  document.getElementById('transferSummary').innerHTML=`
-    <div class="transfer-card"><span>Selected Guards</span><b>${total}</b></div>
-    <div class="transfer-card"><span>Source Client(s)</span><b>${summary.length}</b></div>
-    <div class="transfer-card"><span>Transfer Type</span><b>Bulk</b></div>`;
-  document.getElementById('transferSourceList').innerHTML='<strong>Current assignment summary:</strong><br>'+summary.map(([k,n])=>`${escapeHtml(k)} — <strong>${n}</strong> guard${n===1?'':'s'}`).join('<br>');
-  document.getElementById('transferTargetLocation').value='';
-  document.getElementById('transferTargetStation').value='';
-  document.getElementById('transferReason').value='';
-  const modal=document.getElementById('transferModal');
-  modal.style.display='flex';
-  populateTransferTargets();
-}
-function closeTransferModal(){ const m=document.getElementById('transferModal'); if(m)m.style.display='none'; }
-
-async function confirmBulkTransfer(){
-  if(!isParent()) return showToast('Only Parent can perform transfers.');
-  const target=String(document.getElementById('transferTargetClient')?.value||'').trim();
-  if(!target) return showToast('Select the new Client / Sector.');
-  const ids=[...(window.selectedRecordIds||[])];
-  const selected=records.filter(r=>ids.includes(r.id));
-  if(!selected.length) return showToast('No guards are selected.');
-  const targetLocation=String(document.getElementById('transferTargetLocation')?.value||'').trim();
-  const targetStation=String(document.getElementById('transferTargetStation')?.value||'').trim();
-  const reason=String(document.getElementById('transferReason')?.value||'').trim();
-  const sources=transferSourceSummary(selected);
-  if(selected.every(r=>String(r.clientproject||'').trim()===target) && !targetLocation && !targetStation){
-    return showToast('All selected guards are already assigned to this Client / Sector.');
-  }
-  const sourceText=sources.map(([k,n])=>`${k} (${n})`).join(', ');
-  const locationText=targetLocation||'Keep current city/region';
-  const stationText=targetStation||'Keep current station';
-  const ok=confirm(`Transfer ${selected.length} guard(s)?\n\nFrom: ${sourceText}\nTo: ${target}\nCity/Region: ${locationText}\nStation: ${stationText}\n\nThe employee records will be updated in one database batch. Continue?`);
-  if(!ok) return;
-
-  const batchId='TR-'+Date.now()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
-  const now=firebase.firestore.FieldValue.serverTimestamp();
-  const batchSize=400;
-  let moved=0;
-  let updateError=null;
-
-  try{
-    // Each Firestore batch is atomic. We deliberately finish the record update first;
-    // audit/history failures must NEVER make already-transferred guards appear lost.
-    for(let i=0;i<selected.length;i+=batchSize){
-      const chunk=selected.slice(i,i+batchSize);
-      const batch=db.batch();
-      chunk.forEach(r=>{
-        const ref=db.collection(RECORDS_COLLECTION).doc(r.id);
-        const update={
-          clientproject:target,
-          updatedAt:now,
-          lastTransferBatchId:batchId,
-          lastTransferAt:now,
-          lastTransferFrom:String(r.clientproject||''),
-          lastTransferBy:(currentUser.email||'').toLowerCase()
-        };
-        if(targetLocation) update.location=targetLocation;
-        if(targetStation) update.deployloc=targetStation;
-        batch.update(ref,update);
-      });
-      await batch.commit();
-      moved += chunk.length;
-    }
-
-    // Verify the moved records before clearing the selection.
-    let verified=0;
-    for(let i=0;i<selected.length;i+=30){
-      const chunk=selected.slice(i,i+30);
-      const snap=await db.collection(RECORDS_COLLECTION)
-        .where(firebase.firestore.FieldPath.documentId(),'in',chunk.map(r=>r.id))
-        .get();
-      snap.docs.forEach(d=>{
-        if(String((d.data()||{}).clientproject||'').trim()===target) verified++;
-      });
-    }
-    if(verified!==selected.length){
-      throw new Error(`Transfer verification failed: ${verified} of ${selected.length} records are in the destination. No additional records were changed.`);
-    }
-
-    const historyPayload={
-      batchId,
-      fromSummary:sources,
-      toClient:target,
-      toLocation:targetLocation||'',
-      toStation:targetStation||'',
-      guardCount:selected.length,
-      guardIds:selected.map(r=>r.id).slice(0,1000),
-      guardNames:selected.map(r=>r.name||'').slice(0,1000),
-      reason,
-      performedBy:(currentUser.email||'').toLowerCase(),
-      createdAt:firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    // History/audit are secondary logging operations. If their rules are not yet
-    // published, the transfer itself remains successful and the user gets a clear warning.
-    const logWarnings=[];
-    try{
-      await db.collection(TRANSFER_HISTORY_COLLECTION).add(historyPayload);
-    }catch(e){
-      console.warn('Transfer succeeded but history could not be saved:',e);
-      logWarnings.push('Transfer History permission is not configured yet.');
-    }
-    try{
-      await writeAuditLog('BULK_TRANSFER',batchId,{count:selected.length,from:sources,toClient:target,toLocation:targetLocation,toStation:targetStation,reason});
-    }catch(e){
-      console.warn('Transfer succeeded but audit log could not be saved:',e);
-      logWarnings.push('Audit Trail permission is not configured yet.');
-    }
-
-    window.selectedRecordIds=new Set();
-    closeTransferModal();
-    // onSnapshot normally refreshes automatically; force a render as well so the
-    // destination assignment is visible immediately.
-    await new Promise(r=>setTimeout(r,250));
-    renderTable();
-    if(logWarnings.length){
-      showToast(`${moved} guard(s) transferred successfully. ${logWarnings.join(' ')}`);
-    }else{
-      showToast(`${moved} guard(s) transferred successfully to ${target}.`);
-    }
-  }catch(err){
-    console.error(err);
-    showToast('Transfer failed: '+(err.message||err));
-  }
-}
-
-function formatTransferSources(v){
-  if(Array.isArray(v)) return v.map(x=>Array.isArray(x)?`${x[0]} (${x[1]})`:String(x)).join(', ');
-  return String(v||'');
-}
-function subscribeTransferHistory(){
-  if(transferHistoryUnsub){transferHistoryUnsub();transferHistoryUnsub=null;}
-  if(!isParent()) return;
-  transferHistoryUnsub=db.collection(TRANSFER_HISTORY_COLLECTION).orderBy('createdAt','desc').limit(300).onSnapshot(snap=>{
-    window.transferHistory=snap.docs.map(d=>({id:d.id,...d.data()}));
-    renderTransferHistory();
-  },err=>{
-    console.error(err);
-    const el=document.getElementById('transferHistoryTbody');
-    if(el) el.innerHTML=`<tr><td colspan="6">Could not load transfer history: ${escapeHtml(err.message||'Unknown error')}</td></tr>`;
-  });
-}
-function loadTransferHistory(){subscribeTransferHistory();}
-function renderTransferHistory(){
-  const tbody=document.getElementById('transferHistoryTbody'); if(!tbody) return;
-  const q=(document.getElementById('transferHistorySearch')?.value||'').trim().toLowerCase();
-  const rows=(window.transferHistory||[]).filter(x=>{
-    if(!q) return true;
-    return [formatTransferSources(x.fromSummary),x.toClient,x.toLocation,x.toStation,x.performedBy,x.batchId,x.reason,(x.guardNames||[]).join(' ')].some(v=>String(v||'').toLowerCase().includes(q));
-  });
-  tbody.innerHTML=rows.map(x=>`<tr>
-    <td>${escapeHtml(formatAuditTime(x.createdAt))}<div class="audit-meta">${escapeHtml(x.batchId||'')}</div></td>
-    <td>${escapeHtml(formatTransferSources(x.fromSummary)||'—')}</td>
-    <td>${escapeHtml(x.toClient||'—')}</td>
-    <td><strong>${Number(x.guardCount)||0}</strong></td>
-    <td>${escapeHtml(x.performedBy||'—')}</td>
-    <td>${escapeHtml(x.toLocation||'Keep')} / ${escapeHtml(x.toStation||'Keep')}</td>
-  </tr>`).join('') || '<tr><td colspan="6">No transfer history found.</td></tr>';
-}
-
-function resetRegisterFilters(){
-  ['searchBox','filterDateFrom','filterDateTo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  ['filterClient','filterLocation','filterSupervisor','filterStatus'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  const sf=document.getElementById('sortField'); if(sf) sf.value='sno'; const so=document.getElementById('sortOrder'); if(so) so.value='asc';
-  window.selectedRecordIds=new Set(); renderTable();
+  document.getElementById('pagerLabel').textContent = `Page ${currentPage} of ${totalPages}`;
+  updateBulkBar();
 }
 
 function escapeHtml(str){
@@ -2307,95 +2288,100 @@ function findImportColumn(headers, aliases){
   return -1;
 }
 
-let pendingImport = null;
-function closeImportPreview(){ pendingImport=null; const m=document.getElementById('importPreviewModal'); if(m)m.style.display='none'; }
-function importKey(v){ return String(v||'').trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
-function validateImportRows(imported){
-  const byMsm=new Map(), byCnic=new Map();
-  records.forEach(r=>{
-    const m=importKey(r.msmno), c=importKey(r.cnic);
-    if(m) byMsm.set(m,r.id); if(c) byCnic.set(c,r.id);
-  });
-  const seenMsm=new Set(), seenCnic=new Set();
-  return imported.map((rec,idx)=>{
-    const reasons=[]; const m=importKey(rec.msmno), c=importKey(rec.cnic);
-    if(!rec.name) reasons.push('Guard name missing');
-    if(!rec.cnic) reasons.push('CNIC missing');
-    if(m && seenMsm.has(m)) reasons.push('Duplicate MSM No. inside file');
-    if(c && seenCnic.has(c)) reasons.push('Duplicate CNIC inside file');
-    if(m && byMsm.has(m)) reasons.push('MSM No. already exists — will update');
-    if(c && byCnic.has(c) && (!m || byCnic.get(c)!==byMsm.get(m))) reasons.push('CNIC belongs to another existing record');
-    if(m) seenMsm.add(m); if(c) seenCnic.add(c);
-    const blocked=reasons.some(x=>/missing|another existing|duplicate/i.test(x));
-    return {...rec,__row:idx+1,__ok:!blocked,__reason:reasons.join('; ')||'Ready to add'};
-  });
-}
-function showImportPreview(rows,fileName){
-  pendingImport={rows,fileName};
-  const valid=rows.filter(r=>r.__ok).length, blocked=rows.length-valid;
-  document.getElementById('importPreviewSubtitle').textContent=`${fileName} — review before writing to the database`;
-  document.getElementById('importPreviewSummary').innerHTML=`<div class="transfer-card"><span>Total rows</span><b>${rows.length}</b></div><div class="transfer-card"><span>Ready</span><b>${valid}</b></div><div class="transfer-card"><span>Blocked</span><b>${blocked}</b></div>`;
-  document.getElementById('importPreviewTbody').innerHTML=rows.slice(0,500).map(r=>`<tr><td>${r.__row}</td><td>${escapeHtml(r.name||'—')}</td><td>${escapeHtml(r.cnic||'—')}</td><td>${escapeHtml(r.msmno||'—')}</td><td>${escapeHtml(r.clientproject||'—')}</td><td>${r.__ok?'✅ Ready':'❌ Blocked'}</td><td>${escapeHtml(r.__reason)}</td></tr>`).join('');
-  const btn=document.getElementById('confirmImportBtn'); btn.disabled=valid===0; btn.textContent=valid?`Confirm ${valid} Valid Row(s)`:'Nothing to Import';
-  document.getElementById('importPreviewModal').style.display='flex';
-}
 function importLongRoll(file){
   if(!file) return;
-  if(!isParent()){ showToast('Bulk import is restricted to the Parent user.'); const input=document.getElementById('longRollImport'); if(input) input.value=''; return; }
-  if(typeof XLSX==='undefined'){ showToast('Excel library is not available.'); return; }
-  const reader=new FileReader();
-  reader.onload=function(e){
+  if(typeof XLSX === 'undefined'){
+    showToast('Excel library is not available.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e){
     try{
-      const wb=XLSX.read(e.target.result,{type:'array',cellDates:false}); const ws=wb.Sheets[wb.SheetNames[0]];
-      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}); if(!aoa.length){showToast('The selected file is empty.');return;}
-      let headerRow=0,bestScore=-1;
-      for(let r=0;r<Math.min(10,aoa.length);r++){const score=aoa[r].reduce((n,v)=>{const h=normalizeHeader(v);return n+(Object.values(IMPORT_ALIASES).some(list=>list.some(a=>normalizeHeader(a)===h))?1:0);},0);if(score>bestScore){bestScore=score;headerRow=r;}}
-      const headers=aoa[headerRow],colMap={}; for(const key of Object.keys(IMPORT_ALIASES)) colMap[key]=findImportColumn(headers,IMPORT_ALIASES[key]);
+      const wb = XLSX.read(e.target.result, {type:'array', cellDates:false});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const aoa = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+      if(!aoa.length){ showToast('The selected file is empty.'); return; }
+
+      // Find the most likely header row (supports a title row above the real headers).
+      let headerRow = 0, bestScore = -1;
+      for(let r=0; r<Math.min(10,aoa.length); r++){
+        const score = aoa[r].reduce((n,v)=>{
+          const h=normalizeHeader(v);
+          return n + (Object.values(IMPORT_ALIASES).some(list=>list.some(a=>normalizeHeader(a)===h)) ? 1 : 0);
+        },0);
+        if(score>bestScore){bestScore=score;headerRow=r;}
+      }
+      const headers = aoa[headerRow];
+      const colMap = {};
+      for(const key of Object.keys(IMPORT_ALIASES)) colMap[key]=findImportColumn(headers, IMPORT_ALIASES[key]);
+
       const imported=[];
       for(let r=headerRow+1;r<aoa.length;r++){
-        const row=aoa[r]; if(!row||row.every(v=>String(v??'').trim()===''))continue;
-        const rec={}; for(const key of Object.keys(IMPORT_ALIASES)){const idx=colMap[key];rec[key]=idx>=0?String(row[idx]??'').trim():'';}
-        if(!rec.name&&!rec.cnic&&!rec.msmno)continue;
-        rec.clientproject=rec.clientproject||''; imported.push(rec);
+        const row=aoa[r];
+        if(!row || row.every(v=>String(v??'').trim()==='')) continue;
+        const rec={};
+        for(const key of Object.keys(IMPORT_ALIASES)){
+          const idx=colMap[key];
+          rec[key]=idx>=0 ? String(row[idx]??'').trim() : '';
+        }
+        if(!rec.name && !rec.cnic && !rec.msmno) continue;
+        imported.push(rec);
       }
-      if(!imported.length){showToast('No employee rows were found. Check the Long Roll headers.');return;}
-      imported.forEach(rec=>{rec.clientproject=rec.clientproject||myClientProject();});
-      showImportPreview(validateImportRows(imported),file.name||'Import file');
-    }catch(err){console.error(err);showToast('Could not read this Long Roll file: '+err.message);}finally{const input=document.getElementById('longRollImport');if(input)input.value='';}
-  }; reader.readAsArrayBuffer(file);
-}
-async function confirmLongRollImport(){
-  if(!isParent()||!pendingImport)return;
-  const rows=pendingImport.rows.filter(r=>r.__ok); if(!rows.length)return;
-  const btn=document.getElementById('confirmImportBtn'); btn.disabled=true; btn.textContent='Importing…';
-  try{
-    const existingByMsm=new Map(records.map(r=>[importKey(r.msmno),r])); const existingByCnic=new Map(records.map(r=>[importKey(r.cnic),r]));
-    let nextSno=records.length?Math.max(...records.map(r=>Number(r.sno)||0))+1:1,added=0,updated=0;
-    for(let i=0;i<rows.length;i+=400){
-      const batch=db.batch();
-      rows.slice(i,i+400).forEach(rec=>{
-        const m=importKey(rec.msmno),c=importKey(rec.cnic); const existing=(m&&existingByMsm.get(m))||(c&&existingByCnic.get(c));
-        const clean={...rec}; delete clean.__row; delete clean.__ok; delete clean.__reason;
-        clean.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
-        if(existing){batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id),clean);updated++;}
-        else{const ref=db.collection(RECORDS_COLLECTION).doc();batch.set(ref,{sno:clean.sno?(Number(clean.sno)||nextSno):nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),...clean});nextSno++;added++;}
-      });
-      await batch.commit();
-    }
-    try{await writeAuditLog('BULK_IMPORT',rows.length,{count:rows.length,added,updated,sourceFile:pendingImport.fileName||''});}catch(e){console.warn('Import succeeded; audit write failed:',e);}
-    closeImportPreview(); showToast(`Import complete: ${added} added, ${updated} updated, ${rows.length} valid rows.`); renderTable();
-  }catch(err){console.error(err);showToast('Import failed before completion: '+err.message);}finally{btn.disabled=false;}
-}
+      if(!imported.length){ showToast('No employee rows were found. Check the Long Roll headers.'); return; }
 
-function getFilteredRecordsForExport(){
-  const q=(document.getElementById('searchBox')?.value||'').trim().toLowerCase();
-  const client=document.getElementById('filterClient')?.value||'', loc=document.getElementById('filterLocation')?.value||'', sup=document.getElementById('filterSupervisor')?.value||'', status=document.getElementById('filterStatus')?.value||'';
-  const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
-  const arr=records.filter(r=>{
-    const hay=[r.name,r.cnic,r.msmno,r.cell,r.clientproject,r.location,r.deployloc,r.supervisor,r.unitrank].join(' ').toLowerCase();
-    if(q&&!hay.includes(q))return false; if(client&&String(r.clientproject||'')!==client)return false; if(loc&&String(r.location||r.deployloc||'')!==loc)return false; if(sup&&String(r.supervisor||'')!==sup)return false; if(status&&String(r.newold||'').toLowerCase()!==status.toLowerCase())return false;
-    const d=String(r.doe||r.enrolldate||r.joining||'').slice(0,10); if(from&&(!d||d<from))return false; if(to&&(!d||d>to))return false; return true;
-  }); return arr;
+      if(!isParent()){
+        // Client-role users can only ever import rows into their own tenant.
+        imported.forEach(rec => rec.clientproject = myClientProject());
+      }
+
+      const existingByMsm = new Map(records.map(r=>[String(r.msmno||'').trim(), r]));
+      let nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
+
+      const CHUNK = 400; // stay under Firestore's 500-write batch limit
+      let added=0, updated=0, i=0;
+
+      function runChunk(){
+        const batch = db.batch();
+        const slice = imported.slice(i, i+CHUNK);
+        slice.forEach(rec=>{
+          const key = String(rec.msmno||'').trim();
+          const existing = key ? existingByMsm.get(key) : null;
+          if(existing){
+            batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id), rec);
+            updated++;
+          }else{
+            const docRef = db.collection(RECORDS_COLLECTION).doc();
+            const sno = rec.sno ? (Number(rec.sno)||nextSno) : nextSno;
+            batch.set(docRef, {sno, ...rec});
+            if(key) existingByMsm.set(key, {id:docRef.id});
+            nextSno++;
+            added++;
+          }
+        });
+        i += CHUNK;
+        return batch.commit().then(()=>{
+          if(i < imported.length) return runChunk();
+        });
+      }
+
+      runChunk().then(()=>{
+        showToast(`Imported ${imported.length} rows — ${added} added, ${updated} updated.`);
+      }).catch(err=>{
+        console.error(err);
+        showToast('Import partly failed: ' + err.message);
+      }).finally(()=>{
+        const input=document.getElementById('longRollImport');
+        if(input) input.value='';
+      });
+      return; // async chunks handle their own finally above
+    }catch(err){
+      console.error(err);
+      showToast('Could not import this Long Roll file.');
+      const input=document.getElementById('longRollImport');
+      if(input) input.value='';
+    }
+  };
+  reader.readAsArrayBuffer(file);
 }
 
 /* ===================== Export to Excel (matches Long_roll_Format.xlsx) ===================== */
@@ -2405,12 +2391,11 @@ function exportExcel(){
     return;
   }
   const company = document.getElementById('companyName').value.trim() || 'Company';
-  const client = document.getElementById('filterClient').value.trim() || 'All Clients';
+  const client = document.getElementById('clientName').value.trim() || 'All Clients';
   const titleRow = [`Long Roll — ${company} — ${client}`];
 
   const header = COLUMNS.map(c=>c.label);
-  const visible = getFilteredRecordsForExport();
-  const rows = visible.map(r => COLUMNS.map(c => r[c.key] ?? ''));
+  const rows = records.map(r => COLUMNS.map(c => r[c.key] ?? ''));
 
   const aoa = [titleRow, header, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -2426,7 +2411,7 @@ function exportExcel(){
   const safeClient = client.replace(/[\\\/:*?"<>|]+/g,'-');
   const filename = `${safeClient}_Long_Roll_${dateStr}.xlsx`;
   XLSX.writeFile(wb, filename);
-  showToast(`Exported ${visible.length} filtered record(s): ${filename}`);
+  showToast(`Exported: ${filename}`);
 }
 
 /* ===================== Print — Employee Enrollment Form ===================== */
@@ -2441,35 +2426,41 @@ function printRecordForm(id){
   doPrint();
 }
 async function doPrint(){
-  try{
-    await populatePrintTemplate();
-    const template=document.getElementById('printFormTemplate');
-    template.style.display='block';
-
-    // Wait for every image used by the print layout and for browser fonts.
-    const images=[...template.querySelectorAll('img')];
-    await Promise.all(images.map(img=>{
-      if(img.complete){
-        return img.decode ? img.decode().catch(()=>{}) : Promise.resolve();
-      }
-      return new Promise(resolve=>{
-        img.onload=resolve; img.onerror=resolve;
-      });
-    }));
-    if(document.fonts && document.fonts.ready) await document.fonts.ready;
-
-    fitPrintValues();
-
-    // Give the browser one paint cycle so dynamically created verification
-    // pages/canvases are included in the print tree before opening the dialog.
-    await new Promise(requestAnimationFrame);
-    await new Promise(resolve=>setTimeout(resolve,80));
-
-    window.print();
-  }catch(err){
-    console.error('Print preparation failed:',err);
-    showToast('Print could not be prepared. Please try again.');
+  populatePrintTemplate();
+  document.getElementById('printFormTemplate').style.display='block';
+  fitPrintValues();
+  // Wait for an uploaded police-verification document to finish rendering before
+  // opening the browser print dialog, preventing a blank third page. This covers
+  // BOTH cases: a PDF (rendered to <canvas> by PDF.js) and a plain JPG/PNG image
+  // (which needs its own decode to complete before the print snapshot is taken).
+  await new Promise(resolve=>setTimeout(resolve,120));
+  const pdfPage=document.getElementById('pf_policeVerifPage');
+  const verifDoc = getPrintData().policeVerifDoc;
+  if(pdfPage && verifDoc && verifDoc.startsWith('data:application/pdf')){
+    await new Promise(resolve=>{
+      const check=()=>{ if(pdfPage.querySelector('canvas') || pdfPage.textContent.includes('could not be rendered')) resolve(); else setTimeout(check,80); };
+      check();
+    });
+  } else if(pdfPage && verifDoc && verifDoc.startsWith('data:image')){
+    await new Promise(resolve=>{
+      const check=()=>{
+        const img = pdfPage.querySelector('img');
+        if(img && img.complete && img.naturalWidth > 0) resolve(); else setTimeout(check,60);
+      };
+      check();
+    });
   }
+  // Also make sure the employee photo (if any) has finished decoding into the
+  // passport-photo box before printing, using the same completeness check.
+  const photoEl = document.getElementById('pf_employeePhoto');
+  if(photoEl && photoEl.getAttribute('src')){
+    await new Promise(resolve=>{
+      const check=()=>{ if(photoEl.complete && photoEl.naturalWidth > 0) resolve(); else setTimeout(check,60); };
+      check();
+    });
+  }
+  fitPrintValues();
+  setTimeout(()=>{ window.print(); }, 80);
 }
 
 function getPrintData(){
@@ -2481,7 +2472,7 @@ function getPrintData(){
   return readForm();
 }
 
-async function populatePrintTemplate(){
+function populatePrintTemplate(){
   const d = getPrintData();
   const formatDate = (val) => {
     if(!val) return '';
@@ -2505,14 +2496,28 @@ async function populatePrintTemplate(){
   const photoEl = document.getElementById('pf_employeePhoto');
   if(d.photoData && d.photoData.startsWith('data:image')){
     photoFrame.style.display='block';
-    photoEl.src = d.photoData;
     const ps = normalizePhotoSettings(d.photoSettings);
-    photoEl.style.objectPosition='50% 50%';
-    photoEl.style.transform=`translate(${ps.x/2}%, ${ps.y/2}%) scale(${ps.scale})`;
-    photoEl.style.transformOrigin='center center';
-    photoEl.style.width='100%';
-    photoEl.style.height='100%';
-    photoEl.style.objectFit='cover';
+    // Mirror the New Entry photo adjuster's own math exactly, using the actual
+    // frame pixel size (not object-fit:cover), so the passport photo always lands
+    // fully inside the printed box at the right zoom/position, never overflowing it.
+    const img = new Image();
+    img.onload = () => {
+      const frameW = photoFrame.clientWidth || photoFrame.offsetWidth;
+      const frameH = photoFrame.clientHeight || photoFrame.offsetHeight;
+      const baseScale = Math.max(frameW / img.naturalWidth, frameH / img.naturalHeight);
+      const scale = baseScale * ps.scale;
+      const px = (ps.x/100) * frameW;
+      const py = (ps.y/100) * frameH;
+      photoEl.style.width = img.naturalWidth + 'px';
+      photoEl.style.height = img.naturalHeight + 'px';
+      photoEl.style.left = '50%';
+      photoEl.style.top = '50%';
+      photoEl.style.objectFit = 'unset';
+      photoEl.style.transformOrigin = 'center center';
+      photoEl.style.transform = `translate(calc(-50% + ${px}px), calc(-50% + ${py}px)) scale(${scale})`;
+    };
+    img.src = d.photoData;
+    photoEl.src = d.photoData;
   } else {
     photoEl.removeAttribute('src');
     photoFrame.style.display = 'none';
@@ -2534,16 +2539,8 @@ async function populatePrintTemplate(){
     document.getElementById('printFormTemplate').appendChild(page);
     if(d.policeVerifDoc.startsWith('data:image')){
       img.src=d.policeVerifDoc;
-      if(img.decode){
-        try{ await img.decode(); }catch(_e){}
-      } else {
-        await new Promise(resolve=>{
-          if(img.complete) resolve();
-          else { img.onload=resolve; img.onerror=resolve; }
-        });
-      }
     } else {
-      await renderPolicePdfForPrint(d.policeVerifDoc, img, page);
+      renderPolicePdfForPrint(d.policeVerifDoc, img, page);
     }
   }
 }
@@ -2552,83 +2549,61 @@ async function renderPolicePdfForPrint(dataUrl, imgEl, pageEl){
   try{
     if(!window.pdfjsLib) throw new Error('PDF renderer is not loaded');
     pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
-
-    const raw=atob(dataUrl.split(',')[1]);
-    const bytes=new Uint8Array(raw.length);
-    for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
-
+    const raw=atob(dataUrl.split(',')[1]); const bytes=new Uint8Array(raw.length); for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
     const pdf=await pdfjsLib.getDocument({data:bytes}).promise;
-
-    // Render every PDF page into an actual print page. Nothing is sent to
-    // window.print() until all canvases have finished rendering.
+    // First page is the official printable verification page. If the certificate
+    // itself has multiple pages, add each page as another print page automatically.
     for(let i=1;i<=pdf.numPages;i++){
       const target=i===1?pageEl:document.createElement('div');
-
-      if(i>1){
-        target.className='pf-print-page';
-        target.style.background='#fff';
-        target.id='pf_policeVerifPage_'+i;
-        document.getElementById('printFormTemplate').appendChild(target);
-      }
-
+      if(i>1){target.className='pf-print-page'; target.style.background='#fff'; target.id='pf_policeVerifPage_'+i; document.getElementById('printFormTemplate').appendChild(target);}
       const canvas=document.createElement('canvas');
       const page=await pdf.getPage(i);
       const base=page.getViewport({scale:1});
       const scale=Math.min(816/base.width,1056/base.height);
       const viewport=page.getViewport({scale});
-
-      canvas.width=Math.ceil(viewport.width);
-      canvas.height=Math.ceil(viewport.height);
-      canvas.style.position='absolute';
-      canvas.style.left='50%';
-      canvas.style.top='50%';
-      canvas.style.transform='translate(-50%,-50%)';
-      canvas.style.maxWidth='100%';
-      canvas.style.maxHeight='100%';
-
+      canvas.width=Math.ceil(viewport.width); canvas.height=Math.ceil(viewport.height);
+      canvas.style.position='absolute'; canvas.style.left='50%'; canvas.style.top='50%'; canvas.style.transform='translate(-50%,-50%)'; canvas.style.maxWidth='100%'; canvas.style.maxHeight='100%';
       await page.render({canvasContext:canvas.getContext('2d'),viewport}).promise;
-
-      if(i===1) imgEl.replaceWith(canvas);
-      else target.appendChild(canvas);
-
-      target.dataset.ready='1';
+      if(i===1){ imgEl.replaceWith(canvas); } else target.appendChild(canvas);
     }
   }catch(err){
     pageEl.innerHTML='<div style="padding:36px;font-family:Arial,sans-serif;color:#9B3A31;font-size:16px;text-align:center;">Police Verification PDF could not be rendered for printing.<br><small>Please re-upload the certificate or use an image (JPG/PNG).</small></div>';
-    pageEl.dataset.ready='error';
     console.error('Police verification PDF render error:',err);
   }
 }
 
+/* PRINT_FONT_CONFIG: change ONLY these two numbers to fine-tune how the
+   manually typed data matches the printed form's own label font size —
+   no other code needs to change. Compare a fresh print to the paper form
+   and nudge baseSize up/down by 0.5px steps until they line up visually. */
+const PRINT_FONT_CONFIG = { baseSize: 12, minSize: 9 };
+
 function fitPrintValues(){
-  // The supplied artwork is 1232px wide and prints at 8.5in (816 CSS px).
-  // Keep entered values close to the artwork's own label font, then shrink
-  // only when a value would overflow its allotted printed line.
+  // Letter print width is 8.5in = 816 CSS px.
+  // Entered data starts at PRINT_FONT_CONFIG.baseSize (matched to the
+  // enrollment form's own printed field size) and is reduced only when the
+  // actual value is too long for its own printed line, preventing overlap.
   const PAGE_PX = 816;
-  const baseSize = 11;
-  const minSize = 8.5;
+  const { baseSize, minSize } = PRINT_FONT_CONFIG;
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
-
   document.querySelectorAll('#printFormTemplate .pf-value').forEach(el=>{
     const m = (el.getAttribute('style')||'').match(/width\s*:\s*([0-9.]+)%/);
     const maxWidth = m ? PAGE_PX * parseFloat(m[1]) / 100 : PAGE_PX;
-    const text = el.textContent || '';
     let size = baseSize;
-
+    const text = el.textContent || '';
     while(size > minSize){
       ctx.font = `400 ${size}px Arial`;
       if(ctx.measureText(text).width <= maxWidth - 3) break;
       size -= 0.25;
     }
-
     el.style.fontSize = size.toFixed(2) + 'px';
-    el.style.lineHeight = '1.05';
-    el.style.transform = 'translateY(-1px)';
+    el.style.transform = 'translateY(-2px)';
   });
 }
 
 window.addEventListener('beforeprint', ()=>{
+  populatePrintTemplate();
   document.getElementById('printFormTemplate').style.display='block';
   fitPrintValues();
 });
@@ -2654,5 +2629,17 @@ function showToast(msg){
    confirmed, which itself subscribes to the live Firestore data and
    renders the table. */
 </script>
+
+<!-- ============ CAMERA CAPTURE MODAL ============ -->
+<div id="cameraModal" style="display:none; position:fixed; inset:0; z-index:9999; background:rgba(20,25,32,0.82); align-items:center; justify-content:center; padding:20px;">
+  <div style="background:#fff; border-radius:14px; padding:20px; max-width:480px; width:100%; text-align:center; box-shadow:0 20px 60px rgba(0,0,0,0.3);">
+    <div style="font-family:Georgia,serif; font-size:16px; color:var(--navy); font-weight:700; margin-bottom:12px;">Take Photo</div>
+    <video id="cameraVideo" autoplay playsinline style="width:100%; border-radius:8px; background:#000; max-height:360px; object-fit:cover;"></video>
+    <div style="display:flex; gap:10px; justify-content:center; margin-top:14px;">
+      <button type="button" class="btn btn-primary" onclick="captureCameraPhoto()">📸 Capture</button>
+      <button type="button" class="btn btn-sm" onclick="closeCameraCapture()">Cancel</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>
