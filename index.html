@@ -2057,24 +2057,54 @@ async function confirmBulkTransfer(){
   const sourceText=sources.map(([k,n])=>`${k} (${n})`).join(', ');
   const locationText=targetLocation||'Keep current city/region';
   const stationText=targetStation||'Keep current station';
-  const ok=confirm(`Transfer ${selected.length} guard(s)?\n\nFrom: ${sourceText}\nTo: ${target}\nCity/Region: ${locationText}\nStation: ${stationText}\n\nThis will update the current assignment and create permanent transfer history. Continue?`);
+  const ok=confirm(`Transfer ${selected.length} guard(s)?\n\nFrom: ${sourceText}\nTo: ${target}\nCity/Region: ${locationText}\nStation: ${stationText}\n\nThe employee records will be updated in one database batch. Continue?`);
   if(!ok) return;
-  const batchSize=400;
+
   const batchId='TR-'+Date.now()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
+  const now=firebase.firestore.FieldValue.serverTimestamp();
+  const batchSize=400;
   let moved=0;
+  let updateError=null;
+
   try{
+    // Each Firestore batch is atomic. We deliberately finish the record update first;
+    // audit/history failures must NEVER make already-transferred guards appear lost.
     for(let i=0;i<selected.length;i+=batchSize){
+      const chunk=selected.slice(i,i+batchSize);
       const batch=db.batch();
-      selected.slice(i,i+batchSize).forEach(r=>{
+      chunk.forEach(r=>{
         const ref=db.collection(RECORDS_COLLECTION).doc(r.id);
-        const update={clientproject:target, updatedAt:firebase.firestore.FieldValue.serverTimestamp(), lastTransferBatchId:batchId};
+        const update={
+          clientproject:target,
+          updatedAt:now,
+          lastTransferBatchId:batchId,
+          lastTransferAt:now,
+          lastTransferFrom:String(r.clientproject||''),
+          lastTransferBy:(currentUser.email||'').toLowerCase()
+        };
         if(targetLocation) update.location=targetLocation;
         if(targetStation) update.deployloc=targetStation;
         batch.update(ref,update);
       });
       await batch.commit();
-      moved+=Math.min(batchSize, selected.length-i);
+      moved += chunk.length;
     }
+
+    // Verify the moved records before clearing the selection.
+    let verified=0;
+    for(let i=0;i<selected.length;i+=30){
+      const chunk=selected.slice(i,i+30);
+      const snap=await db.collection(RECORDS_COLLECTION)
+        .where(firebase.firestore.FieldPath.documentId(),'in',chunk.map(r=>r.id))
+        .get();
+      snap.docs.forEach(d=>{
+        if(String((d.data()||{}).clientproject||'').trim()===target) verified++;
+      });
+    }
+    if(verified!==selected.length){
+      throw new Error(`Transfer verification failed: ${verified} of ${selected.length} records are in the destination. No additional records were changed.`);
+    }
+
     const historyPayload={
       batchId,
       fromSummary:sources,
@@ -2088,12 +2118,34 @@ async function confirmBulkTransfer(){
       performedBy:(currentUser.email||'').toLowerCase(),
       createdAt:firebase.firestore.FieldValue.serverTimestamp()
     };
-    await db.collection(TRANSFER_HISTORY_COLLECTION).add(historyPayload);
-    await writeAuditLog('BULK_TRANSFER',batchId,{count:selected.length,from:sources,toClient:target,toLocation:targetLocation,toStation:targetStation,reason});
+
+    // History/audit are secondary logging operations. If their rules are not yet
+    // published, the transfer itself remains successful and the user gets a clear warning.
+    const logWarnings=[];
+    try{
+      await db.collection(TRANSFER_HISTORY_COLLECTION).add(historyPayload);
+    }catch(e){
+      console.warn('Transfer succeeded but history could not be saved:',e);
+      logWarnings.push('Transfer History permission is not configured yet.');
+    }
+    try{
+      await writeAuditLog('BULK_TRANSFER',batchId,{count:selected.length,from:sources,toClient:target,toLocation:targetLocation,toStation:targetStation,reason});
+    }catch(e){
+      console.warn('Transfer succeeded but audit log could not be saved:',e);
+      logWarnings.push('Audit Trail permission is not configured yet.');
+    }
+
     window.selectedRecordIds=new Set();
     closeTransferModal();
-    showToast(`${moved} guard(s) transferred successfully to ${target}.`);
+    // onSnapshot normally refreshes automatically; force a render as well so the
+    // destination assignment is visible immediately.
+    await new Promise(r=>setTimeout(r,250));
     renderTable();
+    if(logWarnings.length){
+      showToast(`${moved} guard(s) transferred successfully. ${logWarnings.join(' ')}`);
+    }else{
+      showToast(`${moved} guard(s) transferred successfully to ${target}.`);
+    }
   }catch(err){
     console.error(err);
     showToast('Transfer failed: '+(err.message||err));
