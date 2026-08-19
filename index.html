@@ -616,6 +616,14 @@
   .row-check{width:16px;height:16px;}
   @media(max-width:1000px){.register-controls{grid-template-columns:1fr 1fr;}}
   @media(max-width:650px){.register-controls{grid-template-columns:1fr;}.bulk-toolbar .selected-count{margin-left:0;width:100%;}}
+  .transfer-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0;}
+  .transfer-card{padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--paper);}
+  .transfer-card b{display:block;font-size:18px;margin-top:3px;}
+  .transfer-source-list{max-height:160px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;}
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:9999;display:none;align-items:center;justify-content:center;padding:18px;}
+  .modal-card{width:min(720px,100%);max-height:92vh;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.25);padding:20px;}
+  @media(max-width:650px){.transfer-summary{grid-template-columns:1fr;}}
+
 </style>
 </head>
 <body>
@@ -889,6 +897,7 @@
         <button class="btn btn-sm" onclick="selectAllVisible(true)">☑ Select All Visible</button>
         <button class="btn btn-sm" onclick="selectAllVisible(false)">☐ Clear Selection</button>
         <button class="btn btn-sm btn-danger" id="bulkDeleteBtn" style="display:none;" onclick="bulkDeleteSelected()">🗑 Delete Selected</button>
+        <button class="btn btn-sm btn-primary" id="bulkTransferBtn" style="display:none;" onclick="openTransferModal()">↔ Transfer Selected</button>
         <button class="btn btn-sm" onclick="resetRegisterFilters()">↺ Reset Filters</button>
         <span class="selected-count" id="selectedCount">0 selected</span>
       </div>
@@ -1017,10 +1026,48 @@
           <tbody id="auditTbody"><tr><td colspan="5">Loading audit trail…</td></tr></tbody>
         </table>
       </div>
+      <div class="helper-note" style="margin-top:24px;">
+        <strong>Transfer History:</strong> Permanent movement history for bulk client/sector transfers. Original client and deployment details are preserved in each history entry.
+      </div>
+      <div class="audit-toolbar">
+        <input id="transferHistorySearch" placeholder="Search from/to client, Gmail, guard or batch..." oninput="renderTransferHistory()">
+        <button class="btn btn-sm" onclick="loadTransferHistory()">↻ Refresh Transfer History</button>
+      </div>
+      <div class="table-wrap">
+        <table class="register audit-table">
+          <thead><tr><th>Date / Time</th><th>From</th><th>To</th><th>Guards</th><th>Performed By</th><th>Location Change</th></tr></thead>
+          <tbody id="transferHistoryTbody"><tr><td colspan="6">Loading transfer history…</td></tr></tbody>
+        </table>
+      </div>
     </div>
 
   </div>
 </main>
+
+<!-- ============ PARENT BULK TRANSFER MODAL ============ -->
+<div id="transferModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="transferModalTitle">
+  <div class="modal-card">
+    <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
+      <div>
+        <h2 id="transferModalTitle" style="margin:0 0 4px;">Bulk Guard Transfer</h2>
+        <div style="font-size:12px;color:var(--ink-soft);">Parent only — records are moved, not deleted or recreated.</div>
+      </div>
+      <button class="btn btn-sm" onclick="closeTransferModal()">✕ Close</button>
+    </div>
+    <div id="transferSummary" class="transfer-summary"></div>
+    <div class="grid">
+      <div class="field"><label>New Client / Sector <span class="req">*</span></label><select id="transferTargetClient"></select></div>
+      <div class="field"><label>New City / Region (optional)</label><input id="transferTargetLocation" placeholder="Leave blank to keep each guard's current location"></div>
+      <div class="field"><label>New Deployment Station (optional)</label><input id="transferTargetStation" placeholder="Leave blank to keep each guard's station"></div>
+      <div class="field wide"><label>Transfer Reason / Order Reference (optional)</label><input id="transferReason" placeholder="e.g. Sector redistribution / client instruction / deployment order"></div>
+    </div>
+    <div id="transferSourceList" class="transfer-source-list"></div>
+    <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:16px;">
+      <button class="btn" onclick="closeTransferModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="confirmBulkTransfer()">↔ Confirm Transfer</button>
+    </div>
+  </div>
+</div>
 
 <footer class="foot">
   Data is saved to the shared cloud register and synced for every authorized Gmail account. Use <strong>Import Long Roll (.xlsx)</strong> to load an existing register (including hundreds of employees), or <strong>Export Long Roll (.xlsx)</strong> to save a copy or share it — rename the file per client using the Client / Project field above.
@@ -1246,6 +1293,9 @@ const EXTRA_KEYS = ['co','mother','domicile','education2','blood','height','mari
 const RECORDS_COLLECTION = 'records';
 const AUTHUSERS_COLLECTION = 'authorizedUsers';
 const AUDIT_COLLECTION = 'auditLogs';
+const TRANSFER_HISTORY_COLLECTION = 'transferHistory';
+let transferHistoryUnsub = null;
+window.transferHistory = [];
 const META_KEY = 'longRollRegister_branding_v1'; // branding only (logo/company name) — not sensitive, kept per-device
 let records = [];
 let editingId = null;
@@ -1290,7 +1340,7 @@ function startApp(){
   }
 
   subscribeRecords();
-  if(isParent()){ subscribeAdminUsers(); subscribeAuditLogs(); }
+  if(isParent()){ subscribeAdminUsers(); subscribeAuditLogs(); subscribeTransferHistory(); }
   resetForm();
   switchTab('form');
 }
@@ -1382,7 +1432,7 @@ function switchTab(tab){
     if(el) el.style.display = tab===v ? 'block' : 'none';
   });
   if(tab==='register') renderTable();
-  if(tab==='audit') renderAuditLogs();
+  if(tab==='audit'){ renderAuditLogs(); renderTransferHistory(); }
 }
 
 /* ===================== Photo / document uploads ===================== */
@@ -1938,7 +1988,7 @@ function selectAllVisible(checked){
   window.selectedRecordIds=window.selectedRecordIds||new Set(); arr.forEach(r=>checked?window.selectedRecordIds.add(r.id):window.selectedRecordIds.delete(r.id)); renderTable();
 }
 function updateSelectionUI(){
-  const n=window.selectedRecordIds?window.selectedRecordIds.size:0; const el=document.getElementById('selectedCount'); if(el) el.textContent=`${n} selected`; const b=document.getElementById('bulkDeleteBtn'); if(b) b.style.display=isParent()&&n?'inline-flex':'none';
+  const n=window.selectedRecordIds?window.selectedRecordIds.size:0; const el=document.getElementById('selectedCount'); if(el) el.textContent=`${n} selected`; const b=document.getElementById('bulkDeleteBtn'); if(b) b.style.display=isParent()&&n?'inline-flex':'none'; const t=document.getElementById('bulkTransferBtn'); if(t) t.style.display=isParent()&&n?'inline-flex':'none';
 }
 async function bulkDeleteSelected(){
   if(!isParent()) return showToast('Only Parent can delete selected records.');
@@ -1950,6 +2000,140 @@ async function bulkDeleteSelected(){
     window.selectedRecordIds=new Set(); showToast(`${ids.length} records deleted.`); renderTable();
   }catch(err){ console.error(err); showToast('Bulk delete failed: '+err.message); }
 }
+/* ===================== Parent: Bulk Client/Sector Transfer ===================== */
+function transferSourceSummary(selectedRecords){
+  const counts={};
+  selectedRecords.forEach(r=>{ const k=String(r.clientproject||'Unassigned').trim()||'Unassigned'; counts[k]=(counts[k]||0)+1; });
+  return Object.entries(counts).sort((a,b)=>b[1]-a[1]);
+}
+
+async function populateTransferTargets(){
+  const el=document.getElementById('transferTargetClient');
+  if(!el) return;
+  const values=new Set(records.map(r=>String(r.clientproject||'').trim()).filter(Boolean));
+  try{
+    const snap=await db.collection(AUTHUSERS_COLLECTION).get();
+    snap.docs.forEach(d=>{ const v=String((d.data()||{}).clientproject||'').trim(); if(v) values.add(v); });
+  }catch(e){ console.warn('Could not load authorized client list for transfer:',e); }
+  const current=[...values].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+  el.innerHTML='<option value="">Select new client / sector…</option>'+current.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+}
+
+function openTransferModal(){
+  if(!isParent()) return showToast('Only Parent can transfer guards between clients/sectors.');
+  const ids=[...(window.selectedRecordIds||[])];
+  const selected=records.filter(r=>ids.includes(r.id));
+  if(!selected.length) return showToast('Select at least one guard first.');
+  const summary=transferSourceSummary(selected);
+  const total=selected.length;
+  document.getElementById('transferSummary').innerHTML=`
+    <div class="transfer-card"><span>Selected Guards</span><b>${total}</b></div>
+    <div class="transfer-card"><span>Source Client(s)</span><b>${summary.length}</b></div>
+    <div class="transfer-card"><span>Transfer Type</span><b>Bulk</b></div>`;
+  document.getElementById('transferSourceList').innerHTML='<strong>Current assignment summary:</strong><br>'+summary.map(([k,n])=>`${escapeHtml(k)} — <strong>${n}</strong> guard${n===1?'':'s'}`).join('<br>');
+  document.getElementById('transferTargetLocation').value='';
+  document.getElementById('transferTargetStation').value='';
+  document.getElementById('transferReason').value='';
+  const modal=document.getElementById('transferModal');
+  modal.style.display='flex';
+  populateTransferTargets();
+}
+function closeTransferModal(){ const m=document.getElementById('transferModal'); if(m)m.style.display='none'; }
+
+async function confirmBulkTransfer(){
+  if(!isParent()) return showToast('Only Parent can perform transfers.');
+  const target=String(document.getElementById('transferTargetClient')?.value||'').trim();
+  if(!target) return showToast('Select the new Client / Sector.');
+  const ids=[...(window.selectedRecordIds||[])];
+  const selected=records.filter(r=>ids.includes(r.id));
+  if(!selected.length) return showToast('No guards are selected.');
+  const targetLocation=String(document.getElementById('transferTargetLocation')?.value||'').trim();
+  const targetStation=String(document.getElementById('transferTargetStation')?.value||'').trim();
+  const reason=String(document.getElementById('transferReason')?.value||'').trim();
+  const sources=transferSourceSummary(selected);
+  if(selected.every(r=>String(r.clientproject||'').trim()===target) && !targetLocation && !targetStation){
+    return showToast('All selected guards are already assigned to this Client / Sector.');
+  }
+  const sourceText=sources.map(([k,n])=>`${k} (${n})`).join(', ');
+  const locationText=targetLocation||'Keep current city/region';
+  const stationText=targetStation||'Keep current station';
+  const ok=confirm(`Transfer ${selected.length} guard(s)?\n\nFrom: ${sourceText}\nTo: ${target}\nCity/Region: ${locationText}\nStation: ${stationText}\n\nThis will update the current assignment and create permanent transfer history. Continue?`);
+  if(!ok) return;
+  const batchSize=400;
+  const batchId='TR-'+Date.now()+'-'+Math.random().toString(36).slice(2,8).toUpperCase();
+  let moved=0;
+  try{
+    for(let i=0;i<selected.length;i+=batchSize){
+      const batch=db.batch();
+      selected.slice(i,i+batchSize).forEach(r=>{
+        const ref=db.collection(RECORDS_COLLECTION).doc(r.id);
+        const update={clientproject:target, updatedAt:firebase.firestore.FieldValue.serverTimestamp(), lastTransferBatchId:batchId};
+        if(targetLocation) update.location=targetLocation;
+        if(targetStation) update.deployloc=targetStation;
+        batch.update(ref,update);
+      });
+      await batch.commit();
+      moved+=Math.min(batchSize, selected.length-i);
+    }
+    const historyPayload={
+      batchId,
+      fromSummary:sources,
+      toClient:target,
+      toLocation:targetLocation||'',
+      toStation:targetStation||'',
+      guardCount:selected.length,
+      guardIds:selected.map(r=>r.id).slice(0,1000),
+      guardNames:selected.map(r=>r.name||'').slice(0,1000),
+      reason,
+      performedBy:(currentUser.email||'').toLowerCase(),
+      createdAt:firebase.firestore.FieldValue.serverTimestamp()
+    };
+    await db.collection(TRANSFER_HISTORY_COLLECTION).add(historyPayload);
+    await writeAuditLog('BULK_TRANSFER',batchId,{count:selected.length,from:sources,toClient:target,toLocation:targetLocation,toStation:targetStation,reason});
+    window.selectedRecordIds=new Set();
+    closeTransferModal();
+    showToast(`${moved} guard(s) transferred successfully to ${target}.`);
+    renderTable();
+  }catch(err){
+    console.error(err);
+    showToast('Transfer failed: '+(err.message||err));
+  }
+}
+
+function formatTransferSources(v){
+  if(Array.isArray(v)) return v.map(x=>Array.isArray(x)?`${x[0]} (${x[1]})`:String(x)).join(', ');
+  return String(v||'');
+}
+function subscribeTransferHistory(){
+  if(transferHistoryUnsub){transferHistoryUnsub();transferHistoryUnsub=null;}
+  if(!isParent()) return;
+  transferHistoryUnsub=db.collection(TRANSFER_HISTORY_COLLECTION).orderBy('createdAt','desc').limit(300).onSnapshot(snap=>{
+    window.transferHistory=snap.docs.map(d=>({id:d.id,...d.data()}));
+    renderTransferHistory();
+  },err=>{
+    console.error(err);
+    const el=document.getElementById('transferHistoryTbody');
+    if(el) el.innerHTML=`<tr><td colspan="6">Could not load transfer history: ${escapeHtml(err.message||'Unknown error')}</td></tr>`;
+  });
+}
+function loadTransferHistory(){subscribeTransferHistory();}
+function renderTransferHistory(){
+  const tbody=document.getElementById('transferHistoryTbody'); if(!tbody) return;
+  const q=(document.getElementById('transferHistorySearch')?.value||'').trim().toLowerCase();
+  const rows=(window.transferHistory||[]).filter(x=>{
+    if(!q) return true;
+    return [formatTransferSources(x.fromSummary),x.toClient,x.toLocation,x.toStation,x.performedBy,x.batchId,x.reason,(x.guardNames||[]).join(' ')].some(v=>String(v||'').toLowerCase().includes(q));
+  });
+  tbody.innerHTML=rows.map(x=>`<tr>
+    <td>${escapeHtml(formatAuditTime(x.createdAt))}<div class="audit-meta">${escapeHtml(x.batchId||'')}</div></td>
+    <td>${escapeHtml(formatTransferSources(x.fromSummary)||'—')}</td>
+    <td>${escapeHtml(x.toClient||'—')}</td>
+    <td><strong>${Number(x.guardCount)||0}</strong></td>
+    <td>${escapeHtml(x.performedBy||'—')}</td>
+    <td>${escapeHtml(x.toLocation||'Keep')} / ${escapeHtml(x.toStation||'Keep')}</td>
+  </tr>`).join('') || '<tr><td colspan="6">No transfer history found.</td></tr>';
+}
+
 function resetRegisterFilters(){
   ['searchBox','filterDateFrom','filterDateTo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   ['filterClient','filterLocation','filterSupervisor','filterStatus'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
