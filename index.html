@@ -627,6 +627,7 @@
   @media(max-width:650px){.transfer-summary{grid-template-columns:1fr;}}
 
 
+.audit-toolbar label input{box-sizing:border-box;width:100%;}.audit-toolbar select,.audit-toolbar input{min-width:0;}@media(max-width:850px){.audit-toolbar{grid-template-columns:1fr!important;}.audit-toolbar label{display:block!important;}.audit-toolbar label input{margin-top:3px;}}
 .dashboard-grid{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:12px 0}.dash-card{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:0 4px 14px rgba(0,0,0,.05)}.dash-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}.dash-card strong{display:block;font-size:24px;margin-top:4px}@media(max-width:900px){.dashboard-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
@@ -670,6 +671,17 @@
         </svg>
         Continue with Google / Gmail
       </button>
+
+      <div style="margin:12px 0 8px;text-align:center;">
+        <button type="button" class="btn btn-sm" onclick="togglePasswordLogin()" id="passwordLoginToggle">Use Email &amp; Password instead</button>
+      </div>
+      <div id="passwordLoginBox" style="display:none;max-width:420px;margin:10px auto 0;">
+        <input id="loginEmail" type="email" autocomplete="username" placeholder="Authorized email" style="width:100%;margin-bottom:8px;">
+        <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;margin-bottom:8px;">
+        <button class="btn btn-primary" type="button" onclick="doPasswordSignIn()" style="width:100%;">Sign in with Email &amp; Password</button>
+        <button class="btn btn-sm" type="button" onclick="sendPasswordReset()" style="width:100%;margin-top:6px;">Forgot / Reset Password</button>
+        <div style="font-size:11px;color:var(--ink-soft);margin-top:7px;text-align:center;">Google Sign-In remains the default. Password login works only for Firebase Authentication accounts with Email/Password enabled.</div>
+      </div>
 
       <div id="msmLoginError"></div>
       <div class="msm-login-note">
@@ -1014,6 +1026,9 @@
         </div>
       </div>
       <div style="margin-top:14px;"><button class="btn btn-primary" onclick="addAuthorizedUser()">+ Add Gmail access</button></div>
+      <div class="helper-note" style="margin-top:10px;">
+        <strong>Login method:</strong> Google/Gmail remains the default and requires no password. Optional Email/Password sign-in is available on the login screen for Firebase Authentication accounts. Passwords are never stored in this database. A Parent should create/provision password accounts through Firebase Authentication/Admin tooling, then add the same email here as an authorized user.
+      </div>
 
       <div class="form-section-title" style="margin-top:30px;"><span class="idx">✓</span>Currently authorized</div>
       <div class="table-wrap">
@@ -1027,16 +1042,39 @@
     <!-- ============ AUDIT TRAIL VIEW (parent only) ============ -->
     <div id="view-audit" style="display:none;">
       <div class="helper-note">
-        <strong>Audit Trail:</strong> Parent/Admin only. This records successful sign-ins, record create/update/delete actions, and access-management changes with the acting Gmail and server timestamp.
+        <strong>Unified Activity Log:</strong> Parent/Admin only. Create, Update, Delete, Bulk Delete, Transfer, Import, Export, Sign-In and access-management actions are kept in <strong>one activity log</strong>. Nothing is split into a separate delete-log file. Use the filters below to view activity by date/time, client/sector, action or user.
       </div>
-      <div class="audit-toolbar">
-        <input id="auditSearch" placeholder="Search action, Gmail, employee, CNIC, client/project..." oninput="renderAuditLogs()">
+      <div class="audit-toolbar" style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;">
+        <input id="auditSearch" placeholder="Search guard, CNIC, Gmail, client, location..." oninput="renderAuditLogs()">
+        <select id="auditActionFilter" onchange="renderAuditLogs()">
+          <option value="">All Actions</option>
+          <option value="SIGN_IN">Sign In</option>
+          <option value="CREATE_RECORD">Create Record</option>
+          <option value="UPDATE_RECORD">Update Record</option>
+          <option value="DELETE_RECORD">Delete Record</option>
+          <option value="BULK_DELETE">Bulk Delete</option>
+          <option value="BULK_TRANSFER">Bulk Transfer</option>
+          <option value="BULK_IMPORT">Bulk Import</option>
+          <option value="EXPORT">Export</option>
+          <option value="ADD_ACCESS">Add Access</option>
+          <option value="REMOVE_ACCESS">Remove Access</option>
+        </select>
+        <select id="auditClientFilter" onchange="renderAuditLogs()"><option value="">All Clients / Sectors</option></select>
+        <input id="auditUserFilter" placeholder="Filter by Gmail..." oninput="renderAuditLogs()">
+        <label style="font-size:11px;display:flex;flex-direction:column;gap:3px;">From date/time<input id="auditFrom" type="datetime-local" onchange="renderAuditLogs()"></label>
+        <label style="font-size:11px;display:flex;flex-direction:column;gap:3px;">To date/time<input id="auditTo" type="datetime-local" onchange="renderAuditLogs()"></label>
+        <select id="auditSort" onchange="renderAuditLogs()">
+          <option value="desc">Newest → Oldest</option>
+          <option value="asc">Oldest → Newest</option>
+        </select>
+        <button class="btn btn-sm" onclick="resetAuditFilters()">Reset Filters</button>
         <button class="btn btn-sm" onclick="loadAuditLogs()">↻ Refresh</button>
       </div>
+      <div id="auditFilterSummary" class="helper-note" style="margin-top:8px;">Showing 0 activity entries.</div>
       <div class="table-wrap">
         <table class="register audit-table">
           <thead><tr><th>Date / Time</th><th>Action</th><th>User</th><th>Record / Target</th><th>Details</th></tr></thead>
-          <tbody id="auditTbody"><tr><td colspan="5">Loading audit trail…</td></tr></tbody>
+          <tbody id="auditTbody"><tr><td colspan="5">Loading activity log…</td></tr></tbody>
         </table>
       </div>
       <div class="helper-note" style="margin-top:24px;">
@@ -1262,14 +1300,37 @@ function initFirebase(){
   });
 }
 
+function togglePasswordLogin(){
+  const box=document.getElementById('passwordLoginBox');
+  const btn=document.getElementById('passwordLoginToggle');
+  const show=box && box.style.display==='none';
+  if(box) box.style.display=show?'block':'none';
+  if(btn) btn.textContent=show?'Use Google / Gmail instead':'Use Email & Password instead';
+}
+function showLoginError(message){
+  const el=document.getElementById('msmLoginError');
+  if(!el) return;
+  el.textContent=message;
+  el.style.display='block';
+}
 function doGoogleSignIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
   document.getElementById('msmLoginError').style.display='none';
-  auth.signInWithPopup(provider).catch(err=>{
-    const el = document.getElementById('msmLoginError');
-    el.textContent = 'Sign-in failed: ' + err.message;
-    el.style.display='block';
-  });
+  auth.signInWithPopup(provider).catch(err=>showLoginError('Google sign-in failed: ' + err.message));
+}
+function doPasswordSignIn(){
+  const email=(document.getElementById('loginEmail')?.value||'').trim().toLowerCase();
+  const password=document.getElementById('loginPassword')?.value||'';
+  if(!email || !password){ showLoginError('Enter your authorized email and password.'); return; }
+  document.getElementById('msmLoginError').style.display='none';
+  auth.signInWithEmailAndPassword(email,password).catch(err=>showLoginError('Password sign-in failed: ' + err.message));
+}
+function sendPasswordReset(){
+  const email=(document.getElementById('loginEmail')?.value||'').trim().toLowerCase();
+  if(!email){ showLoginError('Enter the authorized email first.'); return; }
+  auth.sendPasswordResetEmail(email)
+    .then(()=>showLoginError('Password reset email sent if this email has a Firebase Authentication account.'))
+    .catch(err=>showLoginError('Could not send reset email: ' + err.message));
 }
 function doSignOut(){
   auth.signOut();
@@ -1828,6 +1889,10 @@ function auditDetailsText(details){
   catch(e){return String(details);}
 }
 
+function writeExportAudit(details){
+  return writeAuditLog('EXPORT', 'export', details || {});
+}
+
 function writeAuditLog(action, targetId, details){
   if(!currentUser || !currentAccess || !db) return Promise.resolve();
   const payload = {
@@ -1852,36 +1917,71 @@ function formatAuditTime(v){
   return d.toLocaleString();
 }
 
+function auditDateMs(v){
+  if(!v) return 0;
+  try{ if(v.toDate) return v.toDate().getTime(); if(v.seconds) return Number(v.seconds)*1000; const t=Date.parse(v); return isNaN(t)?0:t; }catch(e){ return 0; }
+}
+function auditClientOf(x){
+  return String(x.clientproject || x.details || '').toLowerCase();
+}
+function refreshAuditClientFilter(){
+  const el=document.getElementById('auditClientFilter'); if(!el) return;
+  const current=el.value;
+  const vals=[...new Set((window.auditLogs||[]).map(x=>String(x.clientproject||'').trim()).filter(Boolean))]
+    .sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
+  el.innerHTML='<option value="">All Clients / Sectors</option>'+vals.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
+  if(vals.includes(current)) el.value=current;
+}
 function subscribeAuditLogs(){
   if(auditUnsub){auditUnsub(); auditUnsub=null;}
   if(!isParent()) return;
-  auditUnsub = db.collection(AUDIT_COLLECTION).orderBy('createdAt','desc').limit(300).onSnapshot(snap=>{
+  auditUnsub = db.collection(AUDIT_COLLECTION).orderBy('createdAt','desc').limit(1000).onSnapshot(snap=>{
     window.auditLogs = snap.docs.map(d=>({id:d.id,...d.data()}));
+    refreshAuditClientFilter();
     renderAuditLogs();
   }, err=>{
     console.error(err);
     const el=document.getElementById('auditTbody');
-    if(el) el.innerHTML=`<tr><td colspan="5">Could not load audit trail: ${escapeHtml(err.message||'Unknown error')}</td></tr>`;
+    if(el) el.innerHTML=`<tr><td colspan="5">Could not load activity log: ${escapeHtml(err.message||'Unknown error')}</td></tr>`;
   });
 }
-
 function loadAuditLogs(){ subscribeAuditLogs(); }
-
+function resetAuditFilters(){
+  ['auditSearch','auditUserFilter','auditFrom','auditTo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['auditActionFilter','auditClientFilter','auditSort'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=id==='auditSort'?'desc':'';});
+  renderAuditLogs();
+}
 function renderAuditLogs(){
-  const tbody=document.getElementById('auditTbody');
-  if(!tbody) return;
+  const tbody=document.getElementById('auditTbody'); if(!tbody) return;
   const q=(document.getElementById('auditSearch')?.value||'').trim().toLowerCase();
-  const rows=(window.auditLogs||[]).filter(x=>{
-    if(!q) return true;
-    return [x.action,x.userEmail,x.targetId,x.details,x.clientproject,x.role].some(v=>String(v||'').toLowerCase().includes(q));
+  const action=(document.getElementById('auditActionFilter')?.value||'').trim();
+  const client=(document.getElementById('auditClientFilter')?.value||'').trim().toLowerCase();
+  const user=(document.getElementById('auditUserFilter')?.value||'').trim().toLowerCase();
+  const fromVal=document.getElementById('auditFrom')?.value||'';
+  const toVal=document.getElementById('auditTo')?.value||'';
+  const from=fromVal?new Date(fromVal).getTime():0;
+  const to=toVal?new Date(toVal).getTime():Infinity;
+  const sort=(document.getElementById('auditSort')?.value||'desc')==='asc'?'asc':'desc';
+  let rows=(window.auditLogs||[]).filter(x=>{
+    const t=auditDateMs(x.createdAt);
+    if(action && String(x.action||'')!==action) return false;
+    if(client && !auditClientOf(x).includes(client)) return false;
+    if(user && !String(x.userEmail||'').toLowerCase().includes(user)) return false;
+    if(from && t && t<from) return false;
+    if(to!==Infinity && t && t>to) return false;
+    if(q && ![x.action,x.userEmail,x.targetId,x.details,x.clientproject,x.role].some(v=>String(v||'').toLowerCase().includes(q))) return false;
+    return true;
   });
+  rows.sort((a,b)=>{const d=auditDateMs(a.createdAt)-auditDateMs(b.createdAt);return sort==='asc'?d:-d;});
+  const summary=document.getElementById('auditFilterSummary');
+  if(summary) summary.textContent=`Showing ${rows.length} activity entr${rows.length===1?'y':'ies'} from ${ (window.auditLogs||[]).length } loaded entries.`;
   tbody.innerHTML=rows.map(x=>`<tr>
     <td>${escapeHtml(formatAuditTime(x.createdAt))}</td>
     <td class="audit-action">${escapeHtml(x.action||'—')}</td>
     <td>${escapeHtml(x.userEmail||'—')}<div class="audit-meta">${escapeHtml(x.role||'')}</div></td>
     <td>${escapeHtml(x.targetId||'—')}</td>
     <td>${escapeHtml(x.details||'—')}<div class="audit-meta">${escapeHtml(x.clientproject||'')}</div></td>
-  </tr>`).join('') || '<tr><td colspan="5">No audit entries found.</td></tr>';
+  </tr>`).join('') || '<tr><td colspan="5">No activity entries match the selected filters.</td></tr>';
 }
 
 /* ===================== Save / Edit / Delete (Firestore) ===================== */
@@ -1899,13 +1999,13 @@ function saveEntry(){
   if(editingId){
     const targetId=editingId;
     db.collection(RECORDS_COLLECTION).doc(targetId).update(data)
-      .then(()=>writeAuditLog('UPDATE_RECORD', targetId, {name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||''}))
+      .then(()=>writeAuditLog('UPDATE_RECORD', targetId, {name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||'', location:data.location||'', deployloc:data.deployloc||'', supervisor:data.supervisor||''}))
       .then(()=>{ showToast('Record updated in the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
   } else {
     const nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
     db.collection(RECORDS_COLLECTION).add({sno: nextSno, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...data})
-      .then(docRef=>writeAuditLog('CREATE_RECORD', docRef.id, {sno:nextSno, name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||''}))
+      .then(docRef=>writeAuditLog('CREATE_RECORD', docRef.id, {sno:nextSno, name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||'', location:data.location||'', deployloc:data.deployloc||'', supervisor:data.supervisor||''}))
       .then(()=>{ showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
       .catch(err=>showToast('Could not save: ' + err.message));
   }
@@ -1927,7 +2027,7 @@ function deleteRecord(id){
   if(!rec) return;
   if(!confirm(`Delete record #${rec.sno} — ${rec.name}? This cannot be undone.`)) return;
   db.collection(RECORDS_COLLECTION).doc(id).delete()
-    .then(()=>writeAuditLog('DELETE_RECORD', id, {sno:rec.sno||'', name:rec.name||'', cnic:rec.cnic||'', clientproject:rec.clientproject||''}))
+    .then(()=>writeAuditLog('DELETE_RECORD', id, {sno:rec.sno||'', name:rec.name||'', cnic:rec.cnic||'', clientproject:rec.clientproject||'', location:rec.location||'', deployloc:rec.deployloc||'', supervisor:rec.supervisor||''}))
     .then(()=>showToast('Record deleted.'))
     .catch(err=>showToast('Could not delete: ' + err.message));
 }
