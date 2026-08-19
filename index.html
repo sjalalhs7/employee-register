@@ -601,6 +601,45 @@
 #msmLoginError{display:none;margin-top:13px;color:#9B3A31;font-size:12px;font-weight:650;line-height:1.45}
 
 
+
+/* ===== MSM Sector Portal / Post-login branded landing ===== */
+#sectorPortal{
+  position:relative;overflow:hidden;color:#fff;
+  background:linear-gradient(135deg,#031a10 0%,#07552d 48%,#0b2d52 100%);
+  border-bottom:4px solid #d2ad55;
+  box-shadow:0 8px 26px rgba(0,0,0,.22);
+}
+#sectorPortal::before{
+  content:"";position:absolute;inset:0;pointer-events:none;opacity:.16;
+  background:
+    radial-gradient(circle at 12% 30%,#fff 0 2px,transparent 3px),
+    radial-gradient(circle at 82% 24%,#d2ad55 0 2px,transparent 3px),
+    linear-gradient(90deg,transparent 0 45%,rgba(255,255,255,.08) 50%,transparent 55%);
+  background-size:90px 90px,120px 120px,100% 100%;
+}
+.sector-portal-inner{max-width:1180px;margin:0 auto;padding:22px 32px 18px;position:relative;z-index:1}
+.sector-bismillah{font-family:Amiri,Georgia,serif;text-align:center;font-size:27px;color:#f1d98a;text-shadow:0 2px 8px rgba(0,0,0,.45);margin-bottom:4px}
+.sector-darood{font-family:Amiri,Georgia,serif;text-align:center;font-size:14px;line-height:1.7;color:#f7f1dd;opacity:.96;max-width:900px;margin:0 auto}
+.sector-datetime{display:inline-flex;gap:12px;flex-wrap:wrap;justify-content:center;margin:10px auto 0;padding:6px 12px;border:1px solid rgba(255,255,255,.22);border-radius:20px;background:rgba(0,0,0,.22);font-size:11px}
+.sector-brand-row{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:13px;flex-wrap:wrap}
+.sector-brand-row img{width:48px;height:48px;object-fit:contain;background:#fff;border-radius:9px;padding:4px}
+.sector-designer{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:#f1d98a;font-weight:800}
+.sector-title{text-align:center;margin:9px 0 0;font-family:Georgia,serif;font-size:clamp(22px,4vw,34px);letter-spacing:1.2px;text-transform:uppercase;text-shadow:0 2px 8px rgba(0,0,0,.35)}
+.sector-subtitle{text-align:center;margin:4px 0 0;color:#e8e4d7;font-size:11px;letter-spacing:2px;text-transform:uppercase}
+.sector-badge-row{display:flex;justify-content:center;margin-top:12px}
+.sector-badge{display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:30px;background:rgba(255,255,255,.1);border:1px solid rgba(210,173,85,.72);font-size:12px;font-weight:800;box-shadow:0 4px 18px rgba(0,0,0,.18)}
+.sector-badge .dot{width:8px;height:8px;border-radius:50%;background:#7ff0aa;box-shadow:0 0 10px #7ff0aa}
+body.sector-rawalpindi #sectorPortal{background:linear-gradient(135deg,#07172b 0%,#173e67 48%,#0a5c45 100%)}
+body.sector-islamabad #sectorPortal{background:linear-gradient(135deg,#032719 0%,#075f38 48%,#0b3f57 100%)}
+body.sector-lahore #sectorPortal{background:linear-gradient(135deg,#26130b 0%,#6a3c0b 48%,#18384e 100%)}
+body.sector-karachi #sectorPortal{background:linear-gradient(135deg,#071e2a 0%,#075d6a 48%,#123a58 100%)}
+body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28405a 52%,#1a5143 100%)}
+@media(max-width:650px){
+ .sector-portal-inner{padding:16px 16px 14px}
+ .sector-bismillah{font-size:22px}.sector-darood{font-size:12px}
+ .sector-title{font-size:23px}.sector-brand-row{margin-top:10px}
+}
+
   /* ===== Audit Trail ===== */
   .audit-toolbar{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:12px 0;}
   .audit-toolbar input{min-width:260px;flex:1;max-width:520px;}
@@ -673,14 +712,14 @@
       </button>
 
       <div style="margin:12px 0 8px;text-align:center;">
-        <button type="button" class="btn btn-sm" onclick="togglePasswordLogin()" id="passwordLoginToggle">Use Email &amp; Password instead</button>
+        <button type="button" class="btn btn-sm" onclick="togglePasswordLogin()" id="passwordLoginToggle">Use Email &amp; Password</button>
       </div>
       <div id="passwordLoginBox" style="display:none;max-width:420px;margin:10px auto 0;">
         <input id="loginEmail" type="email" autocomplete="username" placeholder="Authorized email" style="width:100%;margin-bottom:8px;">
         <input id="loginPassword" type="password" autocomplete="current-password" placeholder="Password" style="width:100%;margin-bottom:8px;">
         <button class="btn btn-primary" type="button" onclick="doPasswordSignIn()" style="width:100%;">Sign in with Email &amp; Password</button>
         <button class="btn btn-sm" type="button" onclick="sendPasswordReset()" style="width:100%;margin-top:6px;">Forgot / Reset Password</button>
-        <div style="font-size:11px;color:var(--ink-soft);margin-top:7px;text-align:center;">Google Sign-In remains the default. Password login works only for Firebase Authentication accounts with Email/Password enabled.</div>
+        <div style="font-size:11px;color:var(--ink-soft);margin-top:7px;text-align:center;">Google/Gmail is the default. Email & Password works for an authorized Firebase Authentication account; the Parent controls who is authorized in Admin: Access.</div>
       </div>
 
       <div id="msmLoginError"></div>
@@ -710,6 +749,23 @@
 <!-- ============ MAIN APP (shown only once signed in + authorized) ============ -->
 <div id="appRoot" style="display:none;">
 
+
+<!-- ============ POST-LOGIN SECTOR PORTAL ============ -->
+<div id="sectorPortal" style="display:none;">
+  <div class="sector-portal-inner">
+    <div class="sector-bismillah">بِسْمِ اللهِ الرَّحْمٰنِ الرَّحِيْمِ</div>
+    <div class="sector-darood">اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ</div>
+    <div style="text-align:center"><div class="sector-datetime"><span id="sectorDate">DATE</span><span id="sectorTime">TIME</span></div></div>
+    <div class="sector-brand-row">
+      <img src="data:image/png;base64,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" alt="MSM">
+      <div class="sector-designer">DESIGNED BY: SYED JALAL HUSSAIN SHAH · HRMS MSM SECURITY COMPANY</div>
+    </div>
+    <div class="sector-title" id="sectorPortalTitle">MSM SECURITY COMPANY</div>
+    <div class="sector-subtitle" id="sectorPortalSubtitle">WELCOME TO THE MSM LONGROLL DATABASE</div>
+    <div class="sector-badge-row"><div class="sector-badge"><span class="dot"></span><span id="sectorPortalBadge">Authorized Sector Portal</span></div></div>
+  </div>
+</div>
+
 <div class="cover">
   <div class="cover-inner">
     <div class="cover-title">
@@ -719,7 +775,7 @@
     <div class="cover-meta">
       <div class="cover-field">
         <label>Client / Project</label>
-        <input id="clientName" placeholder="e.g. North Region – Islamabad Sector" />
+        <input id="clientName" placeholder="e.g. Rawalpindi Sector / Islamabad Sector" />
       </div>
       <div class="stamp">
         <span class="n" id="stampCount">0</span>
@@ -1265,6 +1321,8 @@ function showOnly(id){
   ['setupGate','loginGate','notAuthorizedGate','appRoot'].forEach(g=>{
     document.getElementById(g).style.display = (g===id) ? (g==='appRoot' ? 'block' : '') : 'none';
   });
+  const portal=document.getElementById('sectorPortal');
+  if(portal) portal.style.display=(id==='appRoot')?'block':'none';
 }
 
 function initFirebase(){
@@ -1408,7 +1466,44 @@ document.getElementById('companyName').addEventListener('change', persistMeta);
 function isParent(){ return currentAccess && currentAccess.role === 'parent'; }
 function myClientProject(){ return currentAccess ? (currentAccess.clientproject||'') : ''; }
 
+
+/* ===================== Sector-branded post-login portal ===================== */
+function normalizeSectorName(v){ return String(v||'').trim().replace(/\s+/g,' '); }
+function sectorThemeFor(name){
+  const n=normalizeSectorName(name).toLowerCase();
+  if(n.includes('rawalpindi')) return 'rawalpindi';
+  if(n.includes('islamabad')) return 'islamabad';
+  if(n.includes('lahore')) return 'lahore';
+  if(n.includes('karachi')) return 'karachi';
+  return 'other';
+}
+function updateSectorPortal(){
+  const portal=document.getElementById('sectorPortal');
+  if(!portal || !currentAccess) return;
+  const parent=isParent();
+  const sector=parent ? 'MSM HEAD OFFICE / PARENT CONTROL CENTER' : (normalizeSectorName(myClientProject()) || 'AUTHORIZED SECTOR');
+  const theme=parent ? 'other' : sectorThemeFor(sector);
+  document.body.classList.remove('sector-rawalpindi','sector-islamabad','sector-lahore','sector-karachi','sector-other');
+  document.body.classList.add('sector-'+theme);
+  portal.style.display='block';
+  const title=document.getElementById('sectorPortalTitle');
+  const sub=document.getElementById('sectorPortalSubtitle');
+  const badge=document.getElementById('sectorPortalBadge');
+  if(title) title.textContent=parent ? 'MSM SECURITY COMPANY' : sector.toUpperCase();
+  if(sub) sub.textContent=parent ? 'WELCOME TO THE MSM LONGROLL DATABASE · PARENT MASTER ACCESS' : 'WELCOME TO THE MSM LONGROLL DATABASE';
+  if(badge) badge.textContent=parent ? 'Parent Master Access · All Clients / Sectors' : 'Authorized Access · '+sector;
+  const tick=()=>{
+    const now=new Date();
+    const date=document.getElementById('sectorDate'), time=document.getElementById('sectorTime');
+    if(date) date.textContent='DATE: '+now.toLocaleDateString('en-PK',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    if(time) time.textContent='TIME: '+now.toLocaleTimeString('en-PK',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true})+' PKT';
+  };
+  tick();
+  clearInterval(window.sectorPortalClock); window.sectorPortalClock=setInterval(tick,1000);
+}
+
 function startApp(){
+  updateSectorPortal();
   const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='none';
   editingId = null;
   const meta = safeLoad(META_KEY, {});
