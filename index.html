@@ -624,6 +624,8 @@
   .modal-card{width:min(720px,100%);max-height:92vh;overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 60px rgba(0,0,0,.25);padding:20px;}
   @media(max-width:650px){.transfer-summary{grid-template-columns:1fr;}}
 
+
+.dashboard-grid{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:12px 0}.dash-card{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:0 4px 14px rgba(0,0,0,.05)}.dash-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}.dash-card strong{display:block;font-size:24px;margin-top:4px}@media(max-width:900px){.dashboard-grid{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -880,11 +882,20 @@
       <div class="register-toolbar">
         <span class="count-pill" id="rowCountPill">0 entries</span>
       </div>
+      <div class="dashboard-grid" id="registerDashboard">
+        <div class="dash-card"><span>Total</span><strong id="dashTotal">0</strong></div>
+        <div class="dash-card"><span>Active</span><strong id="dashActive">0</strong></div>
+        <div class="dash-card"><span>On Leave</span><strong id="dashLeave">0</strong></div>
+        <div class="dash-card"><span>Terminated</span><strong id="dashTerminated">0</strong></div>
+        <div class="dash-card"><span>Filtered</span><strong id="dashFiltered">0</strong></div>
+      </div>
       <div class="register-controls">
         <div class="control"><label>Global Search</label><input class="search-input" id="searchBox" placeholder="Name, CNIC, MSM No., client, location, mobile..." oninput="renderTable()"></div>
         <div class="control"><label>Client / Project</label><select id="filterClient" onchange="renderTable()"><option value="">All Clients</option></select></div>
         <div class="control"><label>Location</label><select id="filterLocation" onchange="renderTable()"><option value="">All Locations</option></select></div>
         <div class="control"><label>Supervisor</label><select id="filterSupervisor" onchange="renderTable()"><option value="">All Supervisors</option></select></div>
+        <div class="control"><label>Deployment Station</label><select id="filterStation" onchange="renderTable()"><option value="">All Stations</option></select></div>
+        <div class="control"><label>Rank / Unit</label><select id="filterRank" onchange="renderTable()"><option value="">All Ranks / Units</option></select></div>
         <div class="control"><label>Status / Type</label><select id="filterStatus" onchange="renderTable()"><option value="">All Status</option><option value="active">Active</option><option value="on-leave">On Leave</option><option value="terminated">Terminated</option><option value="new">New</option><option value="old">Old</option></select></div>
         <div class="control"><label>Sort By</label><select id="sortField" onchange="renderTable()">
           <option value="sno">S No.</option><option value="name">Guard Name</option><option value="clientproject">Client Name</option><option value="location">Location</option><option value="supervisor">Supervisor</option><option value="msmno">MSM No.</option><option value="cnic">CNIC</option><option value="doe">Employment Date</option><option value="createdAt">Created Date/Time</option><option value="updatedAt">Updated Date/Time</option>
@@ -1045,6 +1056,22 @@
 </main>
 
 <!-- ============ PARENT BULK TRANSFER MODAL ============ -->
+<div id="importPreviewModal" class="modal-backdrop" role="dialog" aria-modal="true" style="display:none;z-index:10001;">
+  <div class="modal-card" style="max-width:980px;width:96%;max-height:90vh;overflow:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+      <div><h2 style="margin:0 0 4px;">Bulk Import Preview</h2><div id="importPreviewSubtitle" class="muted"></div></div>
+      <button class="btn btn-sm" onclick="closeImportPreview()">Close</button>
+    </div>
+    <div id="importPreviewSummary" class="transfer-summary"></div>
+    <div style="overflow:auto;max-height:420px;border:1px solid var(--line);border-radius:10px;">
+      <table class="data-table" style="min-width:760px;"><thead><tr><th>Row</th><th>Name</th><th>CNIC</th><th>MSM No.</th><th>Client</th><th>Result</th><th>Reason</th></tr></thead><tbody id="importPreviewTbody"></tbody></table>
+    </div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:14px;">
+      <button class="btn" onclick="closeImportPreview()">Cancel</button>
+      <button id="confirmImportBtn" class="btn btn-brass" onclick="confirmLongRollImport()">Confirm Import</button>
+    </div>
+  </div>
+</div>
 <div id="transferModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="transferModalTitle">
   <div class="modal-card">
     <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;">
@@ -1917,7 +1944,7 @@ function uniqueFilterValues(key){
   return [...new Set(records.map(r=>String(r[key]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
 }
 function refreshRegisterFilters(){
-  const defs=[['filterClient','clientproject','All Clients'],['filterLocation','location','All Locations'],['filterSupervisor','supervisor','All Supervisors']];
+  const defs=[['filterClient','clientproject','All Clients'],['filterLocation','location','All Locations'],['filterSupervisor','supervisor','All Supervisors'],['filterStation','deployloc','All Stations'],['filterRank','unitrank','All Ranks / Units']];
   defs.forEach(([id,key,label])=>{
     const el=document.getElementById(id); if(!el) return;
     const current=el.value; const vals=uniqueFilterValues(key);
@@ -1931,12 +1958,22 @@ function getSortValue(r,key){
   if(key==='doe') { const t=Date.parse(String(r[key]||'')); return isNaN(t)?String(r[key]||'').toLowerCase():t; }
   return String(r[key]??'').toLowerCase();
 }
+function updateRegisterDashboard(filtered){
+  const all=records||[];
+  const count=(arr,status)=>arr.filter(r=>normalizedStatus(r)===status).length;
+  const set=(id,val)=>{const el=document.getElementById(id); if(el) el.textContent=String(val);};
+  set('dashTotal',all.length);
+  set('dashActive',count(all,'active'));
+  set('dashLeave',count(all,'on-leave'));
+  set('dashTerminated',count(all,'terminated'));
+  set('dashFiltered',filtered.length);
+}
 function renderTable(){
   const thead = document.getElementById('theadRow');
   thead.innerHTML = `<th><input class="row-check" type="checkbox" title="Select all visible" onchange="selectAllVisible(this.checked)"></th>` + COLUMNS.map(c=>`<th class="sort-head">${escapeHtml(c.label)}</th>`).join('') + '<th>Actions</th>';
   refreshRegisterFilters();
   const q = (document.getElementById('searchBox')?.value||'').trim().toLowerCase();
-  const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
+  const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fstation=document.getElementById('filterStation')?.value||'', frank=document.getElementById('filterRank')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
   const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
   const searchKeys=['name','cnic','clientproject','supervisor','msmno','location','cell','deployloc','unitrank'];
   let filtered=records.filter(r=>{
@@ -1944,6 +1981,8 @@ function renderTable(){
     if(fc && String(r.clientproject||'')!==fc) return false;
     if(fl && String(r.location||'')!==fl) return false;
     if(fs && String(r.supervisor||'')!==fs) return false;
+    if(fstation && String(r.deployloc||'')!==fstation) return false;
+    if(frank && String(r.unitrank||'')!==frank) return false;
     if(fst && normalizedStatus(r)!==fst) return false;
     const dateVal=String(r.doe||'').slice(0,10);
     if(from && dateVal && dateVal<from) return false;
@@ -1958,6 +1997,7 @@ function renderTable(){
     if(typeof av==='number'&&typeof bv==='number') cmp=av-bv; else cmp=String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'});
     return sortOrder==='desc' ? -cmp : cmp;
   });
+  updateRegisterDashboard(filtered);
   const selected=new Set(window.selectedRecordIds||[]);
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = filtered.map(r=>{
@@ -1978,11 +2018,11 @@ function toggleRecordSelection(id,checked){
 function selectAllVisible(checked){
   if(!isParent()){ showToast('Only Parent can use bulk selection.'); return; }
   const q=(document.getElementById('searchBox')?.value||'').trim().toLowerCase();
-  const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
+  const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fstation=document.getElementById('filterStation')?.value||'', frank=document.getElementById('filterRank')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
   const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
   const arr=records.filter(r=>{
     if(q && !['name','cnic','clientproject','supervisor','msmno','location','cell','deployloc','unitrank'].some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
-    if(fc&&String(r.clientproject||'')!==fc) return false; if(fl&&String(r.location||'')!==fl) return false; if(fs&&String(r.supervisor||'')!==fs) return false; if(fst&&normalizedStatus(r)!==fst) return false;
+    if(fc&&String(r.clientproject||'')!==fc) return false; if(fl&&String(r.location||'')!==fl) return false; if(fs&&String(r.supervisor||'')!==fs) return false; if(fstation&&String(r.deployloc||'')!==fstation) return false; if(frank&&String(r.unitrank||'')!==frank) return false; if(fst&&normalizedStatus(r)!==fst) return false;
     const d=String(r.doe||'').slice(0,10); if(from&&d&&d<from)return false; if(to&&d&&d>to)return false; return true;
   });
   window.selectedRecordIds=window.selectedRecordIds||new Set(); arr.forEach(r=>checked?window.selectedRecordIds.add(r.id):window.selectedRecordIds.delete(r.id)); renderTable();
@@ -2267,101 +2307,95 @@ function findImportColumn(headers, aliases){
   return -1;
 }
 
+let pendingImport = null;
+function closeImportPreview(){ pendingImport=null; const m=document.getElementById('importPreviewModal'); if(m)m.style.display='none'; }
+function importKey(v){ return String(v||'').trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
+function validateImportRows(imported){
+  const byMsm=new Map(), byCnic=new Map();
+  records.forEach(r=>{
+    const m=importKey(r.msmno), c=importKey(r.cnic);
+    if(m) byMsm.set(m,r.id); if(c) byCnic.set(c,r.id);
+  });
+  const seenMsm=new Set(), seenCnic=new Set();
+  return imported.map((rec,idx)=>{
+    const reasons=[]; const m=importKey(rec.msmno), c=importKey(rec.cnic);
+    if(!rec.name) reasons.push('Guard name missing');
+    if(!rec.cnic) reasons.push('CNIC missing');
+    if(m && seenMsm.has(m)) reasons.push('Duplicate MSM No. inside file');
+    if(c && seenCnic.has(c)) reasons.push('Duplicate CNIC inside file');
+    if(m && byMsm.has(m)) reasons.push('MSM No. already exists — will update');
+    if(c && byCnic.has(c) && (!m || byCnic.get(c)!==byMsm.get(m))) reasons.push('CNIC belongs to another existing record');
+    if(m) seenMsm.add(m); if(c) seenCnic.add(c);
+    const blocked=reasons.some(x=>/missing|another existing|duplicate/i.test(x));
+    return {...rec,__row:idx+1,__ok:!blocked,__reason:reasons.join('; ')||'Ready to add'};
+  });
+}
+function showImportPreview(rows,fileName){
+  pendingImport={rows,fileName};
+  const valid=rows.filter(r=>r.__ok).length, blocked=rows.length-valid;
+  document.getElementById('importPreviewSubtitle').textContent=`${fileName} — review before writing to the database`;
+  document.getElementById('importPreviewSummary').innerHTML=`<div class="transfer-card"><span>Total rows</span><b>${rows.length}</b></div><div class="transfer-card"><span>Ready</span><b>${valid}</b></div><div class="transfer-card"><span>Blocked</span><b>${blocked}</b></div>`;
+  document.getElementById('importPreviewTbody').innerHTML=rows.slice(0,500).map(r=>`<tr><td>${r.__row}</td><td>${escapeHtml(r.name||'—')}</td><td>${escapeHtml(r.cnic||'—')}</td><td>${escapeHtml(r.msmno||'—')}</td><td>${escapeHtml(r.clientproject||'—')}</td><td>${r.__ok?'✅ Ready':'❌ Blocked'}</td><td>${escapeHtml(r.__reason)}</td></tr>`).join('');
+  const btn=document.getElementById('confirmImportBtn'); btn.disabled=valid===0; btn.textContent=valid?`Confirm ${valid} Valid Row(s)`:'Nothing to Import';
+  document.getElementById('importPreviewModal').style.display='flex';
+}
 function importLongRoll(file){
   if(!file) return;
   if(!isParent()){ showToast('Bulk import is restricted to the Parent user.'); const input=document.getElementById('longRollImport'); if(input) input.value=''; return; }
-  if(typeof XLSX === 'undefined'){
-    showToast('Excel library is not available.');
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = function(e){
+  if(typeof XLSX==='undefined'){ showToast('Excel library is not available.'); return; }
+  const reader=new FileReader();
+  reader.onload=function(e){
     try{
-      const wb = XLSX.read(e.target.result, {type:'array', cellDates:false});
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const aoa = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
-      if(!aoa.length){ showToast('The selected file is empty.'); return; }
-
-      // Find the most likely header row (supports a title row above the real headers).
-      let headerRow = 0, bestScore = -1;
-      for(let r=0; r<Math.min(10,aoa.length); r++){
-        const score = aoa[r].reduce((n,v)=>{
-          const h=normalizeHeader(v);
-          return n + (Object.values(IMPORT_ALIASES).some(list=>list.some(a=>normalizeHeader(a)===h)) ? 1 : 0);
-        },0);
-        if(score>bestScore){bestScore=score;headerRow=r;}
-      }
-      const headers = aoa[headerRow];
-      const colMap = {};
-      for(const key of Object.keys(IMPORT_ALIASES)) colMap[key]=findImportColumn(headers, IMPORT_ALIASES[key]);
-
+      const wb=XLSX.read(e.target.result,{type:'array',cellDates:false}); const ws=wb.Sheets[wb.SheetNames[0]];
+      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}); if(!aoa.length){showToast('The selected file is empty.');return;}
+      let headerRow=0,bestScore=-1;
+      for(let r=0;r<Math.min(10,aoa.length);r++){const score=aoa[r].reduce((n,v)=>{const h=normalizeHeader(v);return n+(Object.values(IMPORT_ALIASES).some(list=>list.some(a=>normalizeHeader(a)===h))?1:0);},0);if(score>bestScore){bestScore=score;headerRow=r;}}
+      const headers=aoa[headerRow],colMap={}; for(const key of Object.keys(IMPORT_ALIASES)) colMap[key]=findImportColumn(headers,IMPORT_ALIASES[key]);
       const imported=[];
       for(let r=headerRow+1;r<aoa.length;r++){
-        const row=aoa[r];
-        if(!row || row.every(v=>String(v??'').trim()==='')) continue;
-        const rec={};
-        for(const key of Object.keys(IMPORT_ALIASES)){
-          const idx=colMap[key];
-          rec[key]=idx>=0 ? String(row[idx]??'').trim() : '';
-        }
-        if(!rec.name && !rec.cnic && !rec.msmno) continue;
-        imported.push(rec);
+        const row=aoa[r]; if(!row||row.every(v=>String(v??'').trim()===''))continue;
+        const rec={}; for(const key of Object.keys(IMPORT_ALIASES)){const idx=colMap[key];rec[key]=idx>=0?String(row[idx]??'').trim():'';}
+        if(!rec.name&&!rec.cnic&&!rec.msmno)continue;
+        rec.clientproject=rec.clientproject||''; imported.push(rec);
       }
-      if(!imported.length){ showToast('No employee rows were found. Check the Long Roll headers.'); return; }
-
-      if(!isParent()){
-        // Client-role users can only ever import rows into their own tenant.
-        imported.forEach(rec => rec.clientproject = myClientProject());
-      }
-
-      const existingByMsm = new Map(records.map(r=>[String(r.msmno||'').trim(), r]));
-      let nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
-
-      const CHUNK = 400; // stay under Firestore's 500-write batch limit
-      let added=0, updated=0, i=0;
-
-      function runChunk(){
-        const batch = db.batch();
-        const slice = imported.slice(i, i+CHUNK);
-        slice.forEach(rec=>{
-          const key = String(rec.msmno||'').trim();
-          const existing = key ? existingByMsm.get(key) : null;
-          if(existing){
-            batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id), rec);
-            updated++;
-          }else{
-            const docRef = db.collection(RECORDS_COLLECTION).doc();
-            const sno = rec.sno ? (Number(rec.sno)||nextSno) : nextSno;
-            batch.set(docRef, {sno, ...rec});
-            if(key) existingByMsm.set(key, {id:docRef.id});
-            nextSno++;
-            added++;
-          }
-        });
-        i += CHUNK;
-        return batch.commit().then(()=>{
-          if(i < imported.length) return runChunk();
-        });
-      }
-
-      runChunk().then(()=>{
-        writeAuditLog('BULK_IMPORT', imported.length, {count:imported.length, added, updated, sourceFile:file.name||''}).then(()=>showToast(`Imported ${imported.length} rows — ${added} added, ${updated} updated.`));
-      }).catch(err=>{
-        console.error(err);
-        showToast('Import partly failed: ' + err.message);
-      }).finally(()=>{
-        const input=document.getElementById('longRollImport');
-        if(input) input.value='';
+      if(!imported.length){showToast('No employee rows were found. Check the Long Roll headers.');return;}
+      imported.forEach(rec=>{rec.clientproject=rec.clientproject||myClientProject();});
+      showImportPreview(validateImportRows(imported),file.name||'Import file');
+    }catch(err){console.error(err);showToast('Could not read this Long Roll file: '+err.message);}finally{const input=document.getElementById('longRollImport');if(input)input.value='';}
+  }; reader.readAsArrayBuffer(file);
+}
+async function confirmLongRollImport(){
+  if(!isParent()||!pendingImport)return;
+  const rows=pendingImport.rows.filter(r=>r.__ok); if(!rows.length)return;
+  const btn=document.getElementById('confirmImportBtn'); btn.disabled=true; btn.textContent='Importing…';
+  try{
+    const existingByMsm=new Map(records.map(r=>[importKey(r.msmno),r])); const existingByCnic=new Map(records.map(r=>[importKey(r.cnic),r]));
+    let nextSno=records.length?Math.max(...records.map(r=>Number(r.sno)||0))+1:1,added=0,updated=0;
+    for(let i=0;i<rows.length;i+=400){
+      const batch=db.batch();
+      rows.slice(i,i+400).forEach(rec=>{
+        const m=importKey(rec.msmno),c=importKey(rec.cnic); const existing=(m&&existingByMsm.get(m))||(c&&existingByCnic.get(c));
+        const clean={...rec}; delete clean.__row; delete clean.__ok; delete clean.__reason;
+        clean.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+        if(existing){batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id),clean);updated++;}
+        else{const ref=db.collection(RECORDS_COLLECTION).doc();batch.set(ref,{sno:clean.sno?(Number(clean.sno)||nextSno):nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),...clean});nextSno++;added++;}
       });
-      return; // async chunks handle their own finally above
-    }catch(err){
-      console.error(err);
-      showToast('Could not import this Long Roll file.');
-      const input=document.getElementById('longRollImport');
-      if(input) input.value='';
+      await batch.commit();
     }
-  };
-  reader.readAsArrayBuffer(file);
+    try{await writeAuditLog('BULK_IMPORT',rows.length,{count:rows.length,added,updated,sourceFile:pendingImport.fileName||''});}catch(e){console.warn('Import succeeded; audit write failed:',e);}
+    closeImportPreview(); showToast(`Import complete: ${added} added, ${updated} updated, ${rows.length} valid rows.`); renderTable();
+  }catch(err){console.error(err);showToast('Import failed before completion: '+err.message);}finally{btn.disabled=false;}
+}
+
+function getFilteredRecordsForExport(){
+  const q=(document.getElementById('searchBox')?.value||'').trim().toLowerCase();
+  const client=document.getElementById('filterClient')?.value||'', loc=document.getElementById('filterLocation')?.value||'', sup=document.getElementById('filterSupervisor')?.value||'', status=document.getElementById('filterStatus')?.value||'';
+  const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
+  const arr=records.filter(r=>{
+    const hay=[r.name,r.cnic,r.msmno,r.cell,r.clientproject,r.location,r.deployloc,r.supervisor,r.unitrank].join(' ').toLowerCase();
+    if(q&&!hay.includes(q))return false; if(client&&String(r.clientproject||'')!==client)return false; if(loc&&String(r.location||r.deployloc||'')!==loc)return false; if(sup&&String(r.supervisor||'')!==sup)return false; if(status&&String(r.newold||'').toLowerCase()!==status.toLowerCase())return false;
+    const d=String(r.doe||r.enrolldate||r.joining||'').slice(0,10); if(from&&(!d||d<from))return false; if(to&&(!d||d>to))return false; return true;
+  }); return arr;
 }
 
 /* ===================== Export to Excel (matches Long_roll_Format.xlsx) ===================== */
@@ -2371,11 +2405,12 @@ function exportExcel(){
     return;
   }
   const company = document.getElementById('companyName').value.trim() || 'Company';
-  const client = document.getElementById('clientName').value.trim() || 'All Clients';
+  const client = document.getElementById('filterClient').value.trim() || 'All Clients';
   const titleRow = [`Long Roll — ${company} — ${client}`];
 
   const header = COLUMNS.map(c=>c.label);
-  const rows = records.map(r => COLUMNS.map(c => r[c.key] ?? ''));
+  const visible = getFilteredRecordsForExport();
+  const rows = visible.map(r => COLUMNS.map(c => r[c.key] ?? ''));
 
   const aoa = [titleRow, header, ...rows];
   const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -2391,7 +2426,7 @@ function exportExcel(){
   const safeClient = client.replace(/[\\\/:*?"<>|]+/g,'-');
   const filename = `${safeClient}_Long_Roll_${dateStr}.xlsx`;
   XLSX.writeFile(wb, filename);
-  showToast(`Exported: ${filename}`);
+  showToast(`Exported ${visible.length} filtered record(s): ${filename}`);
 }
 
 /* ===================== Print — Employee Enrollment Form ===================== */
