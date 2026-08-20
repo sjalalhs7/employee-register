@@ -1,44 +1,103 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+
     function signedIn() {
       return request.auth != null;
     }
 
+    function authEmail() {
+      return request.auth.token.email;
+    }
+
+    function userPath() {
+      return /databases/$(database)/documents/authorizedUsers/$(authEmail());
+    }
+
+    function authorized() {
+      return signedIn() && exists(userPath());
+    }
+
     function myUser() {
-      return get(/databases/$(database)/documents/authorizedUsers/$(request.auth.token.email));
+      return get(userPath());
     }
 
     function isParent() {
-      return signedIn() && myUser().data.role == 'parent';
+      return authorized() && myUser().data.role == 'parent';
     }
 
     function isClient() {
-      return signedIn() && myUser().data.role == 'client';
+      return authorized() && myUser().data.role == 'client';
     }
 
     function myClient() {
-      return myUser().data.clientproject;
+      return myUser().data.get('clientproject', '');
+    }
+
+    function mySector() {
+      return myUser().data.get('sector', '');
+    }
+
+    function recordInMyScope(data) {
+      return isClient()
+        && data.get('clientproject', '') == myClient()
+        && (mySector() == '' || data.get('sector', '') == mySector());
+    }
+
+    function auditOwnedByCaller() {
+      return authorized()
+        && request.resource.data.userEmail == authEmail()
+        && request.resource.data.role == myUser().data.role
+        && request.resource.data.get('clientproject', '') == myClient()
+        && (myUser().data.get('sector', '') == '' ||
+            request.resource.data.get('sector', '') == mySector());
     }
 
     match /authorizedUsers/{email} {
-      allow read: if signedIn() && (isParent() || email == request.auth.token.email);
+      allow read: if authorized() && (isParent() || email == authEmail());
       allow create, update, delete: if isParent();
     }
 
     match /records/{recordId} {
-      allow read: if isParent() || (isClient() && resource.data.clientproject == myClient());
-      allow create: if isParent() || (isClient() && request.resource.data.clientproject == myClient());
+      allow read: if isParent() || recordInMyScope(resource.data);
+
+      allow create: if isParent()
+                    || recordInMyScope(request.resource.data);
+
       allow update: if isParent()
-        || (isClient()
-            && resource.data.clientproject == myClient()
-            && request.resource.data.clientproject == myClient());
+                    || (recordInMyScope(resource.data)
+                        && recordInMyScope(request.resource.data));
+
+      // A normal delete is allowed only as part of moving the record
+      // into the Recycle Bin. Parent also has full delete control.
+      allow delete: if isParent()
+                    || recordInMyScope(resource.data);
+    }
+
+    match /recycleBin/{recycleId} {
+      // Parent can manage the complete Recycle Bin.
+      allow read: if isParent();
+
+      allow create: if isParent()
+                    || (
+                      recordInMyScope(request.resource.data.recordData)
+                      && request.resource.data.originalRecordId is string
+                      && get(
+                        /databases/$(database)/documents/records/$(request.resource.data.originalRecordId)
+                      ).data.clientproject == myClient()
+                    );
+
+      allow update: if false;
+
       allow delete: if isParent();
     }
 
     match /auditLogs/{logId} {
       allow read: if isParent();
-      allow create: if signedIn();
+
+      allow create: if isParent() || auditOwnedByCaller();
+
       allow update, delete: if false;
     }
 
@@ -46,6 +105,10 @@ service cloud.firestore {
       allow read: if isParent();
       allow create: if isParent();
       allow update, delete: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
