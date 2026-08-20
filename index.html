@@ -1086,7 +1086,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
       <div class="register-controls">
         <div class="control"><label>Global Search</label><input class="search-input" id="searchBox" placeholder="Name, CNIC, MSM No., client, location, mobile..." oninput="renderTable()"></div>
         <div class="control"><label>Client / Project</label><select id="filterClient" onchange="renderTable()"><option value="">All Clients</option></select></div>
-<div class="control"><label>Sector</label><select id="filterSector" onchange="msmSetSectorFilter(this.value)"><option value="">All Sectors</option><option value="Islamabad">Islamabad</option><option value="Rawalpindi">Rawalpindi</option><option value="KPK">KPK</option><option value="Other">Other Sectors</option></select></div>
+<div class="control"><label>Sector</label><select id="filterSector" onchange="msmSetSectorFilter(this.value)"><option value="">All Sectors</option></select></div>
         <div class="control"><label>Location</label><select id="filterLocation" onchange="renderTable()"><option value="">All Locations</option></select></div>
         <div class="control"><label>Supervisor</label><select id="filterSupervisor" onchange="renderTable()"><option value="">All Supervisors</option></select></div>
         <div class="control"><label>Deployment Station</label><select id="filterStation" onchange="renderTable()"><option value="">All Stations</option></select></div>
@@ -2991,21 +2991,32 @@ function showToast(msg){
    confirmed, which itself subscribes to the live Firestore data and
    renders the table. */
 
-/* ===================== MSM Phase-1 Enhancements (fixed placement) ===================== */
-/* ===================== MSM Phase-1 Enhancements ===================== */
+/* ===================== MSM Sector Catalog + Recycle Bin ===================== */
 const MSM_RECYCLE_COLLECTION = 'recycleBin';
+const MSM_SECTOR_COLLECTION = 'sectorCatalog';
+const MSM_DEFAULT_SECTORS = ['Islamabad','Rawalpindi','KPK','Chakwal'];
 window.msmActiveSector = 'full';
 window.msmRecycleUnsub = null;
-function msmSectorOf(r){
-  const raw=String((r&&r.sector)|| (r&&r.clientproject)||'').trim().toLowerCase();
-  if(raw.includes('islamabad')) return 'Islamabad';
-  if(raw.includes('rawalpindi')) return 'Rawalpindi';
-  if(raw.includes('kpk')||raw.includes('khyber')) return 'KPK';
-  return raw ? 'Other' : 'Other';
+window.msmSectorUnsub = null;
+window.msmSectorCatalog = [...MSM_DEFAULT_SECTORS];
+window.msmSectorLoading = false;
+
+function msmNormSectorName(v){
+  return String(v||'').trim().replace(/\\s+/g,' ').replace(/[^\\p{L}\\p{N} _-]/gu,'').trim();
 }
-function msmSectorKey(r){
-  const s=msmSectorOf(r).toLowerCase();
-  return s==='islamabad'?'islamabad':s==='rawalpindi'?'rawalpindi':s==='kpk'?'kpk':'other';
+function msmSectorKeyFromName(v){
+  return msmNormSectorName(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'other';
+}
+function msmSectorOf(r){
+  const raw=String((r&&r.sector)|| (r&&r.clientproject)||'').trim();
+  const low=raw.toLowerCase();
+  const hit=(window.msmSectorCatalog||[]).find(name=>low===String(name).toLowerCase() || low.includes(String(name).toLowerCase()));
+  return hit || (raw ? 'Other Sectors' : 'Other Sectors');
+}
+function msmSectorKey(r){ return msmSectorKeyFromName(msmSectorOf(r)); }
+function msmSectorByKey(key){
+  if(key==='full'||!key)return null;
+  return (window.msmSectorCatalog||[]).find(n=>msmSectorKeyFromName(n)===key) || null;
 }
 function msmInjectStyle(){
   if(document.getElementById('msmPhase1Style'))return;
@@ -3013,6 +3024,15 @@ function msmInjectStyle(){
     .sector-nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px auto 0;max-width:1080px}
     .sector-nav .btn{background:rgba(255,255,255,.10);color:#fff;border-color:rgba(210,173,85,.60);font-size:11px;padding:7px 11px}
     .sector-nav .btn:hover{background:rgba(255,255,255,.18);color:#fff}
+    .sector-nav .btn.active{background:rgba(210,173,85,.25);box-shadow:0 0 0 1px rgba(210,173,85,.35) inset}
+    .sector-manage{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px auto 0}
+    .sector-manage .btn{font-size:11px}
+    .sector-manager{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--paper);margin:12px 0}
+    .sector-manager-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .sector-manager-row input{flex:1;min-width:220px}
+    .sector-list{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+    .sector-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}
+    .sector-chip button{border:0;background:transparent;cursor:pointer;font-weight:700}
     .recycle-summary{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px;margin:12px 0}
     .recycle-card{padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
     .recycle-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase}
@@ -3020,19 +3040,76 @@ function msmInjectStyle(){
     @media(max-width:650px){.recycle-summary{grid-template-columns:1fr}}
   `;document.head.appendChild(s);
 }
+function msmPopulateSectorFilter(){
+  const fs=document.getElementById('filterSector'); if(!fs)return;
+  const current=fs.value;
+  fs.innerHTML='<option value="">All Sectors</option>'+(window.msmSectorCatalog||[]).map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('')+'<option value="Other Sectors">Other Sectors</option>';
+  if([...fs.options].some(o=>o.value===current))fs.value=current;
+}
+function msmRenderSectorNav(){
+  const nav=document.getElementById('msmParentSectorNav'); if(!nav)return;
+  const buttons=[`<button class="btn btn-sm ${msmActiveSector==='full'?'active':''}" onclick="msmOpenSector('full')">FULL DATABASE</button>`];
+  (window.msmSectorCatalog||[]).forEach(name=>{
+    const key=msmSectorKeyFromName(name); buttons.push(`<button class="btn btn-sm ${msmActiveSector===key?'active':''}" onclick="msmOpenSector('${key}')">${escapeHtml(name).toUpperCase()} SECTOR</button>`);
+  });
+  buttons.push(`<button class="btn btn-sm ${msmActiveSector==='other-sectors'?'active':''}" onclick="msmOpenSector('other-sectors')">OTHER SECTORS</button>`);
+  buttons.push(`<button class="btn btn-sm" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`);
+  nav.innerHTML=buttons.join('');
+}
+function msmRenderSectorManager(){
+  const box=document.getElementById('msmSectorManager'); if(!box||!isParent())return;
+  box.innerHTML=`<div class="helper-note"><strong>Manage Sectors:</strong> Add a sector name once. It will automatically appear as its own Parent section and in the Sector filter. You can add more later without changing the code.</div>
+    <div class="sector-manager-row"><input id="msmNewSectorName" class="search-input" placeholder="e.g. Chakwal, Lahore, Peshawar..." onkeydown="if(event.key==='Enter')msmAddSector()"><button class="btn btn-sm btn-primary" onclick="msmAddSector()">+ Add Sector</button></div>
+    <div class="sector-list">${(window.msmSectorCatalog||[]).map(n=>`<span class="sector-chip">${escapeHtml(n)} <button title="Remove sector" onclick="msmRemoveSector('${encodeURIComponent(n)}')">×</button></span>`).join('')}</div>`;
+}
+async function msmLoadSectorCatalog(){
+  if(!db || !isParent() || window.msmSectorLoading)return;
+  window.msmSectorLoading=true;
+  try{
+    const snap=await db.collection(MSM_SECTOR_COLLECTION).orderBy('name').get();
+    const names=snap.docs.map(d=>msmNormSectorName(d.data()?.name)).filter(Boolean);
+    window.msmSectorCatalog=[...new Map([...MSM_DEFAULT_SECTORS,...names].map(n=>[n.toLowerCase(),n])).values()];
+  }catch(e){
+    console.warn('Sector catalog unavailable; using built-in sectors.',e.message);
+    window.msmSectorCatalog=[...MSM_DEFAULT_SECTORS];
+  }finally{
+    window.msmSectorLoading=false; msmPopulateSectorFilter(); msmRenderSectorNav(); msmRenderSectorManager();
+  }
+}
+async function msmAddSector(){
+  if(!isParent())return;
+  const input=document.getElementById('msmNewSectorName'); const name=msmNormSectorName(input?.value);
+  if(!name)return showToast('Enter a sector name.');
+  if((window.msmSectorCatalog||[]).some(n=>n.toLowerCase()===name.toLowerCase()))return showToast('That sector already exists.');
+  try{
+    await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).set({name,createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    window.msmSectorCatalog.push(name); window.msmSectorCatalog.sort((a,b)=>a.localeCompare(b)); msmPopulateSectorFilter(); msmRenderSectorNav(); msmRenderSectorManager(); input.value='';
+    await writeAuditLog('ADD_SECTOR',name,{sector:name}); showToast(`${name} Sector added.`);
+  }catch(e){showToast('Could not add sector: '+e.message);}
+}
+async function msmRemoveSector(encoded){
+  if(!isParent())return; const name=decodeURIComponent(encoded);
+  if(MSM_DEFAULT_SECTORS.some(n=>n.toLowerCase()===name.toLowerCase()))return showToast('Built-in sectors cannot be removed here.');
+  if(!confirm(`Remove the ${name} Sector button? Existing employee records will NOT be deleted.`))return;
+  try{
+    await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).delete();
+    window.msmSectorCatalog=window.msmSectorCatalog.filter(n=>n.toLowerCase()!==name.toLowerCase());
+    if(msmSectorByKey(msmActiveSector)===name)msmActiveSector='full';
+    msmPopulateSectorFilter(); msmRenderSectorNav(); msmRenderSectorManager(); renderTable();
+    await writeAuditLog('REMOVE_SECTOR',name,{sector:name}); showToast(`${name} Sector removed from the catalog.`);
+  }catch(e){showToast('Could not remove sector: '+e.message);}
+}
 function msmEnsureUI(){
   msmInjectStyle();
   if(!currentAccess) return;
   const portal=document.getElementById('sectorPortal');
   if(portal && isParent() && !document.getElementById('msmParentSectorNav')){
     const nav=document.createElement('div'); nav.id='msmParentSectorNav'; nav.className='sector-nav';
-    nav.innerHTML=`<button class="btn btn-sm" onclick="msmOpenSector('full')">FULL DATABASE</button>
-      <button class="btn btn-sm" onclick="msmOpenSector('islamabad')">ISLAMABAD SECTOR</button>
-      <button class="btn btn-sm" onclick="msmOpenSector('rawalpindi')">RAWALPINDI SECTOR</button>
-      <button class="btn btn-sm" onclick="msmOpenSector('kpk')">KPK SECTOR</button>
-      <button class="btn btn-sm" onclick="msmOpenSector('other')">OTHER SECTORS</button>
-      <button class="btn btn-sm" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`;
     portal.querySelector('.sector-portal-inner')?.appendChild(nav);
+  }
+  if(portal && isParent() && !document.getElementById('msmSectorManager')){
+    const box=document.createElement('div'); box.id='msmSectorManager'; box.className='sector-manager';
+    portal.querySelector('.sector-portal-inner')?.appendChild(box);
   }
   if(isParent() && !document.getElementById('msmRecycleTab')){
     const tabs=document.querySelector('.tabs');
@@ -3050,6 +3127,8 @@ function msmEnsureUI(){
       const audit=document.getElementById('view-audit'); audit ? audit.parentNode.insertBefore(v,audit) : sheet.appendChild(v);
     }
   }
+  msmRenderSectorNav(); msmRenderSectorManager(); msmPopulateSectorFilter();
+  if(isParent() && !window.msmSectorUnsub) msmLoadSectorCatalog();
 }
 function msmShowTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
@@ -3061,21 +3140,21 @@ function msmShowTab(tab){
 function msmOpenRecycle(){msmEnsureUI();msmShowTab('recycle');}
 function msmSetSectorFilter(label){
   if(!isParent()) return;
-  const v=String(label||'').trim().toLowerCase();
-  msmActiveSector = v==='islamabad'?'islamabad':v==='rawalpindi'?'rawalpindi':v==='kpk'?'kpk':v==='other'?'other':'full';
-  renderTable();
+  const v=String(label||'').trim();
+  msmActiveSector=v?msmSectorKeyFromName(v):'full';
+  renderTable(); msmRenderSectorNav();
 }
 function msmOpenSector(key){
   if(!isParent())return;
   msmActiveSector=key||'full';
-  const labels={full:'',islamabad:'Islamabad',rawalpindi:'Rawalpindi',kpk:'KPK',other:'Other'};
+  const name=msmSectorByKey(msmActiveSector);
   const fc=document.getElementById('filterClient'); const fs=document.getElementById('filterSector');
-  if(fs){fs.value=labels[msmActiveSector]||'';}
-  msmShowTab('register');
-  renderTable();
+  if(fs)fs.value=name||'';
+  msmShowTab('register'); renderTable(); msmRenderSectorNav();
 }
 function msmFilterSector(r){
   if(!isParent()||!msmActiveSector||msmActiveSector==='full')return true;
+  if(msmActiveSector==='other-sectors')return !msmSectorByKey(msmSectorKey(r));
   return msmSectorKey(r)===msmActiveSector;
 }
 function msmRecycleItemPayload(rec){
@@ -3084,93 +3163,54 @@ function msmRecycleItemPayload(rec){
 async function msmMoveToRecycle(id){
   const rec=records.find(r=>r.id===id); if(!rec)return;
   if(!confirm(`Move record #${rec.sno||''} — ${rec.name||''} to the Recycle Bin?`))return;
-  try{
-    const batch=db.batch(), rr=db.collection(MSM_RECYCLE_COLLECTION).doc();
-    batch.set(rr,msmRecycleItemPayload(rec)); batch.delete(db.collection(RECORDS_COLLECTION).doc(id)); await batch.commit();
-    await writeAuditLog('DELETE_RECORD',id,{name:rec.name||'',cnic:rec.cnic||'',msmno:rec.msmno||'',clientproject:rec.clientproject||'',sector:msmSectorOf(rec),destination:'recycleBin'});
-    showToast('Record moved to Recycle Bin.');
-  }catch(e){console.error(e);showToast('Could not move record to Recycle Bin: '+e.message);}
+  try{const batch=db.batch(), rr=db.collection(MSM_RECYCLE_COLLECTION).doc();batch.set(rr,msmRecycleItemPayload(rec));batch.delete(db.collection(RECORDS_COLLECTION).doc(id));await batch.commit();await writeAuditLog('DELETE_RECORD',id,{name:rec.name||'',cnic:rec.cnic||'',msmno:rec.msmno||'',clientproject:rec.clientproject||'',sector:msmSectorOf(rec),destination:'recycleBin'});showToast('Record moved to Recycle Bin.');}catch(e){console.error(e);showToast('Could not move record to Recycle Bin: '+e.message);}
 }
 async function msmBulkRecycle(){
   if(!isParent())return showToast('Only Parent can use bulk delete.');
   const ids=[...(window.selectedRecordIds||[])], rows=records.filter(r=>ids.includes(r.id)); if(!rows.length)return;
   if(!confirm(`Move ${rows.length} selected record(s) to the Recycle Bin?`))return;
-  try{
-    for(let i=0;i<rows.length;i+=300){const batch=db.batch();rows.slice(i,i+300).forEach(r=>{batch.set(db.collection(MSM_RECYCLE_COLLECTION).doc(),msmRecycleItemPayload(r));batch.delete(db.collection(RECORDS_COLLECTION).doc(r.id));});await batch.commit();}
-    await writeAuditLog('BULK_DELETE',rows.length,{count:rows.length,destination:'recycleBin'});window.selectedRecordIds=new Set();renderTable();showToast(`${rows.length} records moved to Recycle Bin.`);
-  }catch(e){console.error(e);showToast('Bulk delete failed: '+e.message);}
+  try{for(let i=0;i<rows.length;i+=300){const batch=db.batch();rows.slice(i,i+300).forEach(r=>{batch.set(db.collection(MSM_RECYCLE_COLLECTION).doc(),msmRecycleItemPayload(r));batch.delete(db.collection(RECORDS_COLLECTION).doc(r.id));});await batch.commit();}await writeAuditLog('BULK_DELETE',rows.length,{count:rows.length,destination:'recycleBin'});window.selectedRecordIds=new Set();renderTable();showToast(`${rows.length} records moved to Recycle Bin.`);}catch(e){console.error(e);showToast('Bulk delete failed: '+e.message);}
 }
 function msmLoadRecycle(){
-  if(!isParent())return;
-  msmEnsureUI();
-  if(window.msmRecycleUnsub)window.msmRecycleUnsub();
-  window.msmRecycleUnsub=db.collection(MSM_RECYCLE_COLLECTION).orderBy('deletedAt','desc').limit(1000).onSnapshot(s=>{
-    window.msmRecycleRows=s.docs.map(d=>({id:d.id,...d.data()}));msmRenderRecycle();
-  },e=>{const t=document.getElementById('msmRecycleTbody');if(t)t.innerHTML=`<tr><td colspan="9">Could not load Recycle Bin: ${escapeHtml(e.message||'Unknown error')}</td></tr>`;});
+  if(!isParent())return; msmEnsureUI(); if(window.msmRecycleUnsub)window.msmRecycleUnsub();
+  window.msmRecycleUnsub=db.collection(MSM_RECYCLE_COLLECTION).orderBy('deletedAt','desc').limit(1000).onSnapshot(s=>{window.msmRecycleRows=s.docs.map(d=>({id:d.id,...d.data()}));msmRenderRecycle();},e=>{const t=document.getElementById('msmRecycleTbody');if(t)t.innerHTML=`<tr><td colspan="9">Could not load Recycle Bin: ${escapeHtml(e.message||'Unknown error')}</td></tr>`;});
 }
 function msmRenderRecycle(){
-  const t=document.getElementById('msmRecycleTbody');if(!t)return;
-  const q=(document.getElementById('msmRecycleSearch')?.value||'').trim().toLowerCase();
+  const t=document.getElementById('msmRecycleTbody');if(!t)return;const q=(document.getElementById('msmRecycleSearch')?.value||'').trim().toLowerCase();
   const rows=(window.msmRecycleRows||[]).filter(x=>{const r=x.recordData||{};return !q||[r.name,r.cnic,r.msmno,r.clientproject,r.location,r.deployloc,x.sector,x.deletedBy].some(v=>String(v||'').toLowerCase().includes(q));});
   const c=document.getElementById('msmRecycleCount');if(c)c.textContent=(window.msmRecycleRows||[]).length;
   t.innerHTML=rows.map(x=>{const r=x.recordData||{};return `<tr><td>${escapeHtml(formatAuditTime(x.deletedAt))}</td><td>${escapeHtml(r.name||'—')}</td><td>${escapeHtml(r.cnic||'—')}</td><td>${escapeHtml(r.msmno||'—')}</td><td>${escapeHtml(r.clientproject||'—')}</td><td>${escapeHtml(x.sector||msmSectorOf(r))}</td><td>${escapeHtml(r.location||r.deployloc||'—')}</td><td>${escapeHtml(x.deletedBy||'—')}</td><td class="row-actions"><button class="btn btn-sm btn-primary" onclick="msmRecover('${x.id}')">Recover</button><button class="btn btn-sm btn-danger" onclick="msmPermanent('${x.id}')">Permanent Delete</button></td></tr>`;}).join('')||'<tr><td colspan="9">Recycle Bin is empty.</td></tr>';
 }
 async function msmRecover(id){
-  if(!isParent())return;
-  try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return showToast('Recycle Bin item no longer exists.');
-    const x=s.data()||{},r=x.recordData||{},oid=x.originalRecordId;if(!oid)throw Error('Original record ID missing.');
-    const exists=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(exists.exists)return showToast('Original record already exists.');
-    const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(ref);await b.commit();
-    await writeAuditLog('RECOVER_RECORD',oid,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Record recovered.');
-  }catch(e){console.error(e);showToast('Recover failed: '+e.message);}
+  if(!isParent())return;try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return showToast('Recycle Bin item no longer exists.');const x=s.data()||{},r=x.recordData||{},oid=x.originalRecordId;if(!oid)throw Error('Original record ID missing.');const exists=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(exists.exists)return showToast('Original record already exists.');const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(ref);await b.commit();await writeAuditLog('RECOVER_RECORD',oid,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Record recovered.');}catch(e){console.error(e);showToast('Recover failed: '+e.message);}
 }
 async function msmPermanent(id){
-  if(!isParent())return;if(!confirm('Permanently delete this record? This cannot be undone.'))return;
-  try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return;const x=s.data()||{},r=x.recordData||{};await ref.delete();await writeAuditLog('PERMANENT_DELETE',x.originalRecordId||id,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Permanently deleted.');}catch(e){showToast('Permanent delete failed: '+e.message);}
+  if(!isParent())return;if(!confirm('Permanently delete this record? This cannot be undone.'))return;try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return;const x=s.data()||{},r=x.recordData||{};await ref.delete();await writeAuditLog('PERMANENT_DELETE',x.originalRecordId||id,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Permanently deleted.');}catch(e){showToast('Permanent delete failed: '+e.message);}
 }
 async function msmRecoverAll(){
-  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`Recover ${rows.length} record(s)?`))return;let n=0;
-  for(const x of rows){try{const oid=x.originalRecordId,r=x.recordData||{};if(!oid)continue;const ex=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(ex.exists)continue;const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id));await b.commit();n++;}catch(e){console.warn(e);}}
-  await writeAuditLog('RECOVER_ALL','recycleBin',{requested:rows.length,recovered:n});showToast(`Recovered ${n} record(s).`);
+  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`Recover ${rows.length} record(s)?`))return;let n=0;for(const x of rows){try{const oid=x.originalRecordId,r=x.recordData||{};if(!oid)continue;const ex=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(ex.exists)continue;const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id));await b.commit();n++;}catch(e){console.warn(e);}}await writeAuditLog('RECOVER_ALL','recycleBin',{requested:rows.length,recovered:n});showToast(`Recovered ${n} record(s).`);
 }
 async function msmEmptyRecycle(){
-  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`PERMANENTLY DELETE all ${rows.length} Recycle Bin records?`))return;
-  try{for(let i=0;i<rows.length;i+=400){const b=db.batch();rows.slice(i,i+400).forEach(x=>b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id)));await b.commit();}await writeAuditLog('EMPTY_RECYCLE_BIN','recycleBin',{count:rows.length});showToast('Recycle Bin emptied.');}catch(e){showToast('Empty Recycle Bin failed: '+e.message);}
+  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`PERMANENTLY DELETE all ${rows.length} Recycle Bin records?`))return;try{for(let i=0;i<rows.length;i+=400){const b=db.batch();rows.slice(i,i+400).forEach(x=>b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id)));await b.commit();}await writeAuditLog('EMPTY_RECYCLE_BIN','recycleBin',{count:rows.length});showToast('Recycle Bin emptied.');}catch(e){showToast('Empty Recycle Bin failed: '+e.message);}
 }
 
-/* Preserve existing app behavior while replacing only delete semantics and adding Recycle Bin. */
 const msmBaseSwitchTab = switchTab;
 switchTab = function(tab){
-  if(tab==='recycle'){ if(!isParent()) return msmBaseSwitchTab('register'); msmEnsureUI(); msmLoadRecycle(); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab==='recycle')); ['form','register','instructions','admin','audit','recycle'].forEach(v=>{const e=document.getElementById('view-'+v);if(e)e.style.display=v==='recycle'?'block':'none';}); return; }
+  if(tab==='recycle'){if(!isParent())return msmBaseSwitchTab('register');msmEnsureUI();msmLoadRecycle();document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab==='recycle'));['form','register','instructions','admin','audit','recycle'].forEach(v=>{const e=document.getElementById('view-'+v);if(e)e.style.display=v==='recycle'?'block':'none';});return;}
   return msmBaseSwitchTab(tab);
 };
 const msmBaseSelectAllVisible = selectAllVisible;
 selectAllVisible = function(checked){
-  if(!isParent() || msmActiveSector==='full') return msmBaseSelectAllVisible(checked);
-  window.selectedRecordIds=window.selectedRecordIds||new Set();
-  const ids=[...document.querySelectorAll('#tbody .record-check')].map(e=>e.value).filter(Boolean);
-  ids.forEach(id=>checked?window.selectedRecordIds.add(id):window.selectedRecordIds.delete(id));
-  renderTable();
+  if(!isParent()||msmActiveSector==='full')return msmBaseSelectAllVisible(checked);
+  window.selectedRecordIds=window.selectedRecordIds||new Set();const ids=[...document.querySelectorAll('#tbody .record-check')].map(e=>e.value).filter(Boolean);ids.forEach(id=>checked?window.selectedRecordIds.add(id):window.selectedRecordIds.delete(id));renderTable();
 };
-
 const msmBaseRenderTable = renderTable;
 renderTable = function(){
   msmBaseRenderTable();
-  if(isParent() && msmActiveSector!=='full'){
-    let visible=0;
-    document.querySelectorAll('#tbody tr').forEach(tr=>{
-      const id=tr.querySelector('.record-check')?.value;
-      const r=records.find(x=>x.id===id);
-      const show=!r || msmFilterSector(r);
-      tr.style.display=show?'':'none';
-      if(show)visible++;
-    });
-    const pill=document.getElementById('rowCountPill');
-    if(pill)pill.textContent=`${visible} of ${records.length} entries`;
+  if(isParent()&&msmActiveSector!=='full'){
+    let visible=0;document.querySelectorAll('#tbody tr').forEach(tr=>{const id=tr.querySelector('.record-check')?.value;const r=records.find(x=>x.id===id);const show=!r||msmFilterSector(r);tr.style.display=show?'':'none';if(show)visible++;});const pill=document.getElementById('rowCountPill');if(pill)pill.textContent=`${visible} of ${records.length} entries`;
   }
 };
-deleteRecord = msmMoveToRecycle;
-bulkDeleteSelected = msmBulkRecycle;
 setInterval(msmEnsureUI,1500);
 </script>
 </body>
