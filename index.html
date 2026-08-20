@@ -13,7 +13,174 @@
 <meta property="og:description" content="Secure employee enrollment and long roll register for authorized users.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sjalalhs7.github.io/employee-register/">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
+/* ===================== MSM Phase-1 Enhancements ===================== */
+const MSM_RECYCLE_COLLECTION = 'recycleBin';
+window.msmActiveSector = 'full';
+window.msmRecycleUnsub = null;
+function msmSectorOf(r){
+  const raw=String((r&&r.sector)|| (r&&r.clientproject)||'').trim().toLowerCase();
+  if(raw.includes('islamabad')) return 'Islamabad';
+  if(raw.includes('rawalpindi')) return 'Rawalpindi';
+  if(raw.includes('kpk')||raw.includes('khyber')) return 'KPK';
+  return raw ? 'Other' : 'Other';
+}
+function msmSectorKey(r){
+  const s=msmSectorOf(r).toLowerCase();
+  return s==='islamabad'?'islamabad':s==='rawalpindi'?'rawalpindi':s==='kpk'?'kpk':'other';
+}
+function msmInjectStyle(){
+  if(document.getElementById('msmPhase1Style'))return;
+  const s=document.createElement('style');s.id='msmPhase1Style';s.textContent=`
+    .sector-nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px auto 0;max-width:1080px}
+    .sector-nav .btn{background:rgba(255,255,255,.10);color:#fff;border-color:rgba(210,173,85,.60);font-size:11px;padding:7px 11px}
+    .sector-nav .btn:hover{background:rgba(255,255,255,.18);color:#fff}
+    .recycle-summary{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px;margin:12px 0}
+    .recycle-card{padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
+    .recycle-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase}
+    .recycle-card strong{display:block;font-size:22px;margin-top:4px}
+    @media(max-width:650px){.recycle-summary{grid-template-columns:1fr}}
+  `;document.head.appendChild(s);
+}
+function msmEnsureUI(){
+  msmInjectStyle();
+  if(!currentAccess) return;
+  const portal=document.getElementById('sectorPortal');
+  if(portal && isParent() && !document.getElementById('msmParentSectorNav')){
+    const nav=document.createElement('div'); nav.id='msmParentSectorNav'; nav.className='sector-nav';
+    nav.innerHTML=`<button class="btn btn-sm" onclick="msmOpenSector('full')">FULL DATABASE</button>
+      <button class="btn btn-sm" onclick="msmOpenSector('islamabad')">ISLAMABAD SECTOR</button>
+      <button class="btn btn-sm" onclick="msmOpenSector('rawalpindi')">RAWALPINDI SECTOR</button>
+      <button class="btn btn-sm" onclick="msmOpenSector('kpk')">KPK SECTOR</button>
+      <button class="btn btn-sm" onclick="msmOpenSector('other')">OTHER SECTORS</button>
+      <button class="btn btn-sm" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`;
+    portal.querySelector('.sector-portal-inner')?.appendChild(nav);
+  }
+  if(isParent() && !document.getElementById('msmRecycleTab')){
+    const tabs=document.querySelector('.tabs');
+    if(tabs){ const b=document.createElement('button'); b.id='msmRecycleTab'; b.className='tab-btn'; b.dataset.tab='recycle'; b.textContent='♻ Recycle Bin'; b.onclick=msmOpenRecycle; tabs.appendChild(b); }
+  }
+  if(isParent() && !document.getElementById('view-recycle')){
+    const sheet=document.querySelector('#appRoot main .sheet');
+    if(sheet){
+      const v=document.createElement('div'); v.id='view-recycle'; v.style.display='none';
+      v.innerHTML=`<div class="helper-note"><strong>Recycle Bin:</strong> Deleted employees are retained here. Parent/Admin can recover or permanently delete records.</div>
+      <div class="recycle-summary"><div class="recycle-card"><span>Deleted Records</span><strong id="msmRecycleCount">0</strong></div><div class="recycle-card"><span>Access</span><strong>Parent Only</strong></div><div class="recycle-card"><span>Permanent Delete</span><strong>Restricted</strong></div></div>
+      <div class="bulk-toolbar"><input class="search-input" id="msmRecycleSearch" placeholder="Search deleted guard, CNIC, MSM No., client, sector..." oninput="msmRenderRecycle()">
+      <button class="btn btn-sm" onclick="msmLoadRecycle()">↻ Refresh</button><button class="btn btn-sm btn-primary" onclick="msmRecoverAll()">Recover All</button><button class="btn btn-sm btn-danger" onclick="msmEmptyRecycle()">Empty Recycle Bin</button></div>
+      <div class="table-wrap"><table class="register"><thead><tr><th>Deleted</th><th>Guard</th><th>CNIC</th><th>Guard ID</th><th>Client</th><th>Sector</th><th>Location</th><th>Deleted By</th><th>Actions</th></tr></thead><tbody id="msmRecycleTbody"><tr><td colspan="9">Loading…</td></tr></tbody></table></div>`;
+      const audit=document.getElementById('view-audit'); audit ? audit.parentNode.insertBefore(v,audit) : sheet.appendChild(v);
+    }
+  }
+}
+function msmShowTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  ['form','register','instructions','admin','audit','recycle'].forEach(v=>{const e=document.getElementById('view-'+v); if(e)e.style.display=tab===v?'block':'none';});
+  if(tab==='register') renderTable();
+  if(tab==='audit'){renderAuditLogs();renderTransferHistory();}
+  if(tab==='recycle'){if(!isParent())return msmShowTab('register');msmLoadRecycle();}
+}
+function msmOpenRecycle(){msmEnsureUI();msmShowTab('recycle');}
+function msmOpenSector(key){
+  if(!isParent())return;
+  msmActiveSector=key||'full';
+  const labels={full:'',islamabad:'Islamabad',rawalpindi:'Rawalpindi',kpk:'KPK',other:'Other'};
+  const fc=document.getElementById('filterClient'); const fs=document.getElementById('filterSector');
+  if(fs){fs.value=labels[msmActiveSector]||'';}
+  msmShowTab('register');
+  renderTable();
+}
+function msmFilterSector(r){
+  if(!isParent()||!msmActiveSector||msmActiveSector==='full')return true;
+  return msmSectorKey(r)===msmActiveSector;
+}
+function msmRecycleItemPayload(rec){
+  return {originalRecordId:rec.id,recordData:rec,deletedBy:(currentUser?.email||'').toLowerCase(),deletedByRole:currentAccess?.role||'',deletedAt:firebase.firestore.FieldValue.serverTimestamp(),clientproject:rec.clientproject||'',sector:msmSectorOf(rec)};
+}
+async function msmMoveToRecycle(id){
+  const rec=records.find(r=>r.id===id); if(!rec)return;
+  if(!confirm(`Move record #${rec.sno||''} — ${rec.name||''} to the Recycle Bin?`))return;
+  try{
+    const batch=db.batch(), rr=db.collection(MSM_RECYCLE_COLLECTION).doc();
+    batch.set(rr,msmRecycleItemPayload(rec)); batch.delete(db.collection(RECORDS_COLLECTION).doc(id)); await batch.commit();
+    await writeAuditLog('DELETE_RECORD',id,{name:rec.name||'',cnic:rec.cnic||'',msmno:rec.msmno||'',clientproject:rec.clientproject||'',sector:msmSectorOf(rec),destination:'recycleBin'});
+    showToast('Record moved to Recycle Bin.');
+  }catch(e){console.error(e);showToast('Could not move record to Recycle Bin: '+e.message);}
+}
+async function msmBulkRecycle(){
+  if(!isParent())return showToast('Only Parent can use bulk delete.');
+  const ids=[...(window.selectedRecordIds||[])], rows=records.filter(r=>ids.includes(r.id)); if(!rows.length)return;
+  if(!confirm(`Move ${rows.length} selected record(s) to the Recycle Bin?`))return;
+  try{
+    for(let i=0;i<rows.length;i+=300){const batch=db.batch();rows.slice(i,i+300).forEach(r=>{batch.set(db.collection(MSM_RECYCLE_COLLECTION).doc(),msmRecycleItemPayload(r));batch.delete(db.collection(RECORDS_COLLECTION).doc(r.id));});await batch.commit();}
+    await writeAuditLog('BULK_DELETE',rows.length,{count:rows.length,destination:'recycleBin'});window.selectedRecordIds=new Set();renderTable();showToast(`${rows.length} records moved to Recycle Bin.`);
+  }catch(e){console.error(e);showToast('Bulk delete failed: '+e.message);}
+}
+function msmLoadRecycle(){
+  if(!isParent())return;
+  msmEnsureUI();
+  if(window.msmRecycleUnsub)window.msmRecycleUnsub();
+  window.msmRecycleUnsub=db.collection(MSM_RECYCLE_COLLECTION).orderBy('deletedAt','desc').limit(1000).onSnapshot(s=>{
+    window.msmRecycleRows=s.docs.map(d=>({id:d.id,...d.data()}));msmRenderRecycle();
+  },e=>{const t=document.getElementById('msmRecycleTbody');if(t)t.innerHTML=`<tr><td colspan="9">Could not load Recycle Bin: ${escapeHtml(e.message||'Unknown error')}</td></tr>`;});
+}
+function msmRenderRecycle(){
+  const t=document.getElementById('msmRecycleTbody');if(!t)return;
+  const q=(document.getElementById('msmRecycleSearch')?.value||'').trim().toLowerCase();
+  const rows=(window.msmRecycleRows||[]).filter(x=>{const r=x.recordData||{};return !q||[r.name,r.cnic,r.msmno,r.clientproject,r.location,r.deployloc,x.sector,x.deletedBy].some(v=>String(v||'').toLowerCase().includes(q));});
+  const c=document.getElementById('msmRecycleCount');if(c)c.textContent=(window.msmRecycleRows||[]).length;
+  t.innerHTML=rows.map(x=>{const r=x.recordData||{};return `<tr><td>${escapeHtml(formatAuditTime(x.deletedAt))}</td><td>${escapeHtml(r.name||'—')}</td><td>${escapeHtml(r.cnic||'—')}</td><td>${escapeHtml(r.msmno||'—')}</td><td>${escapeHtml(r.clientproject||'—')}</td><td>${escapeHtml(x.sector||msmSectorOf(r))}</td><td>${escapeHtml(r.location||r.deployloc||'—')}</td><td>${escapeHtml(x.deletedBy||'—')}</td><td class="row-actions"><button class="btn btn-sm btn-primary" onclick="msmRecover('${x.id}')">Recover</button><button class="btn btn-sm btn-danger" onclick="msmPermanent('${x.id}')">Permanent Delete</button></td></tr>`;}).join('')||'<tr><td colspan="9">Recycle Bin is empty.</td></tr>';
+}
+async function msmRecover(id){
+  if(!isParent())return;
+  try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return showToast('Recycle Bin item no longer exists.');
+    const x=s.data()||{},r=x.recordData||{},oid=x.originalRecordId;if(!oid)throw Error('Original record ID missing.');
+    const exists=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(exists.exists)return showToast('Original record already exists.');
+    const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(ref);await b.commit();
+    await writeAuditLog('RECOVER_RECORD',oid,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Record recovered.');
+  }catch(e){console.error(e);showToast('Recover failed: '+e.message);}
+}
+async function msmPermanent(id){
+  if(!isParent())return;if(!confirm('Permanently delete this record? This cannot be undone.'))return;
+  try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return;const x=s.data()||{},r=x.recordData||{};await ref.delete();await writeAuditLog('PERMANENT_DELETE',x.originalRecordId||id,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Permanently deleted.');}catch(e){showToast('Permanent delete failed: '+e.message);}
+}
+async function msmRecoverAll(){
+  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`Recover ${rows.length} record(s)?`))return;let n=0;
+  for(const x of rows){try{const oid=x.originalRecordId,r=x.recordData||{};if(!oid)continue;const ex=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(ex.exists)continue;const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id));await b.commit();n++;}catch(e){console.warn(e);}}
+  await writeAuditLog('RECOVER_ALL','recycleBin',{requested:rows.length,recovered:n});showToast(`Recovered ${n} record(s).`);
+}
+async function msmEmptyRecycle(){
+  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`PERMANENTLY DELETE all ${rows.length} Recycle Bin records?`))return;
+  try{for(let i=0;i<rows.length;i+=400){const b=db.batch();rows.slice(i,i+400).forEach(x=>b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id)));await b.commit();}await writeAuditLog('EMPTY_RECYCLE_BIN','recycleBin',{count:rows.length});showToast('Recycle Bin emptied.');}catch(e){showToast('Empty Recycle Bin failed: '+e.message);}
+}
+
+/* Preserve existing app behavior while replacing only delete semantics and adding Recycle Bin. */
+const msmBaseSwitchTab = switchTab;
+switchTab = function(tab){
+  if(tab==='recycle'){ if(!isParent()) return msmBaseSwitchTab('register'); msmEnsureUI(); msmLoadRecycle(); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab==='recycle')); ['form','register','instructions','admin','audit','recycle'].forEach(v=>{const e=document.getElementById('view-'+v);if(e)e.style.display=v==='recycle'?'block':'none';}); return; }
+  return msmBaseSwitchTab(tab);
+};
+const msmBaseRenderTable = renderTable;
+renderTable = function(){
+  msmBaseRenderTable();
+  if(isParent() && msmActiveSector!=='full'){
+    let visible=0;
+    document.querySelectorAll('#tbody tr').forEach(tr=>{
+      const id=tr.querySelector('.record-check')?.value;
+      const r=records.find(x=>x.id===id);
+      const show=!r || msmFilterSector(r);
+      tr.style.display=show?'':'none';
+      if(show)visible++;
+    });
+    const pill=document.getElementById('rowCountPill');
+    if(pill)pill.textContent=`${visible} of ${records.length} entries`;
+  }
+};
+deleteRecord = msmMoveToRecycle;
+bulkDeleteSelected = msmBulkRecycle;
+setInterval(msmEnsureUI,1500);
+
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- Firebase (Google Sign-In + shared cloud database) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -526,13 +693,13 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  padding:32px 18px;
+  padding:28px 14px;
   position:relative;
   overflow:hidden;
   background:
-    radial-gradient(circle at 15% 20%, rgba(201,162,83,.16), transparent 32%),
-    radial-gradient(circle at 85% 80%, rgba(76,108,135,.14), transparent 34%),
-    linear-gradient(135deg,#101c29 0%,#1B2A3A 48%,#28405A 100%);
+    radial-gradient(circle at 12% 18%, rgba(47,63,255,.85), transparent 28%),
+    radial-gradient(circle at 88% 82%, rgba(255,0,122,.72), transparent 30%),
+    linear-gradient(135deg,#090d34 0%,#3511a4 45%,#12051f 100%);
   font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 #msmLoginPage::before{
@@ -546,12 +713,13 @@
   width:min(520px,100%);
   position:relative;
   z-index:2;
-  padding:42px 38px 32px;
-  border:1px solid rgba(255,255,255,.18);
-  border-radius:22px;
-  background:rgba(255,253,248,.97);
-  box-shadow:0 30px 80px rgba(0,0,0,.34);
+  padding:38px 34px 30px;
+  border:1px solid rgba(255,255,255,.55);
+  border-radius:24px;
+  background:rgba(255,255,255,.90);
+  box-shadow:0 30px 90px rgba(0,0,0,.42);
   text-align:center;
+  backdrop-filter:blur(12px);
 }
 .msm-login-logo{
   width:92px;height:92px;object-fit:contain;
