@@ -42,7 +42,11 @@ service cloud.firestore {
     function recordInMyScope(data) {
       return isClient()
         && data.get('clientproject', '') == myClient()
-        && (mySector() == '' || data.get('sector', '') == mySector());
+        && (
+          mySector() == '' ||
+          data.get('sector', '') == mySector() ||
+          data.get('sector', '') == ''
+        );
     }
 
     function auditOwnedByCaller() {
@@ -50,8 +54,11 @@ service cloud.firestore {
         && request.resource.data.userEmail == authEmail()
         && request.resource.data.role == myUser().data.role
         && request.resource.data.get('clientproject', '') == myClient()
-        && (myUser().data.get('sector', '') == '' ||
-            request.resource.data.get('sector', '') == mySector());
+        && (
+          myUser().data.get('sector', '') == '' ||
+          request.resource.data.get('sector', '') == '' ||
+          request.resource.data.get('sector', '') == mySector()
+        );
     }
 
     match /authorizedUsers/{email} {
