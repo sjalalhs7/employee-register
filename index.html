@@ -13,174 +13,7 @@
 <meta property="og:description" content="Secure employee enrollment and long roll register for authorized users.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sjalalhs7.github.io/employee-register/">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js">
-/* ===================== MSM Phase-1 Enhancements ===================== */
-const MSM_RECYCLE_COLLECTION = 'recycleBin';
-window.msmActiveSector = 'full';
-window.msmRecycleUnsub = null;
-function msmSectorOf(r){
-  const raw=String((r&&r.sector)|| (r&&r.clientproject)||'').trim().toLowerCase();
-  if(raw.includes('islamabad')) return 'Islamabad';
-  if(raw.includes('rawalpindi')) return 'Rawalpindi';
-  if(raw.includes('kpk')||raw.includes('khyber')) return 'KPK';
-  return raw ? 'Other' : 'Other';
-}
-function msmSectorKey(r){
-  const s=msmSectorOf(r).toLowerCase();
-  return s==='islamabad'?'islamabad':s==='rawalpindi'?'rawalpindi':s==='kpk'?'kpk':'other';
-}
-function msmInjectStyle(){
-  if(document.getElementById('msmPhase1Style'))return;
-  const s=document.createElement('style');s.id='msmPhase1Style';s.textContent=`
-    .sector-nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px auto 0;max-width:1080px}
-    .sector-nav .btn{background:rgba(255,255,255,.10);color:#fff;border-color:rgba(210,173,85,.60);font-size:11px;padding:7px 11px}
-    .sector-nav .btn:hover{background:rgba(255,255,255,.18);color:#fff}
-    .recycle-summary{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px;margin:12px 0}
-    .recycle-card{padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
-    .recycle-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase}
-    .recycle-card strong{display:block;font-size:22px;margin-top:4px}
-    @media(max-width:650px){.recycle-summary{grid-template-columns:1fr}}
-  `;document.head.appendChild(s);
-}
-function msmEnsureUI(){
-  msmInjectStyle();
-  if(!currentAccess) return;
-  const portal=document.getElementById('sectorPortal');
-  if(portal && isParent() && !document.getElementById('msmParentSectorNav')){
-    const nav=document.createElement('div'); nav.id='msmParentSectorNav'; nav.className='sector-nav';
-    nav.innerHTML=`<button class="btn btn-sm" onclick="msmOpenSector('full')">FULL DATABASE</button>
-      <button class="btn btn-sm" onclick="msmOpenSector('islamabad')">ISLAMABAD SECTOR</button>
-      <button class="btn btn-sm" onclick="msmOpenSector('rawalpindi')">RAWALPINDI SECTOR</button>
-      <button class="btn btn-sm" onclick="msmOpenSector('kpk')">KPK SECTOR</button>
-      <button class="btn btn-sm" onclick="msmOpenSector('other')">OTHER SECTORS</button>
-      <button class="btn btn-sm" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`;
-    portal.querySelector('.sector-portal-inner')?.appendChild(nav);
-  }
-  if(isParent() && !document.getElementById('msmRecycleTab')){
-    const tabs=document.querySelector('.tabs');
-    if(tabs){ const b=document.createElement('button'); b.id='msmRecycleTab'; b.className='tab-btn'; b.dataset.tab='recycle'; b.textContent='♻ Recycle Bin'; b.onclick=msmOpenRecycle; tabs.appendChild(b); }
-  }
-  if(isParent() && !document.getElementById('view-recycle')){
-    const sheet=document.querySelector('#appRoot main .sheet');
-    if(sheet){
-      const v=document.createElement('div'); v.id='view-recycle'; v.style.display='none';
-      v.innerHTML=`<div class="helper-note"><strong>Recycle Bin:</strong> Deleted employees are retained here. Parent/Admin can recover or permanently delete records.</div>
-      <div class="recycle-summary"><div class="recycle-card"><span>Deleted Records</span><strong id="msmRecycleCount">0</strong></div><div class="recycle-card"><span>Access</span><strong>Parent Only</strong></div><div class="recycle-card"><span>Permanent Delete</span><strong>Restricted</strong></div></div>
-      <div class="bulk-toolbar"><input class="search-input" id="msmRecycleSearch" placeholder="Search deleted guard, CNIC, MSM No., client, sector..." oninput="msmRenderRecycle()">
-      <button class="btn btn-sm" onclick="msmLoadRecycle()">↻ Refresh</button><button class="btn btn-sm btn-primary" onclick="msmRecoverAll()">Recover All</button><button class="btn btn-sm btn-danger" onclick="msmEmptyRecycle()">Empty Recycle Bin</button></div>
-      <div class="table-wrap"><table class="register"><thead><tr><th>Deleted</th><th>Guard</th><th>CNIC</th><th>Guard ID</th><th>Client</th><th>Sector</th><th>Location</th><th>Deleted By</th><th>Actions</th></tr></thead><tbody id="msmRecycleTbody"><tr><td colspan="9">Loading…</td></tr></tbody></table></div>`;
-      const audit=document.getElementById('view-audit'); audit ? audit.parentNode.insertBefore(v,audit) : sheet.appendChild(v);
-    }
-  }
-}
-function msmShowTab(tab){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
-  ['form','register','instructions','admin','audit','recycle'].forEach(v=>{const e=document.getElementById('view-'+v); if(e)e.style.display=tab===v?'block':'none';});
-  if(tab==='register') renderTable();
-  if(tab==='audit'){renderAuditLogs();renderTransferHistory();}
-  if(tab==='recycle'){if(!isParent())return msmShowTab('register');msmLoadRecycle();}
-}
-function msmOpenRecycle(){msmEnsureUI();msmShowTab('recycle');}
-function msmOpenSector(key){
-  if(!isParent())return;
-  msmActiveSector=key||'full';
-  const labels={full:'',islamabad:'Islamabad',rawalpindi:'Rawalpindi',kpk:'KPK',other:'Other'};
-  const fc=document.getElementById('filterClient'); const fs=document.getElementById('filterSector');
-  if(fs){fs.value=labels[msmActiveSector]||'';}
-  msmShowTab('register');
-  renderTable();
-}
-function msmFilterSector(r){
-  if(!isParent()||!msmActiveSector||msmActiveSector==='full')return true;
-  return msmSectorKey(r)===msmActiveSector;
-}
-function msmRecycleItemPayload(rec){
-  return {originalRecordId:rec.id,recordData:rec,deletedBy:(currentUser?.email||'').toLowerCase(),deletedByRole:currentAccess?.role||'',deletedAt:firebase.firestore.FieldValue.serverTimestamp(),clientproject:rec.clientproject||'',sector:msmSectorOf(rec)};
-}
-async function msmMoveToRecycle(id){
-  const rec=records.find(r=>r.id===id); if(!rec)return;
-  if(!confirm(`Move record #${rec.sno||''} — ${rec.name||''} to the Recycle Bin?`))return;
-  try{
-    const batch=db.batch(), rr=db.collection(MSM_RECYCLE_COLLECTION).doc();
-    batch.set(rr,msmRecycleItemPayload(rec)); batch.delete(db.collection(RECORDS_COLLECTION).doc(id)); await batch.commit();
-    await writeAuditLog('DELETE_RECORD',id,{name:rec.name||'',cnic:rec.cnic||'',msmno:rec.msmno||'',clientproject:rec.clientproject||'',sector:msmSectorOf(rec),destination:'recycleBin'});
-    showToast('Record moved to Recycle Bin.');
-  }catch(e){console.error(e);showToast('Could not move record to Recycle Bin: '+e.message);}
-}
-async function msmBulkRecycle(){
-  if(!isParent())return showToast('Only Parent can use bulk delete.');
-  const ids=[...(window.selectedRecordIds||[])], rows=records.filter(r=>ids.includes(r.id)); if(!rows.length)return;
-  if(!confirm(`Move ${rows.length} selected record(s) to the Recycle Bin?`))return;
-  try{
-    for(let i=0;i<rows.length;i+=300){const batch=db.batch();rows.slice(i,i+300).forEach(r=>{batch.set(db.collection(MSM_RECYCLE_COLLECTION).doc(),msmRecycleItemPayload(r));batch.delete(db.collection(RECORDS_COLLECTION).doc(r.id));});await batch.commit();}
-    await writeAuditLog('BULK_DELETE',rows.length,{count:rows.length,destination:'recycleBin'});window.selectedRecordIds=new Set();renderTable();showToast(`${rows.length} records moved to Recycle Bin.`);
-  }catch(e){console.error(e);showToast('Bulk delete failed: '+e.message);}
-}
-function msmLoadRecycle(){
-  if(!isParent())return;
-  msmEnsureUI();
-  if(window.msmRecycleUnsub)window.msmRecycleUnsub();
-  window.msmRecycleUnsub=db.collection(MSM_RECYCLE_COLLECTION).orderBy('deletedAt','desc').limit(1000).onSnapshot(s=>{
-    window.msmRecycleRows=s.docs.map(d=>({id:d.id,...d.data()}));msmRenderRecycle();
-  },e=>{const t=document.getElementById('msmRecycleTbody');if(t)t.innerHTML=`<tr><td colspan="9">Could not load Recycle Bin: ${escapeHtml(e.message||'Unknown error')}</td></tr>`;});
-}
-function msmRenderRecycle(){
-  const t=document.getElementById('msmRecycleTbody');if(!t)return;
-  const q=(document.getElementById('msmRecycleSearch')?.value||'').trim().toLowerCase();
-  const rows=(window.msmRecycleRows||[]).filter(x=>{const r=x.recordData||{};return !q||[r.name,r.cnic,r.msmno,r.clientproject,r.location,r.deployloc,x.sector,x.deletedBy].some(v=>String(v||'').toLowerCase().includes(q));});
-  const c=document.getElementById('msmRecycleCount');if(c)c.textContent=(window.msmRecycleRows||[]).length;
-  t.innerHTML=rows.map(x=>{const r=x.recordData||{};return `<tr><td>${escapeHtml(formatAuditTime(x.deletedAt))}</td><td>${escapeHtml(r.name||'—')}</td><td>${escapeHtml(r.cnic||'—')}</td><td>${escapeHtml(r.msmno||'—')}</td><td>${escapeHtml(r.clientproject||'—')}</td><td>${escapeHtml(x.sector||msmSectorOf(r))}</td><td>${escapeHtml(r.location||r.deployloc||'—')}</td><td>${escapeHtml(x.deletedBy||'—')}</td><td class="row-actions"><button class="btn btn-sm btn-primary" onclick="msmRecover('${x.id}')">Recover</button><button class="btn btn-sm btn-danger" onclick="msmPermanent('${x.id}')">Permanent Delete</button></td></tr>`;}).join('')||'<tr><td colspan="9">Recycle Bin is empty.</td></tr>';
-}
-async function msmRecover(id){
-  if(!isParent())return;
-  try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return showToast('Recycle Bin item no longer exists.');
-    const x=s.data()||{},r=x.recordData||{},oid=x.originalRecordId;if(!oid)throw Error('Original record ID missing.');
-    const exists=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(exists.exists)return showToast('Original record already exists.');
-    const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(ref);await b.commit();
-    await writeAuditLog('RECOVER_RECORD',oid,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Record recovered.');
-  }catch(e){console.error(e);showToast('Recover failed: '+e.message);}
-}
-async function msmPermanent(id){
-  if(!isParent())return;if(!confirm('Permanently delete this record? This cannot be undone.'))return;
-  try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return;const x=s.data()||{},r=x.recordData||{};await ref.delete();await writeAuditLog('PERMANENT_DELETE',x.originalRecordId||id,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Permanently deleted.');}catch(e){showToast('Permanent delete failed: '+e.message);}
-}
-async function msmRecoverAll(){
-  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`Recover ${rows.length} record(s)?`))return;let n=0;
-  for(const x of rows){try{const oid=x.originalRecordId,r=x.recordData||{};if(!oid)continue;const ex=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(ex.exists)continue;const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id));await b.commit();n++;}catch(e){console.warn(e);}}
-  await writeAuditLog('RECOVER_ALL','recycleBin',{requested:rows.length,recovered:n});showToast(`Recovered ${n} record(s).`);
-}
-async function msmEmptyRecycle(){
-  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`PERMANENTLY DELETE all ${rows.length} Recycle Bin records?`))return;
-  try{for(let i=0;i<rows.length;i+=400){const b=db.batch();rows.slice(i,i+400).forEach(x=>b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id)));await b.commit();}await writeAuditLog('EMPTY_RECYCLE_BIN','recycleBin',{count:rows.length});showToast('Recycle Bin emptied.');}catch(e){showToast('Empty Recycle Bin failed: '+e.message);}
-}
-
-/* Preserve existing app behavior while replacing only delete semantics and adding Recycle Bin. */
-const msmBaseSwitchTab = switchTab;
-switchTab = function(tab){
-  if(tab==='recycle'){ if(!isParent()) return msmBaseSwitchTab('register'); msmEnsureUI(); msmLoadRecycle(); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab==='recycle')); ['form','register','instructions','admin','audit','recycle'].forEach(v=>{const e=document.getElementById('view-'+v);if(e)e.style.display=v==='recycle'?'block':'none';}); return; }
-  return msmBaseSwitchTab(tab);
-};
-const msmBaseRenderTable = renderTable;
-renderTable = function(){
-  msmBaseRenderTable();
-  if(isParent() && msmActiveSector!=='full'){
-    let visible=0;
-    document.querySelectorAll('#tbody tr').forEach(tr=>{
-      const id=tr.querySelector('.record-check')?.value;
-      const r=records.find(x=>x.id===id);
-      const show=!r || msmFilterSector(r);
-      tr.style.display=show?'':'none';
-      if(show)visible++;
-    });
-    const pill=document.getElementById('rowCountPill');
-    if(pill)pill.textContent=`${visible} of ${records.length} entries`;
-  }
-};
-deleteRecord = msmMoveToRecycle;
-bulkDeleteSelected = msmBulkRecycle;
-setInterval(msmEnsureUI,1500);
-
-</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- Firebase (Google Sign-In + shared cloud database) -->
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -689,52 +522,50 @@ setInterval(msmEnsureUI,1500);
 
 /* ===== MSM Premium Login Redesign ===== */
 #msmLoginPage{
-  min-height:100vh;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:28px 14px;
-  position:relative;
-  overflow:hidden;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  padding:24px 14px;position:relative;overflow:hidden;
   background:
-    radial-gradient(circle at 12% 18%, rgba(47,63,255,.85), transparent 28%),
-    radial-gradient(circle at 88% 82%, rgba(255,0,122,.72), transparent 30%),
-    linear-gradient(135deg,#090d34 0%,#3511a4 45%,#12051f 100%);
+    radial-gradient(ellipse at 10% 18%,rgba(65,30,255,.78) 0 10%,transparent 32%),
+    radial-gradient(ellipse at 92% 78%,rgba(255,20,140,.72) 0 9%,transparent 31%),
+    radial-gradient(ellipse at 82% 15%,rgba(225,120,255,.42) 0 7%,transparent 26%),
+    linear-gradient(135deg,#06113d 0%,#2114a0 38%,#5a12a7 63%,#10082a 100%);
   font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 #msmLoginPage::before{
-  content:"";
-  position:absolute;inset:-20%;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='420' height='420' viewBox='0 0 420 420'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='.035' stroke-width='2'%3E%3Ccircle cx='210' cy='210' r='130'/%3E%3Ccircle cx='210' cy='210' r='105'/%3E%3Cpath d='M110 210h200M210 110v200'/%3E%3C/g%3E%3C/svg%3E");
-  transform:rotate(-8deg);
-  pointer-events:none;
+  content:"";position:absolute;inset:-10%;
+  background:
+    radial-gradient(ellipse at 72% 30%,rgba(255,255,255,.16),transparent 28%),
+    radial-gradient(ellipse at 30% 78%,rgba(255,255,255,.10),transparent 24%);
+  filter:blur(10px);pointer-events:none;
+}
+#msmLoginPage::after{
+  content:"";position:absolute;width:540px;height:920px;right:-230px;top:-80px;
+  border-radius:50%;border:80px solid rgba(255,255,255,.10);
+  transform:rotate(18deg);pointer-events:none;
 }
 .msm-login-card{
-  width:min(520px,100%);
-  position:relative;
-  z-index:2;
-  padding:38px 34px 30px;
-  border:1px solid rgba(255,255,255,.55);
-  border-radius:24px;
-  background:rgba(255,255,255,.90);
-  box-shadow:0 30px 90px rgba(0,0,0,.42);
-  text-align:center;
-  backdrop-filter:blur(12px);
+  width:min(540px,100%);position:relative;z-index:2;padding:34px 34px 26px;
+  border:1px solid rgba(255,255,255,.72);border-radius:28px;
+  background:rgba(255,255,255,.91);box-shadow:0 30px 90px rgba(0,0,0,.48);
+  text-align:center;backdrop-filter:blur(16px);overflow:hidden;
+}
+.msm-login-card::before{
+  content:"";position:absolute;z-index:-1;inset:18% 8% 8%;
+  background-image:url('msm-logo.png');background-repeat:no-repeat;background-position:center;
+  background-size:min(430px,92%);opacity:.075;filter:grayscale(1);
+  mix-blend-mode:multiply;transform:rotate(-8deg);
 }
 .msm-login-logo{
-  width:92px;height:92px;object-fit:contain;
-  background:#fff;border-radius:14px;
-  padding:7px;margin:0 auto 18px;
-  box-shadow:0 8px 24px rgba(27,42,58,.18);
+  width:118px;height:118px;object-fit:contain;background:#fff;border-radius:22px;
+  padding:8px;margin:0 auto 16px;box-shadow:0 8px 26px rgba(27,42,58,.20);
 }
 .msm-login-kicker{
-  color:#A8802F;font-size:11px;font-weight:800;
-  letter-spacing:3px;text-transform:uppercase;margin-bottom:9px;
+  color:#17253b;font-size:12px;font-weight:900;letter-spacing:1.8px;
+  text-transform:uppercase;margin-bottom:14px;
 }
 .msm-login-title{
-  margin:0;color:#1B2A3A;font-family:Georgia,serif;
-  font-size:clamp(25px,5vw,35px);line-height:1.12;
-  letter-spacing:.6px;text-transform:uppercase;
+  margin:0;color:#18263d;font-family:Georgia,serif;font-weight:800;
+  font-size:clamp(27px,6vw,39px);line-height:1.10;letter-spacing:.4px;text-transform:uppercase;
 }
 .msm-login-designer{
   margin:12px 0 25px;color:#5B5A50;
@@ -769,6 +600,19 @@ setInterval(msmEnsureUI,1500);
 #msmLoginError{display:none;margin-top:13px;color:#9B3A31;font-size:12px;font-weight:650;line-height:1.45}
 
 
+
+
+/* Supplied MSM welcome/dashboard design */
+.portal-client-panel{position:relative;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;max-width:900px;margin:18px auto 0;padding:14px 18px;border-top:1px solid rgba(210,173,85,.72);border-bottom:1px solid rgba(210,173,85,.72);background:rgba(0,0,0,.16)}
+.portal-client-label{grid-column:1;font-size:12px;letter-spacing:2px;color:#f1d98a;font-weight:900;text-transform:uppercase}
+.portal-client-value{grid-column:1;font-size:clamp(18px,3vw,28px);font-family:Georgia,serif;color:#eee8d5;letter-spacing:.5px}
+.portal-record-stamp{grid-column:2;grid-row:1/3;min-width:92px;padding:12px 10px;border:1px solid rgba(210,173,85,.8);border-radius:50%;background:rgba(5,10,18,.34);text-align:center;box-shadow:0 6px 20px rgba(0,0,0,.24)}
+.portal-record-stamp span{display:block;font-size:28px;font-weight:900;color:#fff}
+.portal-record-stamp small{display:block;font-size:9px;letter-spacing:1.5px;color:#f1d98a}
+#msmParentSectorNav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px;max-width:1050px;margin:18px auto 0}
+#msmParentSectorNav .btn{min-height:44px;border-radius:12px;background:rgba(0,0,0,.24);color:#fff;border:1px solid rgba(210,173,85,.72);font-size:11px;font-weight:900;letter-spacing:.5px}
+#msmParentSectorNav .btn:hover{background:rgba(210,173,85,.20);transform:translateY(-1px)}
+@media(max-width:650px){#msmParentSectorNav{grid-template-columns:1fr 1fr}.portal-client-panel{grid-template-columns:1fr}.portal-record-stamp{grid-column:1;grid-row:auto;justify-self:center}.portal-client-label,.portal-client-value{grid-column:1}}
 
 /* ===== MSM Sector Portal / Post-login branded landing ===== */
 #sectorPortal{
@@ -863,8 +707,8 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 <div id="loginGate" style="display:none;">
   <div id="msmLoginPage">
     <div class="msm-login-card">
-      <img class="msm-login-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFUAAAA3CAYAAAB9yQYLAAAdu0lEQVR4nO2beZAkV33nP7/3MrOOvs+Z7pnpOTUjIWEJXSC0xjJizeIDvHLYXmzCYS8+1ibs9cFeYYK1l12z9nptjLFhuSXCwkhrgx0CZLBgMUIXErrm1Nwz3TPTd1V3VWXl8d5v/8js1mExA2yzdjh4HZVVXZlV+d63fuf393vSbreV74wNHUEQBP/Qc/gnNwJjzD/0HP7Jje+A+m0YgYj8Q8/hn9z4DqjfhvEd3f82jA1x/U5BBbwqqiAUD4Pg8aBg8QiA2OIk8P9bS7x/7n+KCKCsz+fF5qT6/Ijzhec9Wlyzvm7ZGFClnFnxDOU9EMAiiAfBFmftRtzxW5yn+Bd5c/3wrX2nFp9XUda+fWNAFQDFAIri1ZN7RwaEagiwxUW2BF7XPvftldQ1KRMRVBXvPVA8r51TBRFDEATf8HxUdf3zzuU4l+O9x4uiIhtlUxXUg3pEi9fG5Zze/zjxwizaaYHLyL3bmNvx7MJeqJ4X/ww4B95Bmjr27z9ElhVz+nqAisjzHmv3dM6RJAlJ0iXutOi0Vuk0mnSXGhsjqaCl6isqxWttt7nnXX9KiOUNP/qvmLr6uwgH+/G16v+Ltj17x+eA+WKx9nPPO+dKQASXw6lTZ3n3u9/Dl7/8Zf7qr/6Sqe2T3/A91wDNsowkScjyLmnSRbsZJBni/MaAWtjPQq0VwTrHyvR5zMw57MIyn376aSavfRnXff8PsOnGawkG+tCwgrcVBIPgQBSjrJsGNeAtqHeQZVhVxIOzVcQYxJQ2WhQnOaJSOslS1V2GGMFlgoglTRzHjp3kEx+/m7+865M0GyuohZMnzrFtahLvC8clsjaJFzH+CngF5/FZTpZldNIuvr1KtLxEfn4O290gUNduKAjeO0yes3L+HGFzhfF2TFWU5pcf5L7HDiBbN3HZK27gsptvYmjHDmxvP1QqhbQpiBHUK+o8RhXJEpLlZWZPneL0yZMMbNnC9n1XUB0ewvT0QWgRV0iqeFAVjDFkLieLHRcuzHP/lx/ms5+5j4cf+irtlZiKhBitkGvKgQMH+Z5bbuT52v/iJmXtEu89WZ6TpSmyEhPOzvG597+X5OhxKskGgSqlu1fVQurylPPHjxImLfpcTk/m6DUW112mu9Lk/LETHL7rbuymMQa2bmFg6xS1wUHqfX3YwJBkGd3VDvHcMsvTZ2nNzuI6LYwIK+pZNQGMb6K6dTuD27bRPzhMtVbDOWVldZXZ2QVOzUxz6PAxjh8/SZZ4VC1gMVJH1QAZ1loOHz6MUpw3Zi3G+vpDRcjVk+c5LkkJV2OyU+fIDh5hfKVBLc02SFIVinC08K6SJTRnzxEaEDwGpeIzICPKwefCYCxop0t+appm+DCLBjwggUVFQAwhAVUPVVFyUZwJ0MzSzRJm5o5x4cnjzHdTWhIQ5ylp5sm9J/eQIyWQBpEQUYOKlOYGwOBVOH78BHnmsNaUkcAllipKpp7M5eRxiiQJeadN5BzVPKXq842SVCljE0VE0Sxl4cxZqrkSeguqqHgMjtAbLIWqe5+RW6HiBWTNHuZYa3DGkIvD24hOtUK7vwcZGMQl0F5YZrXZphWneEJcJqgLyfOcHItDMJgCIS0fCJ6stBG2dGSWM6dn6MQxlWr0DSwUvFcy70iylCxJ0LhL0k3AgfqAXDcoTgUovAyIBmjiiecWGcmEUCFURUt3ZlQQU6QfuQjtwJJEAUoBdkXBugzjDS6oEfcNsu8HX8e2m15OONAPNmQ1TvnC3z3I+z94B912CipFrCiGXB1ewKhH1BRIlJEJ4hEcXmT9/W6ny9zsHIOD/aWUSuElXyCx+twXzpcRQApJgs9yrFcMgtpwg7y/NYi6QsUSSBsxdLoYVXLJqYhHFHIJcJLjxGPFkGFIozrx5hEuu/Z66r39PHbvvQysNql6yELLyMuu4vIffh1/++DDPPD5L5A4zxt+/E28/kd/nKcPnORvPvN5vFOcZmgAP/Mzb2JwcIBPffKvOXVyBp9TguQQVaSU4LWIpRvHzM4ucPnll5WeH74+JSJYbwhyLZVA8ShYxYhDJSe3dqMkVYp8Sj3iodVokHY7lDEWXgQnhsRavDGkQZGHS1ihUw149b/+OTa94iaSLOGs5kzf+zcMdTv4MMORgDi27Zxi52WXcfzgET74nvfQde9lbr6JqifVHLXKy195Lb/+1l9goL+X2257HT/+Yz/FuelFXF7aUuPLOQkihQ3FK/Pzc+ucxbew9MLMGFmX5g0MqQRfqkC8uorPU1QLEsUjJEHAahgQ91QZ2rmdTqvD8uIiaWA4tdikn4DpuMXNP/Jj3Htims7hpwlxnDp4gOzuu7n6e1/Lm970U5jeCovNFp//0ld47/s+Qidw5OIYHOnnt97xm8TdFbrdJS7MnmNx8QLGGoaHR3nJlZfz+GOP0m61S1BLjkKVubkFvOol00t9znHtyVNEBL4E2OlGBf9ljFoYypw86WJ8ofIoYCxpYAk3jXPjm3+ayWuuZnWpyT13/jknjz/D4089wZW33spTjz7G8E2v4JY3/QR/8a4/gMYyQVTh4JNP8cWHv0al2k/P1jGuu/lV3PbGH8VHNf7z2/8LYaD8x7e9lW3bt/G+9/0JP/+zP8N9f/tnpGnK7t17+d3f/R1edu1LOfrMcX7vnX/IfZ+/H1VT2FAxzM/PYY0UQvBN8BHrAdi6PyzA3ZjcX59jyL2nvdLAoIUN0wJ0L4ZGt0M6NEC2aRPLA0O8/pd/latvfQ3TSzMsL19g6/gof373XURTE1z7I7fR7Bvkpte/gV/49/+OTTu2cerCNF/54pf41F13I5lnx8QWJEt5/W0/yPf/0A9w58fvJE1z1Af83Zfu59ZbX83td3yAkbE+nO/S11/l9OkTiFmbdpGFNZab68TKpRa69lfYjjI1X19j8c4GUX9rtyvSzTxJCZwSAQEG44Qwy6nGHe6//Q5u27KTGMu9jz/G9/3IDzGwbzvHzk5z7dU3cM9ffpKHHvgKt9x4IxdOnuHhx/YzccXL+De/8hscPHUcVNm596XMLzT40Ic+zOV79/Jvf/3X2L9/P3/6x+/hAx/4AMeOH+OWV303b3nLL/KFL36eer3O5KZN/M5/+32OnjiNavQsgCok7S7rPgpKPk/+3hoBnKFwtPosK1d8k0UJ8FY30KaWQ1HSJC1iuvK9AKWWKz7JiI+d4v6P3M6tv/yrzEjAXbffzQ+/8TYq/f30VGpce8U+vnbP57jCVtg7PMzMQ49xxzt/j+G9u6ls2kRHAz79qS/x4Nee5uTZaX7+599Mlgi/9fbfYXJiin379pFlXX7xLb/E+z/0QRqNZd72trfziY9/ks9++kvgqxgJS8LCIygud6XaX4LxkmcfayBrKZ1epHDI5tsAKkDuckAKdZDCxlTUI6knNx2mH7mfw/ddxs3/7FXMHHuG//UHf8RPvumN9G3byg3bp5j/zOd48MO3kycxUQJxBk+fmuZ8kjGXW5q50DEhWSq8+90f5GN3/m9m58/xS2/5WeqVKnPNJr/9jrdz8tQpPvKRD3Po0FHe9a734TKLeFOEVfj1eFm1jKIvlVLpc9mvQufXbCr6rGnYcFDXCF9FC6rNFKS14AnwRC6nmjju/6uPMTIxwBv++au4808Oce8fvpvr9u1h8chRxpoNqmW6sJyC5Bafgs/A6bMUHmrxzjM3u4Bg+dRf3EPc7vDkk1/j6PFjvPd9f0I9qvJff/sdzF84h5UIJCgzLC0yQSkIGPXKJU1qOUx5oRghNAaxAUYFU4SslwZ17XeRr/PGc9i69VGtVtfrKV4gN4rB4YynrsKQT8gWZnjwE3dw82tvY1+1xtzR4yycOk1dc+o2wDklJ4Rc6Dqh45WOQoIn1SK391rEnQaP956583Pc/qE/QwR27tyKdcLvv/O/8+RXH6RiDN7niIlQH6EalGSDUKlUEPP8ctXzreqz0ikiWGsJw5BKVMFWqkgQESKEKoheokalmqNi1nNnKT3d2n20VHGgSD8xqHFEvTVS4xByKk5RcpIiX2X3S7awkrWodposnH2c//PRY5g2DORQV09UBnxGArq5J6VCjCcmIxVH7iO8erzP8QjOeNAUYwue06oSWmH62BF+6affiEibif4KWyY3s2vXHlod4bP3PUkqQZENSU7PYC9aEu3qi7WqWVtkyRaVmmNEEaMEYYiNQoJ6hbwekFpPYoRMgktIqs+fzYfFoAi5+PJ3k/WjiC0kxggYQ22wH7eeYRS/rscTGEMwXGHPls3srUPsc+aWl1mZuUB7rkm+4uimhSTl5HSMYTXJaLuIrldSB16lqIf4FLSYX+RzjCZEpku14hkdqrFzcjO7d+5gx+4pxjdtIkvhyMlpPvuFRxERXO7BgsczOjbyAluqGFeQQM/yBiAuQBQiqSAmxwRVpFKjW6sThyE2qpDKJSQ19YVqQVbky8aSS1m3UUHUIGrwmgN5wd4bQ6XWg63WcKsJXgwBYFRxcc4TDx0k7DMMT/Yytm2ILRND7N66G809cTtltRnTaLSZXWgyv9Cmtay0s5BMK3gfgHYxvkNdUgLpUq0FbBvqYcfUJHv2bGXn1CZGhvuoV6ustrocPT7LJx94nKf2n2a+2SHWKl77sMbg8Vhr2LRpfF3fVVyRWpcRvarHl+V1cUlxmVEksthaBeilsnWK3d/3L0hm53ByCZvaVQiJMVkDG3pUhYKDCVCNsFIDKng8KikiBi/CwPAoQbWOM6vFr+2VQA1GQ4JOFe16VpY7NJ9Z5GyfoWeyn+Fto4xs7Wd0Uy+jNmAnw7SSkJnlhKPnOxw43uDo6UVWYmV4pM6OnRPs2jPBli0jDPcFBLaO8z0sLecceOoMjx44wJHj51hseGLXQ6Y1VIYQLBAVSYl4jBUmJibQkr4UcXjJyFUweFRTLBmCQ30LFcFRgWoN5y3e1gmq27jp536WSIsq7UVBrbBMPH+Ug498hr5qjkRCtW+YnoHN9A5spd67BRsO401YENQSgUC1vx9bqeGNKZsN1gy4YL2gRGgWohrilrrMd5ucnZnDjgiTewYZneyhZzigMhCwdVDYvLvOjTeP0ersJXOWnlpAFOYY7SJyntV2lce+doaDxzocOLbCmfMrdLSCp07me3DUcGKLRg61hacuc+havc62bVuLsMorkOO1jXVL+GSV9vI5ukvn6DRm6cYrdAlx0QTXvfINhFE/uVRxoeLqQgKIuouDGsgqGp8hXD1ET95C6ZIvV1nyAfNSg9okY7uuZ3DyCmx1FG+GUBNgeyuM7NhBe/ocznrUlTyAGLxNy6Kd4BFUQgyey/bsINics3n3ILlPwMdYcQRiUPFYUfp6BvEYAroEtAlNB3xOVzaxZ8cUe6/s46bVnEe+usTBg6scPHweTJE9GetIycGEOF/Sf6qMDA2weWIYp12sxEi+TNo4xfyJ+2nNnMBkS4QSUyPHGsHKII3VGMlahNEgIhUiCcjJC8mX6OKg5pqTJKvUwi6RLmJNu7CjeBRDkp7n/IETnD2+nal9r2J46gZSO0RQtYzs2s38Aw+RW4HAo1ZJyclsihpfPAKHt548SqG3l+2Xb8aFXaxGiNRorSou6CGvVGgkFZ4+NM+JMxe4+eWXMzHWTy1MwMUE1R7Gwj68XWVwIGPYbuXYk59jtL/DarpKJ6+gUsOq4LxFqaImQEzO1S/dSyUSrKyQdU4yffiLLJ59gn6mGc67hEGMNylB7sip4LzDuD7wCQSKBCFWbOF7Sqd+UVAFiDurBIFDiBHTxnrFFrUDjI8Zkw6dNOHsEw3mzk2z89ofRBlh10uv4engE2Q2xVklNatomBMNWgbGehidHCDqswShEERKz1ANbwTnhjhzpkmrrbSSGg8dOEocVXnmbIPpCwntPOeeL19ganKI8bE6O6bGmdrcz8ypo9xwwxYmxkMmRgLe+tbXs9JZptNt01xRzp7tcuLEAqenl5hdjmnmAV6Ea6+7CjRhdf4Izzx6F1FyhJFwmUhnqQUZoim5KNYI+DqR9BJJjEtXCNQV5RkpGC9jisTioqAacaRJByMOIUM0w6jFakkhuByrMdbOg0s4fahF7/B2tu36bkZ2bsOOj9A526Vq4PLrr2BgskJ9k0OjFBfGWKtYb/CxpbHYInd9nJtr8cAjx5ldgfm4h9kkZEm7xG6QOKuQkLPSSrlwJEOOrsKDTSyHEZ+y69FTvPbVV1G1S2wZGeLy3X1UTAtrEvyVdVL2stLtZXp+gE/ff5L7vrqfl990I8Z2OPTovYTLRxiuzlF1LQyOKM+LVh5T1rzUE0iKkYRut0EPOdaAiCvNCQjmUqDmZEmHKoJRixBg1goREhTezyvduEnuE0ZqA0TSQsKE6qY+xq7aQ/P8eXowpOKpj/YhtSa59YiJkNTiWwFn9p/nyP4LpH6IZlqn2xklzqCR1WhplVhTUjU4Z3FYvES4InQvF+IRyTl0NuXw7fsJTJuxuuUNr34p3/892xnqbSLSwQaeaq1GY2Wes9On2H3ZLnbsngBdZqCSYHyXZHGVqNdSqdaxuUWCnFQVMBjCIjXGkeQxdevw4opeMTxgLy2paI66vKTIBUuAaIqXosjmrdBcaRBnnrBewWgHoy1UVyHq58qbrucLf/cQSWJ56vFDLK+e46pX7sXWqsTtLo2Tq5w/dI7ugqOab0GzXnAhLk/puJS2WhK1pN6SeU+mGV5cmclJmQMJoVeQAO+rqPSRa5vpdpeP3nOIB756lFu/ew/XXLuVoYE+9h+a5UMf+xIzLXjzb/xLeno94lewrl2ETt6yON9h81hEZC1ePEoOkqNU8aWWZnmKw1E0U9oy6+QbaKX0htxZHBU8VRw5aIjxGUYcFkPoLUMjo3RVSTtLLJ14CBvWGRzZza7dI3xlvEYy06Y/rbJ0eJHD6THEwPJCE7cCFdeH8QM4H5J76PiMFXU0vRArZN6Ru5BYlSxw5M/jOaWsgUWAljUoj2gFLyEdrbH/fMyRu55k9PNPMTE6wLnzyyx2lGp/jde/9nri+adYmn+aztIRBk2DgRFDllbIsoQkquCxWG/xuSc3IYmJSLIKLrVFThQ+66DWKLmLZ1T002KUPNpDJsOkaYNet0Jv2IW8QeBSDIItqu+M1QPS5AzLT32S867KoBnh8j0BpxcWSUhQ8cydmgUFQ0iU17BOyKwjQWkT0FJDW4WuK3hOvEG8xyo4dQQvpOa0lFctTIDRQnrSoGjA8D7A+RoXGjELy4vUKiHbN9e5+Yad5M98mgtHFwjCNpsqTaouwarDRAELcUYkVbzWaGs/LTNCLFVMdZQsHCVlBEsv6k3ZdrVGtoLoRXoRW+kckrcIpQW+TTdu0j75BAunH6PiLiCtGfqsUq0VjJF1FvUhKiE5lkB6MLHgmo7mfJPFuSWyeaXR6JAmHptbIh/gpU47D1jMAmYSYSZRzjvPshoSFxA76KojdaXdej6qiM3BZxhyrGYY8WU7bM5grzA+GLBj6zCX7Rxl97YRJsdrDPUmBLJIIDE2T7G0iWyKU8URcX4lY2BwhNj1kg9cxcje11AfmyQIe3GuShiOYG0/agxiFdSUfVz24qAmrlv0RpHjfRdrBUkbJMvPcPShT5DPPs5UP4Q2Bu+wccTKXJtAInr6+jCRLbqpTVA0rlmDSftIc0O7k9Nptuk0V4gbGcuNlAutjHMtx7mVjNnMsZxDO4HEKYk6MlfU7Y0RjIC1gg0MUdXTX48Y6IkYH+5lfGSQbSPDTIz2MT5s6K/lVKyjIl2sdjBlp0qOp9XqQNxhdLwHbEomGWoCFuIqTdfL2L5bmHjJD6C1nZiwD2MsWjptISh6BcwaqAW5dFH1t96gYlFCrKli1JMFfZgBy+Z9r+RM4zTOdDA+warFpVVOHD7H1vEdaKfG6enTTEyNEvWk9A6E4LpUajlGQ/p6Q/rGIozrL+sullSqtL2lnQldX6GTBcSJp5PmpD7DaU5gLGEQEoQh1UpEpRJRraSExlG1npAEqxneZFgzT+g9oTcEeYjzQmc1JWk2cIkniHo5O7NM70hEULHUh+pgErwq1doQS26cyWteRx5uR7QHSw3xglMFa9Ay1ZUXiOXFQQ3Cv6dq1mdkEnFh2aG1zWR+hkh7wQuzc3NMbZ9i+sgiE2M1us2MKO1BcBw4cYKJqVHyeAUxFhtYBof7QB2hjRCUwMT0hZZKRXAS45xgTFSWLDLE5giKdxVEPUobJEVKTiFwivddJHRkPoVMCHyNE4fPUbe9LC+0GBsZ5cL0Kju27+DI08+wY88OmrrCiaOnufL67agNSTWkHY7TZYSFZcfApoggiBATghpEFVM0s/JsKVnW2cOLZ1QvUq8xKlhTZfu+65kPYpamLXG2QMXE9ExN4psx+16xhROHT7F11xhqMxbmlhjoGWR0cDPSozz91CEmJzeRNC1J13H82DNMToyCWHr6e5lfbVDpqZAmGbVaDzYwZFmXiS1DrLaW6auP01pdodVeIQgV8RELswvsnNpCY3WesclB2g3HzKl5XnbVtUh3iUYrJu5kDO0e5eSZ07iaUpusI0NCT1Cjv/8ymlIlt3108iou2sHul9zIwPAUQg3UUpCqZYfDeu3lOVXAb0RSXwTm4mhq1Ad2suu6EdLLb6BxZj/NmSN0l85RH4uxJmX7SBXaXbTrGB8cYXb+PI3OIjVbJ85iqr09dNtdwqBG1oX5mRYTmzcTLztMVmFiYooHH3qYa142QRhYnjx4GpM4BoZrBLnh0OMH+K6rryKKQuK2o704jY5DT6UP9ZbucgIJPHPoGEODg5xpzrB5Ypi5hbPsvGILvi9last2NKygNqKNJamMEI1cxrYd30X/2F4k7EeDftAKtoxF9VIVVy7h/f/+UFRzvCoY8JrgtINJO0jSIm7OsjhziNWFY+TxLJFboq6WinrwbUQyqmrprLSIVzv01XtJOhmNuTbioBqEdLpdegb6GZ/cxCOPPMq1111Jb2+d48dPEcerXHHlLtQJTzxxkInNE3SThCz1GAkQHLXBKrXBCt1WQl/vAEvLKwwMDWOCgMBGWGvpSEISWVo+JA/6iEZ2MrJlNwOTV2Brm/GmDyu9BVVY9rYWNf51uXrRfQbfEqhFu0SGKliCoiyrGUUnsgeXFeCxQmf1HCsLp1iZOUO2NIPkC4RBTD8OzXNCAXEO4z0WxTqPZg71HgKDSkCn3aG3L8QGhpVmG6+e/v4a6hXvhTR1OCdUq5bARDgv+MiQW486i5iQXA3OBHgT0NGAVRUqAwP0jG1nePOV9A7vJgiHEFvBSwWVEAgQU6doxFwrHpnngXqx9qBvGlTFlwG3Ldhzih0pRR6uCDneJ6jvEmgMvovPGqSdOZYXZ0gXZmk158m6DUxnhZrL6LEQGCkCeKOo8SDF/gEkBxxeKfqdAC2jBUMFXxQWMCYiJyIlpJs7OlkR1/aOjFEfGKPaP0rP+FYqQyOElT5MOIixQyA9qIaISOF81od9vqn8JjaxfZPqfxHAVQtpLeVZvQMtKqoeh9cEaxTrMnJJcd0GrbkZ/uID7+fYI18jNAH1nir1WpVKrUKlFlKtBdTrVWrVShkLFsSGc9DpJMTtlHYnpZXmNFZjFlc6LK50abQ6jE9t4zd/+z+y5/LLCXsGgCpqoyIcIgANsLaCUEpmuU9qI8bGgypFSbeQ3GD9HBQRiPqi9VG12HCRNFf464/ewZ0fvYPWaocs8WSpI3MpKu4523B4TiOclDUlg/PgAoMTxVtBrfC9r3kNb3vHb7Fl2wQYTyABImHZ9qhlh2LhwQt7+Y8YVNZsq6wbihJJAxQZR+AL3iFXxeeuqMr6jAfvf4D/8c7/yTOHT+JSxXmP88XU/Ppm1yKTAopzXhAjGMlQ8fQP9/Arv/bL/ORP/QTVnt6S53RlB6KgJkJNUU6HYp6igilT3390oBbDP8cEFP1wa9uA145mTdrWSsIUjbLew8LsEh9+34f5+MfupNGIwUT4XPEqiAQUPQS++DbviwYIUWzY5dW3fg//6Tf/A3uv2IMYjzVhqTXl1s1yp4q+ALeiRXVjd+hvOKjrzyo8j/xYc2aU5v5ZjcZ5jyoYDz73HDl4mD/+ow/w6c98kTzzBRNUhtTWKqqF+TBWueaal/KWt76ZW255FWEUYMpNxcYUP0KZSAJg8Bhda8stqTqBdfHfoPF/AR/XLx0URsP7AAAAAElFTkSuQmCC" alt="MSM Security Guards Logo" id="msmLoginLogo">
-      <div class="msm-login-kicker">SECURE ACCESS PORTAL</div>
+      <img class="msm-login-logo" src="msm-login-logo.png" alt="MSM Security Guards Logo" id="msmLoginLogo">
+      <div class="msm-login-kicker">MSM SECURITY COMPANY</div>
       <h1 class="msm-login-title">WELCOME TO MSM<br>LONGROLL DATABASE</h1>
       <div class="msm-login-designer">DESIGNED BY SYED JALAL HUSSAIN SHAH</div>
       <div class="msm-login-divider"></div>
@@ -925,19 +769,24 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
     <div class="sector-darood">اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا صَلَّيْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ، اللَّهُمَّ بَارِكْ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ كَمَا بَارَكْتَ عَلَى إِبْرَاهِيمَ وَعَلَى آلِ إِبْرَاهِيمَ إِنَّكَ حَمِيدٌ مَجِيدٌ</div>
     <div style="text-align:center"><div class="sector-datetime"><span id="sectorDate">DATE</span><span id="sectorTime">TIME</span></div></div>
     <div class="sector-brand-row">
-      <img src="data:image/png;base64,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" alt="MSM">
+      <img src="msm-logo.png" alt="MSM">
       <div class="sector-designer">DESIGNED BY: SYED JALAL HUSSAIN SHAH · HRMS MSM SECURITY COMPANY</div>
     </div>
     <div class="sector-title" id="sectorPortalTitle">MSM SECURITY COMPANY</div>
     <div class="sector-subtitle" id="sectorPortalSubtitle">WELCOME TO THE MSM LONGROLL DATABASE</div>
     <div class="sector-badge-row"><div class="sector-badge"><span class="dot"></span><span id="sectorPortalBadge">Authorized Sector Portal</span></div></div>
+    <div class="portal-client-panel">
+      <div class="portal-client-label">CLIENT / PROJECT</div>
+      <div class="portal-client-value" id="sectorPortalClient">Authorized Sector</div>
+      <div class="portal-record-stamp"><span id="sectorPortalRecordCount">0</span><small>RECORDS</small></div>
+    </div>
   </div>
 </div>
 
 <div class="cover">
   <div class="cover-inner">
     <div class="cover-title">
-      <div class="brand-row"><img class="cover-logo" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFUAAAA3CAYAAAB9yQYLAAAdu0lEQVR4nO2beZAkV33nP7/3MrOOvs+Z7pnpOTUjIWEJXSC0xjJizeIDvHLYXmzCYS8+1ibs9cFeYYK1l12z9nptjLFhuSXCwkhrgx0CZLBgMUIXErrm1Nwz3TPTd1V3VWXl8d5v/8js1mExA2yzdjh4HZVVXZlV+d63fuf393vSbreV74wNHUEQBP/Qc/gnNwJjzD/0HP7Jje+A+m0YgYj8Q8/hn9z4DqjfhvEd3f82jA1x/U5BBbwqqiAUD4Pg8aBg8QiA2OIk8P9bS7x/7n+KCKCsz+fF5qT6/Ijzhec9Wlyzvm7ZGFClnFnxDOU9EMAiiAfBFmftRtzxW5yn+Bd5c/3wrX2nFp9XUda+fWNAFQDFAIri1ZN7RwaEagiwxUW2BF7XPvftldQ1KRMRVBXvPVA8r51TBRFDEATf8HxUdf3zzuU4l+O9x4uiIhtlUxXUg3pEi9fG5Zze/zjxwizaaYHLyL3bmNvx7MJeqJ4X/ww4B95Bmjr27z9ElhVz+nqAisjzHmv3dM6RJAlJ0iXutOi0Vuk0mnSXGhsjqaCl6isqxWttt7nnXX9KiOUNP/qvmLr6uwgH+/G16v+Ltj17x+eA+WKx9nPPO+dKQASXw6lTZ3n3u9/Dl7/8Zf7qr/6Sqe2T3/A91wDNsowkScjyLmnSRbsZJBni/MaAWtjPQq0VwTrHyvR5zMw57MIyn376aSavfRnXff8PsOnGawkG+tCwgrcVBIPgQBSjrJsGNeAtqHeQZVhVxIOzVcQYxJQ2WhQnOaJSOslS1V2GGMFlgoglTRzHjp3kEx+/m7+865M0GyuohZMnzrFtahLvC8clsjaJFzH+CngF5/FZTpZldNIuvr1KtLxEfn4O290gUNduKAjeO0yes3L+HGFzhfF2TFWU5pcf5L7HDiBbN3HZK27gsptvYmjHDmxvP1QqhbQpiBHUK+o8RhXJEpLlZWZPneL0yZMMbNnC9n1XUB0ewvT0QWgRV0iqeFAVjDFkLieLHRcuzHP/lx/ms5+5j4cf+irtlZiKhBitkGvKgQMH+Z5bbuT52v/iJmXtEu89WZ6TpSmyEhPOzvG597+X5OhxKskGgSqlu1fVQurylPPHjxImLfpcTk/m6DUW112mu9Lk/LETHL7rbuymMQa2bmFg6xS1wUHqfX3YwJBkGd3VDvHcMsvTZ2nNzuI6LYwIK+pZNQGMb6K6dTuD27bRPzhMtVbDOWVldZXZ2QVOzUxz6PAxjh8/SZZ4VC1gMVJH1QAZ1loOHz6MUpw3Zi3G+vpDRcjVk+c5LkkJV2OyU+fIDh5hfKVBLc02SFIVinC08K6SJTRnzxEaEDwGpeIzICPKwefCYCxop0t+appm+DCLBjwggUVFQAwhAVUPVVFyUZwJ0MzSzRJm5o5x4cnjzHdTWhIQ5ylp5sm9J/eQIyWQBpEQUYOKlOYGwOBVOH78BHnmsNaUkcAllipKpp7M5eRxiiQJeadN5BzVPKXq842SVCljE0VE0Sxl4cxZqrkSeguqqHgMjtAbLIWqe5+RW6HiBWTNHuZYa3DGkIvD24hOtUK7vwcZGMQl0F5YZrXZphWneEJcJqgLyfOcHItDMJgCIS0fCJ6stBG2dGSWM6dn6MQxlWr0DSwUvFcy70iylCxJ0LhL0k3AgfqAXDcoTgUovAyIBmjiiecWGcmEUCFURUt3ZlQQU6QfuQjtwJJEAUoBdkXBugzjDS6oEfcNsu8HX8e2m15OONAPNmQ1TvnC3z3I+z94B912CipFrCiGXB1ewKhH1BRIlJEJ4hEcXmT9/W6ny9zsHIOD/aWUSuElXyCx+twXzpcRQApJgs9yrFcMgtpwg7y/NYi6QsUSSBsxdLoYVXLJqYhHFHIJcJLjxGPFkGFIozrx5hEuu/Z66r39PHbvvQysNql6yELLyMuu4vIffh1/++DDPPD5L5A4zxt+/E28/kd/nKcPnORvPvN5vFOcZmgAP/Mzb2JwcIBPffKvOXVyBp9TguQQVaSU4LWIpRvHzM4ucPnll5WeH74+JSJYbwhyLZVA8ShYxYhDJSe3dqMkVYp8Sj3iodVokHY7lDEWXgQnhsRavDGkQZGHS1ihUw149b/+OTa94iaSLOGs5kzf+zcMdTv4MMORgDi27Zxi52WXcfzgET74nvfQde9lbr6JqifVHLXKy195Lb/+1l9goL+X2257HT/+Yz/FuelFXF7aUuPLOQkihQ3FK/Pzc+ucxbew9MLMGFmX5g0MqQRfqkC8uorPU1QLEsUjJEHAahgQ91QZ2rmdTqvD8uIiaWA4tdikn4DpuMXNP/Jj3Htims7hpwlxnDp4gOzuu7n6e1/Lm970U5jeCovNFp//0ld47/s+Qidw5OIYHOnnt97xm8TdFbrdJS7MnmNx8QLGGoaHR3nJlZfz+GOP0m61S1BLjkKVubkFvOol00t9znHtyVNEBL4E2OlGBf9ljFoYypw86WJ8ofIoYCxpYAk3jXPjm3+ayWuuZnWpyT13/jknjz/D4089wZW33spTjz7G8E2v4JY3/QR/8a4/gMYyQVTh4JNP8cWHv0al2k/P1jGuu/lV3PbGH8VHNf7z2/8LYaD8x7e9lW3bt/G+9/0JP/+zP8N9f/tnpGnK7t17+d3f/R1edu1LOfrMcX7vnX/IfZ+/H1VT2FAxzM/PYY0UQvBN8BHrAdi6PyzA3ZjcX59jyL2nvdLAoIUN0wJ0L4ZGt0M6NEC2aRPLA0O8/pd/latvfQ3TSzMsL19g6/gof373XURTE1z7I7fR7Bvkpte/gV/49/+OTTu2cerCNF/54pf41F13I5lnx8QWJEt5/W0/yPf/0A9w58fvJE1z1Af83Zfu59ZbX83td3yAkbE+nO/S11/l9OkTiFmbdpGFNZab68TKpRa69lfYjjI1X19j8c4GUX9rtyvSzTxJCZwSAQEG44Qwy6nGHe6//Q5u27KTGMu9jz/G9/3IDzGwbzvHzk5z7dU3cM9ffpKHHvgKt9x4IxdOnuHhx/YzccXL+De/8hscPHUcVNm596XMLzT40Ic+zOV79/Jvf/3X2L9/P3/6x+/hAx/4AMeOH+OWV303b3nLL/KFL36eer3O5KZN/M5/+32OnjiNavQsgCok7S7rPgpKPk/+3hoBnKFwtPosK1d8k0UJ8FY30KaWQ1HSJC1iuvK9AKWWKz7JiI+d4v6P3M6tv/yrzEjAXbffzQ+/8TYq/f30VGpce8U+vnbP57jCVtg7PMzMQ49xxzt/j+G9u6ls2kRHAz79qS/x4Nee5uTZaX7+599Mlgi/9fbfYXJiin379pFlXX7xLb/E+z/0QRqNZd72trfziY9/ks9++kvgqxgJS8LCIygud6XaX4LxkmcfayBrKZ1epHDI5tsAKkDuckAKdZDCxlTUI6knNx2mH7mfw/ddxs3/7FXMHHuG//UHf8RPvumN9G3byg3bp5j/zOd48MO3kycxUQJxBk+fmuZ8kjGXW5q50DEhWSq8+90f5GN3/m9m58/xS2/5WeqVKnPNJr/9jrdz8tQpPvKRD3Po0FHe9a734TKLeFOEVfj1eFm1jKIvlVLpc9mvQufXbCr6rGnYcFDXCF9FC6rNFKS14AnwRC6nmjju/6uPMTIxwBv++au4808Oce8fvpvr9u1h8chRxpoNqmW6sJyC5Bafgs/A6bMUHmrxzjM3u4Bg+dRf3EPc7vDkk1/j6PFjvPd9f0I9qvJff/sdzF84h5UIJCgzLC0yQSkIGPXKJU1qOUx5oRghNAaxAUYFU4SslwZ17XeRr/PGc9i69VGtVtfrKV4gN4rB4YynrsKQT8gWZnjwE3dw82tvY1+1xtzR4yycOk1dc+o2wDklJ4Rc6Dqh45WOQoIn1SK391rEnQaP956583Pc/qE/QwR27tyKdcLvv/O/8+RXH6RiDN7niIlQH6EalGSDUKlUEPP8ctXzreqz0ikiWGsJw5BKVMFWqkgQESKEKoheokalmqNi1nNnKT3d2n20VHGgSD8xqHFEvTVS4xByKk5RcpIiX2X3S7awkrWodposnH2c//PRY5g2DORQV09UBnxGArq5J6VCjCcmIxVH7iO8erzP8QjOeNAUYwue06oSWmH62BF+6affiEibif4KWyY3s2vXHlod4bP3PUkqQZENSU7PYC9aEu3qi7WqWVtkyRaVmmNEEaMEYYiNQoJ6hbwekFpPYoRMgktIqs+fzYfFoAi5+PJ3k/WjiC0kxggYQ22wH7eeYRS/rscTGEMwXGHPls3srUPsc+aWl1mZuUB7rkm+4uimhSTl5HSMYTXJaLuIrldSB16lqIf4FLSYX+RzjCZEpku14hkdqrFzcjO7d+5gx+4pxjdtIkvhyMlpPvuFRxERXO7BgsczOjbyAluqGFeQQM/yBiAuQBQiqSAmxwRVpFKjW6sThyE2qpDKJSQ19YVqQVbky8aSS1m3UUHUIGrwmgN5wd4bQ6XWg63WcKsJXgwBYFRxcc4TDx0k7DMMT/Yytm2ILRND7N66G809cTtltRnTaLSZXWgyv9Cmtay0s5BMK3gfgHYxvkNdUgLpUq0FbBvqYcfUJHv2bGXn1CZGhvuoV6ustrocPT7LJx94nKf2n2a+2SHWKl77sMbg8Vhr2LRpfF3fVVyRWpcRvarHl+V1cUlxmVEksthaBeilsnWK3d/3L0hm53ByCZvaVQiJMVkDG3pUhYKDCVCNsFIDKng8KikiBi/CwPAoQbWOM6vFr+2VQA1GQ4JOFe16VpY7NJ9Z5GyfoWeyn+Fto4xs7Wd0Uy+jNmAnw7SSkJnlhKPnOxw43uDo6UVWYmV4pM6OnRPs2jPBli0jDPcFBLaO8z0sLecceOoMjx44wJHj51hseGLXQ6Y1VIYQLBAVSYl4jBUmJibQkr4UcXjJyFUweFRTLBmCQ30LFcFRgWoN5y3e1gmq27jp536WSIsq7UVBrbBMPH+Ug498hr5qjkRCtW+YnoHN9A5spd67BRsO401YENQSgUC1vx9bqeGNKZsN1gy4YL2gRGgWohrilrrMd5ucnZnDjgiTewYZneyhZzigMhCwdVDYvLvOjTeP0ersJXOWnlpAFOYY7SJyntV2lce+doaDxzocOLbCmfMrdLSCp07me3DUcGKLRg61hacuc+havc62bVuLsMorkOO1jXVL+GSV9vI5ukvn6DRm6cYrdAlx0QTXvfINhFE/uVRxoeLqQgKIuouDGsgqGp8hXD1ET95C6ZIvV1nyAfNSg9okY7uuZ3DyCmx1FG+GUBNgeyuM7NhBe/ocznrUlTyAGLxNy6Kd4BFUQgyey/bsINics3n3ILlPwMdYcQRiUPFYUfp6BvEYAroEtAlNB3xOVzaxZ8cUe6/s46bVnEe+usTBg6scPHweTJE9GetIycGEOF/Sf6qMDA2weWIYp12sxEi+TNo4xfyJ+2nNnMBkS4QSUyPHGsHKII3VGMlahNEgIhUiCcjJC8mX6OKg5pqTJKvUwi6RLmJNu7CjeBRDkp7n/IETnD2+nal9r2J46gZSO0RQtYzs2s38Aw+RW4HAo1ZJyclsihpfPAKHt548SqG3l+2Xb8aFXaxGiNRorSou6CGvVGgkFZ4+NM+JMxe4+eWXMzHWTy1MwMUE1R7Gwj68XWVwIGPYbuXYk59jtL/DarpKJ6+gUsOq4LxFqaImQEzO1S/dSyUSrKyQdU4yffiLLJ59gn6mGc67hEGMNylB7sip4LzDuD7wCQSKBCFWbOF7Sqd+UVAFiDurBIFDiBHTxnrFFrUDjI8Zkw6dNOHsEw3mzk2z89ofRBlh10uv4engE2Q2xVklNatomBMNWgbGehidHCDqswShEERKz1ANbwTnhjhzpkmrrbSSGg8dOEocVXnmbIPpCwntPOeeL19ganKI8bE6O6bGmdrcz8ypo9xwwxYmxkMmRgLe+tbXs9JZptNt01xRzp7tcuLEAqenl5hdjmnmAV6Ea6+7CjRhdf4Izzx6F1FyhJFwmUhnqQUZoim5KNYI+DqR9BJJjEtXCNQV5RkpGC9jisTioqAacaRJByMOIUM0w6jFakkhuByrMdbOg0s4fahF7/B2tu36bkZ2bsOOj9A526Vq4PLrr2BgskJ9k0OjFBfGWKtYb/CxpbHYInd9nJtr8cAjx5ldgfm4h9kkZEm7xG6QOKuQkLPSSrlwJEOOrsKDTSyHEZ+y69FTvPbVV1G1S2wZGeLy3X1UTAtrEvyVdVL2stLtZXp+gE/ff5L7vrqfl990I8Z2OPTovYTLRxiuzlF1LQyOKM+LVh5T1rzUE0iKkYRut0EPOdaAiCvNCQjmUqDmZEmHKoJRixBg1goREhTezyvduEnuE0ZqA0TSQsKE6qY+xq7aQ/P8eXowpOKpj/YhtSa59YiJkNTiWwFn9p/nyP4LpH6IZlqn2xklzqCR1WhplVhTUjU4Z3FYvES4InQvF+IRyTl0NuXw7fsJTJuxuuUNr34p3/892xnqbSLSwQaeaq1GY2Wes9On2H3ZLnbsngBdZqCSYHyXZHGVqNdSqdaxuUWCnFQVMBjCIjXGkeQxdevw4opeMTxgLy2paI66vKTIBUuAaIqXosjmrdBcaRBnnrBewWgHoy1UVyHq58qbrucLf/cQSWJ56vFDLK+e46pX7sXWqsTtLo2Tq5w/dI7ugqOab0GzXnAhLk/puJS2WhK1pN6SeU+mGV5cmclJmQMJoVeQAO+rqPSRa5vpdpeP3nOIB756lFu/ew/XXLuVoYE+9h+a5UMf+xIzLXjzb/xLeno94lewrl2ETt6yON9h81hEZC1ePEoOkqNU8aWWZnmKw1E0U9oy6+QbaKX0htxZHBU8VRw5aIjxGUYcFkPoLUMjo3RVSTtLLJ14CBvWGRzZza7dI3xlvEYy06Y/rbJ0eJHD6THEwPJCE7cCFdeH8QM4H5J76PiMFXU0vRArZN6Ru5BYlSxw5M/jOaWsgUWAljUoj2gFLyEdrbH/fMyRu55k9PNPMTE6wLnzyyx2lGp/jde/9nri+adYmn+aztIRBk2DgRFDllbIsoQkquCxWG/xuSc3IYmJSLIKLrVFThQ+66DWKLmLZ1T002KUPNpDJsOkaYNet0Jv2IW8QeBSDIItqu+M1QPS5AzLT32S867KoBnh8j0BpxcWSUhQ8cydmgUFQ0iU17BOyKwjQWkT0FJDW4WuK3hOvEG8xyo4dQQvpOa0lFctTIDRQnrSoGjA8D7A+RoXGjELy4vUKiHbN9e5+Yad5M98mgtHFwjCNpsqTaouwarDRAELcUYkVbzWaGs/LTNCLFVMdZQsHCVlBEsv6k3ZdrVGtoLoRXoRW+kckrcIpQW+TTdu0j75BAunH6PiLiCtGfqsUq0VjJF1FvUhKiE5lkB6MLHgmo7mfJPFuSWyeaXR6JAmHptbIh/gpU47D1jMAmYSYSZRzjvPshoSFxA76KojdaXdej6qiM3BZxhyrGYY8WU7bM5grzA+GLBj6zCX7Rxl97YRJsdrDPUmBLJIIDE2T7G0iWyKU8URcX4lY2BwhNj1kg9cxcje11AfmyQIe3GuShiOYG0/agxiFdSUfVz24qAmrlv0RpHjfRdrBUkbJMvPcPShT5DPPs5UP4Q2Bu+wccTKXJtAInr6+jCRLbqpTVA0rlmDSftIc0O7k9Nptuk0V4gbGcuNlAutjHMtx7mVjNnMsZxDO4HEKYk6MlfU7Y0RjIC1gg0MUdXTX48Y6IkYH+5lfGSQbSPDTIz2MT5s6K/lVKyjIl2sdjBlp0qOp9XqQNxhdLwHbEomGWoCFuIqTdfL2L5bmHjJD6C1nZiwD2MsWjptISh6BcwaqAW5dFH1t96gYlFCrKli1JMFfZgBy+Z9r+RM4zTOdDA+warFpVVOHD7H1vEdaKfG6enTTEyNEvWk9A6E4LpUajlGQ/p6Q/rGIozrL+sullSqtL2lnQldX6GTBcSJp5PmpD7DaU5gLGEQEoQh1UpEpRJRraSExlG1npAEqxneZFgzT+g9oTcEeYjzQmc1JWk2cIkniHo5O7NM70hEULHUh+pgErwq1doQS26cyWteRx5uR7QHSw3xglMFa9Ay1ZUXiOXFQQ3Cv6dq1mdkEnFh2aG1zWR+hkh7wQuzc3NMbZ9i+sgiE2M1us2MKO1BcBw4cYKJqVHyeAUxFhtYBof7QB2hjRCUwMT0hZZKRXAS45xgTFSWLDLE5giKdxVEPUobJEVKTiFwivddJHRkPoVMCHyNE4fPUbe9LC+0GBsZ5cL0Kju27+DI08+wY88OmrrCiaOnufL67agNSTWkHY7TZYSFZcfApoggiBATghpEFVM0s/JsKVnW2cOLZ1QvUq8xKlhTZfu+65kPYpamLXG2QMXE9ExN4psx+16xhROHT7F11xhqMxbmlhjoGWR0cDPSozz91CEmJzeRNC1J13H82DNMToyCWHr6e5lfbVDpqZAmGbVaDzYwZFmXiS1DrLaW6auP01pdodVeIQgV8RELswvsnNpCY3WesclB2g3HzKl5XnbVtUh3iUYrJu5kDO0e5eSZ07iaUpusI0NCT1Cjv/8ymlIlt3108iou2sHul9zIwPAUQg3UUpCqZYfDeu3lOVXAb0RSXwTm4mhq1Ad2suu6EdLLb6BxZj/NmSN0l85RH4uxJmX7SBXaXbTrGB8cYXb+PI3OIjVbJ85iqr09dNtdwqBG1oX5mRYTmzcTLztMVmFiYooHH3qYa142QRhYnjx4GpM4BoZrBLnh0OMH+K6rryKKQuK2o704jY5DT6UP9ZbucgIJPHPoGEODg5xpzrB5Ypi5hbPsvGILvi9last2NKygNqKNJamMEI1cxrYd30X/2F4k7EeDftAKtoxF9VIVVy7h/f/+UFRzvCoY8JrgtINJO0jSIm7OsjhziNWFY+TxLJFboq6WinrwbUQyqmrprLSIVzv01XtJOhmNuTbioBqEdLpdegb6GZ/cxCOPPMq1111Jb2+d48dPEcerXHHlLtQJTzxxkInNE3SThCz1GAkQHLXBKrXBCt1WQl/vAEvLKwwMDWOCgMBGWGvpSEISWVo+JA/6iEZ2MrJlNwOTV2Brm/GmDyu9BVVY9rYWNf51uXrRfQbfEqhFu0SGKliCoiyrGUUnsgeXFeCxQmf1HCsLp1iZOUO2NIPkC4RBTD8OzXNCAXEO4z0WxTqPZg71HgKDSkCn3aG3L8QGhpVmG6+e/v4a6hXvhTR1OCdUq5bARDgv+MiQW486i5iQXA3OBHgT0NGAVRUqAwP0jG1nePOV9A7vJgiHEFvBSwWVEAgQU6doxFwrHpnngXqx9qBvGlTFlwG3Ldhzih0pRR6uCDneJ6jvEmgMvovPGqSdOZYXZ0gXZmk158m6DUxnhZrL6LEQGCkCeKOo8SDF/gEkBxxeKfqdAC2jBUMFXxQWMCYiJyIlpJs7OlkR1/aOjFEfGKPaP0rP+FYqQyOElT5MOIixQyA9qIaISOF81od9vqn8JjaxfZPqfxHAVQtpLeVZvQMtKqoeh9cEaxTrMnJJcd0GrbkZ/uID7+fYI18jNAH1nir1WpVKrUKlFlKtBdTrVWrVShkLFsSGc9DpJMTtlHYnpZXmNFZjFlc6LK50abQ6jE9t4zd/+z+y5/LLCXsGgCpqoyIcIgANsLaCUEpmuU9qI8bGgypFSbeQ3GD9HBQRiPqi9VG12HCRNFf464/ewZ0fvYPWaocs8WSpI3MpKu4523B4TiOclDUlg/PgAoMTxVtBrfC9r3kNb3vHb7Fl2wQYTyABImHZ9qhlh2LhwQt7+Y8YVNZsq6wbihJJAxQZR+AL3iFXxeeuqMr6jAfvf4D/8c7/yTOHT+JSxXmP88XU/Ppm1yKTAopzXhAjGMlQ8fQP9/Arv/bL/ORP/QTVnt6S53RlB6KgJkJNUU6HYp6igilT3390oBbDP8cEFP1wa9uA145mTdrWSsIUjbLew8LsEh9+34f5+MfupNGIwUT4XPEqiAQUPQS++DbviwYIUWzY5dW3fg//6Tf/A3uv2IMYjzVhqTXl1s1yp4q+ALeiRXVjd+hvOKjrzyo8j/xYc2aU5v5ZjcZ5jyoYDz73HDl4mD/+ow/w6c98kTzzBRNUhtTWKqqF+TBWueaal/KWt76ZW255FWEUYMpNxcYUP0KZSAJg8Bhda8stqTqBdfHfoPF/AR/XLx0URsP7AAAAAElFTkSuQmCC" alt="MSM Security Guards (Pvt) Ltd Logo"><span class="designer-title">Designed by : Syed Jalal Hussain Shah / MSM G-8 Head Office HR Head Clerk</span><input id="companyName" class="company-name-input display" value="MSM Security Guards (Pvt) Ltd" /></div>
+      <div class="brand-row"><img class="cover-logo" src="msm-logo.png" alt="MSM Security Guards (Pvt) Ltd Logo"><span class="designer-title">Designed by : Syed Jalal Hussain Shah / MSM G-8 Head Office HR Head Clerk</span><input id="companyName" class="company-name-input display" value="MSM Security Guards (Pvt) Ltd" /></div>
       <div class="cover-tagline">Employee Enrollment &amp; Long Roll Register</div>
     </div>
     <div class="cover-meta">
@@ -1130,6 +979,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
       <div class="register-controls">
         <div class="control"><label>Global Search</label><input class="search-input" id="searchBox" placeholder="Name, CNIC, MSM No., client, location, mobile..." oninput="renderTable()"></div>
         <div class="control"><label>Client / Project</label><select id="filterClient" onchange="renderTable()"><option value="">All Clients</option></select></div>
+<div class="control"><label>Sector</label><select id="filterSector" onchange="msmSetSectorFilter(this.value)"><option value="">All Sectors</option><option value="Islamabad">Islamabad</option><option value="Rawalpindi">Rawalpindi</option><option value="KPK">KPK</option><option value="Other">Other Sectors</option></select></div>
         <div class="control"><label>Location</label><select id="filterLocation" onchange="renderTable()"><option value="">All Locations</option></select></div>
         <div class="control"><label>Supervisor</label><select id="filterSupervisor" onchange="renderTable()"><option value="">All Supervisors</option></select></div>
         <div class="control"><label>Deployment Station</label><select id="filterStation" onchange="renderTable()"><option value="">All Stations</option></select></div>
@@ -1188,7 +1038,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
           <li>The Parent first adds the user's Gmail in <strong>Admin: Access</strong>.</li>
           <li>The user then opens the <strong>same website link</strong>: <strong>https://sjalalhs7.github.io/employee-register/</strong></li>
           <li>The user signs in with the <strong>same Gmail address</strong> that the Parent authorized.</li>
-          <li>The system automatically identifies the user's assigned Client / Project.</li>
+          <li>The system automatically identifies the user's assigned Client / Project and, when assigned, Sector.</li>
           <li>The user can add and manage only records belonging to that assigned Client / Project.</li>
           <li>The user cannot change their Client / Project to access another client's data.</li>
           <li>If the Gmail has not been authorized, access is denied until the Parent adds it.</li>
@@ -1257,7 +1107,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
       <div class="form-section-title" style="margin-top:30px;"><span class="idx">✓</span>Currently authorized</div>
       <div class="table-wrap">
         <table class="register">
-          <thead><tr><th>Gmail</th><th>Role</th><th>Client / Project</th><th>Actions</th></tr></thead>
+          <thead><tr><th>Gmail</th><th>Role</th><th>Client / Project</th><th>Sector</th><th>Actions</th></tr></thead>
           <tbody id="adminUsersTbody"></tbody>
         </table>
       </div>
@@ -1633,6 +1483,15 @@ document.getElementById('companyName').addEventListener('change', persistMeta);
    For a 'client' role user, every record they can see/write is locked to their own clientproject. */
 function isParent(){ return currentAccess && currentAccess.role === 'parent'; }
 function myClientProject(){ return currentAccess ? (currentAccess.clientproject||'') : ''; }
+function mySector(){ return currentAccess ? String(currentAccess.sector||'').trim() : ''; }
+function msmCanonicalSector(v){
+  const n=String(v||'').trim().toLowerCase();
+  if(n.includes('islamabad')) return 'Islamabad';
+  if(n.includes('rawalpindi')) return 'Rawalpindi';
+  if(n==='kpk'||n.includes('khyber')) return 'KPK';
+  if(n) return 'Other';
+  return '';
+}
 
 
 /* ===================== Sector-branded post-login portal ===================== */
@@ -1649,7 +1508,7 @@ function updateSectorPortal(){
   const portal=document.getElementById('sectorPortal');
   if(!portal || !currentAccess) return;
   const parent=isParent();
-  const sector=parent ? 'MSM HEAD OFFICE / PARENT CONTROL CENTER' : (normalizeSectorName(myClientProject()) || 'AUTHORIZED SECTOR');
+  const sector=parent ? 'MSM HEAD OFFICE / PARENT CONTROL CENTER' : (normalizeSectorName(mySector() || myClientProject()) || 'AUTHORIZED SECTOR');
   const theme=parent ? 'other' : sectorThemeFor(sector);
   document.body.classList.remove('sector-rawalpindi','sector-islamabad','sector-lahore','sector-karachi','sector-other');
   document.body.classList.add('sector-'+theme);
@@ -1660,6 +1519,8 @@ function updateSectorPortal(){
   if(title) title.textContent=parent ? 'MSM SECURITY COMPANY' : sector.toUpperCase();
   if(sub) sub.textContent=parent ? 'WELCOME TO THE MSM LONGROLL DATABASE · PARENT MASTER ACCESS' : 'WELCOME TO THE MSM LONGROLL DATABASE';
   if(badge) badge.textContent=parent ? 'Parent Master Access · All Clients / Sectors' : 'Authorized Access · '+sector;
+   const pc=document.getElementById('sectorPortalClient'); if(pc) pc.textContent=parent ? 'All Clients / Sectors' : sector;
+   const pr=document.getElementById('sectorPortalRecordCount'); if(pr) pr.textContent=String(records?.length||0);
   const tick=()=>{
     const now=new Date();
     const date=document.getElementById('sectorDate'), time=document.getElementById('sectorTime');
@@ -1677,7 +1538,7 @@ function startApp(){
   const meta = safeLoad(META_KEY, {});
   if(meta.companyName) document.getElementById('companyName').value = meta.companyName;
 
-  document.getElementById('userBadge').textContent = `${currentUser.email} · ${isParent()?'Parent (all data)':('Client: '+myClientProject())}`;
+  document.getElementById('userBadge').textContent = `${currentUser.email} · ${isParent()?'Parent (all data)':('Client: '+myClientProject()+(mySector()?' · Sector: '+mySector():''))}`;
   document.getElementById('adminTabBtn').style.display = isParent() ? '' : 'none';
   document.getElementById('auditTabBtn').style.display = isParent() ? '' : 'none';
   const importBtn=document.getElementById('importLongRollBtn'); if(importBtn) importBtn.style.display=isParent()?'inline-flex':'none';
@@ -1696,11 +1557,12 @@ function startApp(){
   if(isParent()){ subscribeAdminUsers(); subscribeAuditLogs(); subscribeTransferHistory(); }
   resetForm();
   switchTab('form');
+  if(typeof msmEnsureUI==='function') msmEnsureUI();
 }
 
 function subscribeRecords(){
   let q = db.collection(RECORDS_COLLECTION);
-  if(!isParent()) q = q.where('clientproject','==', myClientProject());
+  if(!isParent()) { q = q.where('clientproject','==', myClientProject()); if(mySector()) q = q.where('sector','==',mySector()); }
   recordsUnsub = q.onSnapshot(snap=>{
     records = snap.docs.map(d=>({id:d.id, ...d.data()}));
     records.sort((a,b)=>(Number(a.sno)||0)-(Number(b.sno)||0));
@@ -1722,10 +1584,11 @@ function subscribeAdminUsers(){
         <td>${escapeHtml(r.email)}</td>
         <td>${r.role==='parent'?'Parent':'Client / Location'}</td>
         <td>${escapeHtml(r.clientproject||'')}</td>
+        <td>${escapeHtml(r.sector||'—')}</td>
         <td class="row-actions">${r.role==='parent'
           ? '<span style="font-size:11px;color:var(--ink-soft);font-weight:600;">Protected Parent</span>'
           : `<button class="btn btn-sm btn-danger" onclick="removeAuthorizedUser('${r.email.replace(/'/g,"\\'")}')">Remove</button>`}</td>
-      </tr>`).join('') || `<tr><td colspan="4" style="text-align:center;color:var(--ink-soft);padding:20px;">No one added yet.</td></tr>`;
+      </tr>`).join('') || `<tr><td colspan="5" style="text-align:center;color:var(--ink-soft);padding:20px;">No one added yet.</td></tr>`;
   });
 }
 
@@ -1736,18 +1599,19 @@ function addAuthorizedUser(){
   }
   const email = document.getElementById('adm_email').value.trim().toLowerCase();
   const clientproject = document.getElementById('adm_clientproject').value.trim();
+  const sector = document.getElementById('adm_sector')?.value.trim() || '';
   if(!email || !email.includes('@')){ showToast('Enter a valid Gmail address.'); return; }
   if(!clientproject){ showToast('Enter the Client / Project name for this location.'); return; }
 
   // Parent/Admin is deliberately NOT editable from the web UI.
   // It is the protected account created in Firestore during first-time setup.
-  const payload = {role:'client', clientproject};
+  const payload = {role:'client', clientproject, sector};
   db.collection(AUTHUSERS_COLLECTION).doc(email).set(payload)
     .then(()=>writeAuditLog('ADD_ACCESS', email, {targetEmail:email, clientproject}))
     .then(()=>{
       showToast(`Added access for ${email}.`);
       document.getElementById('adm_email').value='';
-      document.getElementById('adm_clientproject').value='';
+      document.getElementById('adm_clientproject').value=''; if(document.getElementById('adm_sector')) document.getElementById('adm_sector').value='';
     })
     .catch(err=>showToast('Could not add: ' + err.message));
 }
@@ -2257,7 +2121,7 @@ function saveEntry(){
   }
   const data = readForm();
   data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-  if(!isParent()) data.clientproject = myClientProject(); // client role can never save into another tenant
+  if(!isParent()) { data.clientproject = myClientProject(); data.sector = mySector() || msmCanonicalSector(myClientProject()); } // client role can never save into another tenant
 
   if(editingId){
     const targetId=editingId;
@@ -2342,6 +2206,7 @@ function renderTable(){
   const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
   const searchKeys=['name','cnic','clientproject','supervisor','msmno','location','cell','deployloc','unitrank'];
   let filtered=records.filter(r=>{
+     if(typeof msmFilterSector==='function' && isParent() && msmActiveSector!=='full' && !msmFilterSector(r)) return false;
     if(q && !searchKeys.some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
     if(fc && String(r.clientproject||'')!==fc) return false;
     if(fl && String(r.location||'')!==fl) return false;
@@ -2593,7 +2458,7 @@ function renderTransferHistory(){
 
 function resetRegisterFilters(){
   ['searchBox','filterDateFrom','filterDateTo'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-  ['filterClient','filterLocation','filterSupervisor','filterStatus'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
+  ['filterClient','filterSector','filterLocation','filterSupervisor','filterStatus'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
   const sf=document.getElementById('sortField'); if(sf) sf.value='sno'; const so=document.getElementById('sortOrder'); if(so) so.value='asc';
   window.selectedRecordIds=new Set(); renderTable();
 }
@@ -3021,3 +2886,185 @@ function showToast(msg){
 </script>
 </body>
 </html>
+
+/* ===================== MSM Phase-1 Enhancements (fixed placement) ===================== */
+/* ===================== MSM Phase-1 Enhancements ===================== */
+const MSM_RECYCLE_COLLECTION = 'recycleBin';
+window.msmActiveSector = 'full';
+window.msmRecycleUnsub = null;
+function msmSectorOf(r){
+  const raw=String((r&&r.sector)|| (r&&r.clientproject)||'').trim().toLowerCase();
+  if(raw.includes('islamabad')) return 'Islamabad';
+  if(raw.includes('rawalpindi')) return 'Rawalpindi';
+  if(raw.includes('kpk')||raw.includes('khyber')) return 'KPK';
+  return raw ? 'Other' : 'Other';
+}
+function msmSectorKey(r){
+  const s=msmSectorOf(r).toLowerCase();
+  return s==='islamabad'?'islamabad':s==='rawalpindi'?'rawalpindi':s==='kpk'?'kpk':'other';
+}
+function msmInjectStyle(){
+  if(document.getElementById('msmPhase1Style'))return;
+  const s=document.createElement('style');s.id='msmPhase1Style';s.textContent=`
+    .sector-nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px auto 0;max-width:1080px}
+    .sector-nav .btn{background:rgba(255,255,255,.10);color:#fff;border-color:rgba(210,173,85,.60);font-size:11px;padding:7px 11px}
+    .sector-nav .btn:hover{background:rgba(255,255,255,.18);color:#fff}
+    .recycle-summary{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px;margin:12px 0}
+    .recycle-card{padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
+    .recycle-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase}
+    .recycle-card strong{display:block;font-size:22px;margin-top:4px}
+    @media(max-width:650px){.recycle-summary{grid-template-columns:1fr}}
+  `;document.head.appendChild(s);
+}
+function msmEnsureUI(){
+  msmInjectStyle();
+  if(!currentAccess) return;
+  const portal=document.getElementById('sectorPortal');
+  if(portal && isParent() && !document.getElementById('msmParentSectorNav')){
+    const nav=document.createElement('div'); nav.id='msmParentSectorNav'; nav.className='sector-nav';
+    nav.innerHTML=`<button class="btn btn-sm" onclick="msmOpenSector('full')">FULL DATABASE</button>
+      <button class="btn btn-sm" onclick="msmOpenSector('islamabad')">ISLAMABAD SECTOR</button>
+      <button class="btn btn-sm" onclick="msmOpenSector('rawalpindi')">RAWALPINDI SECTOR</button>
+      <button class="btn btn-sm" onclick="msmOpenSector('kpk')">KPK SECTOR</button>
+      <button class="btn btn-sm" onclick="msmOpenSector('other')">OTHER SECTORS</button>
+      <button class="btn btn-sm" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`;
+    portal.querySelector('.sector-portal-inner')?.appendChild(nav);
+  }
+  if(isParent() && !document.getElementById('msmRecycleTab')){
+    const tabs=document.querySelector('.tabs');
+    if(tabs){ const b=document.createElement('button'); b.id='msmRecycleTab'; b.className='tab-btn'; b.dataset.tab='recycle'; b.textContent='♻ Recycle Bin'; b.onclick=msmOpenRecycle; tabs.appendChild(b); }
+  }
+  if(isParent() && !document.getElementById('view-recycle')){
+    const sheet=document.querySelector('#appRoot main .sheet');
+    if(sheet){
+      const v=document.createElement('div'); v.id='view-recycle'; v.style.display='none';
+      v.innerHTML=`<div class="helper-note"><strong>Recycle Bin:</strong> Deleted employees are retained here. Parent/Admin can recover or permanently delete records.</div>
+      <div class="recycle-summary"><div class="recycle-card"><span>Deleted Records</span><strong id="msmRecycleCount">0</strong></div><div class="recycle-card"><span>Access</span><strong>Parent Only</strong></div><div class="recycle-card"><span>Permanent Delete</span><strong>Restricted</strong></div></div>
+      <div class="bulk-toolbar"><input class="search-input" id="msmRecycleSearch" placeholder="Search deleted guard, CNIC, MSM No., client, sector..." oninput="msmRenderRecycle()">
+      <button class="btn btn-sm" onclick="msmLoadRecycle()">↻ Refresh</button><button class="btn btn-sm btn-primary" onclick="msmRecoverAll()">Recover All</button><button class="btn btn-sm btn-danger" onclick="msmEmptyRecycle()">Empty Recycle Bin</button></div>
+      <div class="table-wrap"><table class="register"><thead><tr><th>Deleted</th><th>Guard</th><th>CNIC</th><th>Guard ID</th><th>Client</th><th>Sector</th><th>Location</th><th>Deleted By</th><th>Actions</th></tr></thead><tbody id="msmRecycleTbody"><tr><td colspan="9">Loading…</td></tr></tbody></table></div>`;
+      const audit=document.getElementById('view-audit'); audit ? audit.parentNode.insertBefore(v,audit) : sheet.appendChild(v);
+    }
+  }
+}
+function msmShowTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+  ['form','register','instructions','admin','audit','recycle'].forEach(v=>{const e=document.getElementById('view-'+v); if(e)e.style.display=tab===v?'block':'none';});
+  if(tab==='register') renderTable();
+  if(tab==='audit'){renderAuditLogs();renderTransferHistory();}
+  if(tab==='recycle'){if(!isParent())return msmShowTab('register');msmLoadRecycle();}
+}
+function msmOpenRecycle(){msmEnsureUI();msmShowTab('recycle');}
+function msmSetSectorFilter(label){
+  if(!isParent()) return;
+  const v=String(label||'').trim().toLowerCase();
+  msmActiveSector = v==='islamabad'?'islamabad':v==='rawalpindi'?'rawalpindi':v==='kpk'?'kpk':v==='other'?'other':'full';
+  renderTable();
+}
+function msmOpenSector(key){
+  if(!isParent())return;
+  msmActiveSector=key||'full';
+  const labels={full:'',islamabad:'Islamabad',rawalpindi:'Rawalpindi',kpk:'KPK',other:'Other'};
+  const fc=document.getElementById('filterClient'); const fs=document.getElementById('filterSector');
+  if(fs){fs.value=labels[msmActiveSector]||'';}
+  msmShowTab('register');
+  renderTable();
+}
+function msmFilterSector(r){
+  if(!isParent()||!msmActiveSector||msmActiveSector==='full')return true;
+  return msmSectorKey(r)===msmActiveSector;
+}
+function msmRecycleItemPayload(rec){
+  return {originalRecordId:rec.id,recordData:rec,deletedBy:(currentUser?.email||'').toLowerCase(),deletedByRole:currentAccess?.role||'',deletedAt:firebase.firestore.FieldValue.serverTimestamp(),clientproject:rec.clientproject||'',sector:msmSectorOf(rec)};
+}
+async function msmMoveToRecycle(id){
+  const rec=records.find(r=>r.id===id); if(!rec)return;
+  if(!confirm(`Move record #${rec.sno||''} — ${rec.name||''} to the Recycle Bin?`))return;
+  try{
+    const batch=db.batch(), rr=db.collection(MSM_RECYCLE_COLLECTION).doc();
+    batch.set(rr,msmRecycleItemPayload(rec)); batch.delete(db.collection(RECORDS_COLLECTION).doc(id)); await batch.commit();
+    await writeAuditLog('DELETE_RECORD',id,{name:rec.name||'',cnic:rec.cnic||'',msmno:rec.msmno||'',clientproject:rec.clientproject||'',sector:msmSectorOf(rec),destination:'recycleBin'});
+    showToast('Record moved to Recycle Bin.');
+  }catch(e){console.error(e);showToast('Could not move record to Recycle Bin: '+e.message);}
+}
+async function msmBulkRecycle(){
+  if(!isParent())return showToast('Only Parent can use bulk delete.');
+  const ids=[...(window.selectedRecordIds||[])], rows=records.filter(r=>ids.includes(r.id)); if(!rows.length)return;
+  if(!confirm(`Move ${rows.length} selected record(s) to the Recycle Bin?`))return;
+  try{
+    for(let i=0;i<rows.length;i+=300){const batch=db.batch();rows.slice(i,i+300).forEach(r=>{batch.set(db.collection(MSM_RECYCLE_COLLECTION).doc(),msmRecycleItemPayload(r));batch.delete(db.collection(RECORDS_COLLECTION).doc(r.id));});await batch.commit();}
+    await writeAuditLog('BULK_DELETE',rows.length,{count:rows.length,destination:'recycleBin'});window.selectedRecordIds=new Set();renderTable();showToast(`${rows.length} records moved to Recycle Bin.`);
+  }catch(e){console.error(e);showToast('Bulk delete failed: '+e.message);}
+}
+function msmLoadRecycle(){
+  if(!isParent())return;
+  msmEnsureUI();
+  if(window.msmRecycleUnsub)window.msmRecycleUnsub();
+  window.msmRecycleUnsub=db.collection(MSM_RECYCLE_COLLECTION).orderBy('deletedAt','desc').limit(1000).onSnapshot(s=>{
+    window.msmRecycleRows=s.docs.map(d=>({id:d.id,...d.data()}));msmRenderRecycle();
+  },e=>{const t=document.getElementById('msmRecycleTbody');if(t)t.innerHTML=`<tr><td colspan="9">Could not load Recycle Bin: ${escapeHtml(e.message||'Unknown error')}</td></tr>`;});
+}
+function msmRenderRecycle(){
+  const t=document.getElementById('msmRecycleTbody');if(!t)return;
+  const q=(document.getElementById('msmRecycleSearch')?.value||'').trim().toLowerCase();
+  const rows=(window.msmRecycleRows||[]).filter(x=>{const r=x.recordData||{};return !q||[r.name,r.cnic,r.msmno,r.clientproject,r.location,r.deployloc,x.sector,x.deletedBy].some(v=>String(v||'').toLowerCase().includes(q));});
+  const c=document.getElementById('msmRecycleCount');if(c)c.textContent=(window.msmRecycleRows||[]).length;
+  t.innerHTML=rows.map(x=>{const r=x.recordData||{};return `<tr><td>${escapeHtml(formatAuditTime(x.deletedAt))}</td><td>${escapeHtml(r.name||'—')}</td><td>${escapeHtml(r.cnic||'—')}</td><td>${escapeHtml(r.msmno||'—')}</td><td>${escapeHtml(r.clientproject||'—')}</td><td>${escapeHtml(x.sector||msmSectorOf(r))}</td><td>${escapeHtml(r.location||r.deployloc||'—')}</td><td>${escapeHtml(x.deletedBy||'—')}</td><td class="row-actions"><button class="btn btn-sm btn-primary" onclick="msmRecover('${x.id}')">Recover</button><button class="btn btn-sm btn-danger" onclick="msmPermanent('${x.id}')">Permanent Delete</button></td></tr>`;}).join('')||'<tr><td colspan="9">Recycle Bin is empty.</td></tr>';
+}
+async function msmRecover(id){
+  if(!isParent())return;
+  try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return showToast('Recycle Bin item no longer exists.');
+    const x=s.data()||{},r=x.recordData||{},oid=x.originalRecordId;if(!oid)throw Error('Original record ID missing.');
+    const exists=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(exists.exists)return showToast('Original record already exists.');
+    const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(ref);await b.commit();
+    await writeAuditLog('RECOVER_RECORD',oid,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Record recovered.');
+  }catch(e){console.error(e);showToast('Recover failed: '+e.message);}
+}
+async function msmPermanent(id){
+  if(!isParent())return;if(!confirm('Permanently delete this record? This cannot be undone.'))return;
+  try{const ref=db.collection(MSM_RECYCLE_COLLECTION).doc(id),s=await ref.get();if(!s.exists)return;const x=s.data()||{},r=x.recordData||{};await ref.delete();await writeAuditLog('PERMANENT_DELETE',x.originalRecordId||id,{name:r.name||'',cnic:r.cnic||'',clientproject:r.clientproject||'',sector:msmSectorOf(r)});showToast('Permanently deleted.');}catch(e){showToast('Permanent delete failed: '+e.message);}
+}
+async function msmRecoverAll(){
+  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`Recover ${rows.length} record(s)?`))return;let n=0;
+  for(const x of rows){try{const oid=x.originalRecordId,r=x.recordData||{};if(!oid)continue;const ex=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(ex.exists)continue;const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id));await b.commit();n++;}catch(e){console.warn(e);}}
+  await writeAuditLog('RECOVER_ALL','recycleBin',{requested:rows.length,recovered:n});showToast(`Recovered ${n} record(s).`);
+}
+async function msmEmptyRecycle(){
+  const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`PERMANENTLY DELETE all ${rows.length} Recycle Bin records?`))return;
+  try{for(let i=0;i<rows.length;i+=400){const b=db.batch();rows.slice(i,i+400).forEach(x=>b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id)));await b.commit();}await writeAuditLog('EMPTY_RECYCLE_BIN','recycleBin',{count:rows.length});showToast('Recycle Bin emptied.');}catch(e){showToast('Empty Recycle Bin failed: '+e.message);}
+}
+
+/* Preserve existing app behavior while replacing only delete semantics and adding Recycle Bin. */
+const msmBaseSwitchTab = switchTab;
+switchTab = function(tab){
+  if(tab==='recycle'){ if(!isParent()) return msmBaseSwitchTab('register'); msmEnsureUI(); msmLoadRecycle(); document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab==='recycle')); ['form','register','instructions','admin','audit','recycle'].forEach(v=>{const e=document.getElementById('view-'+v);if(e)e.style.display=v==='recycle'?'block':'none';}); return; }
+  return msmBaseSwitchTab(tab);
+};
+const msmBaseSelectAllVisible = selectAllVisible;
+selectAllVisible = function(checked){
+  if(!isParent() || msmActiveSector==='full') return msmBaseSelectAllVisible(checked);
+  window.selectedRecordIds=window.selectedRecordIds||new Set();
+  const ids=[...document.querySelectorAll('#tbody .record-check')].map(e=>e.value).filter(Boolean);
+  ids.forEach(id=>checked?window.selectedRecordIds.add(id):window.selectedRecordIds.delete(id));
+  renderTable();
+};
+
+const msmBaseRenderTable = renderTable;
+renderTable = function(){
+  msmBaseRenderTable();
+  if(isParent() && msmActiveSector!=='full'){
+    let visible=0;
+    document.querySelectorAll('#tbody tr').forEach(tr=>{
+      const id=tr.querySelector('.record-check')?.value;
+      const r=records.find(x=>x.id===id);
+      const show=!r || msmFilterSector(r);
+      tr.style.display=show?'':'none';
+      if(show)visible++;
+    });
+    const pill=document.getElementById('rowCountPill');
+    if(pill)pill.textContent=`${visible} of ${records.length} entries`;
+  }
+};
+deleteRecord = msmMoveToRecycle;
+bulkDeleteSelected = msmBulkRecycle;
+setInterval(msmEnsureUI,1500);
