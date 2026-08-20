@@ -525,10 +525,10 @@
   min-height:100vh;display:flex;align-items:center;justify-content:center;
   padding:24px 14px;position:relative;overflow:hidden;
   background:
-    radial-gradient(ellipse at 10% 18%,rgba(65,30,255,.78) 0 10%,transparent 32%),
-    radial-gradient(ellipse at 92% 78%,rgba(255,20,140,.72) 0 9%,transparent 31%),
-    radial-gradient(ellipse at 82% 15%,rgba(225,120,255,.42) 0 7%,transparent 26%),
-    linear-gradient(135deg,#06113d 0%,#2114a0 38%,#5a12a7 63%,#10082a 100%);
+    radial-gradient(ellipse at 10% 18%,rgba(65,30,255,.88) 0 10%,transparent 34%),
+    radial-gradient(ellipse at 92% 78%,rgba(255,20,140,.80) 0 10%,transparent 33%),
+    radial-gradient(ellipse at 82% 15%,rgba(225,120,255,.48) 0 8%,transparent 28%),
+    linear-gradient(135deg,#07124a 0%,#2415a8 38%,#6b12b7 64%,#11072c 100%);
   font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
 }
 #msmLoginPage::before{
@@ -680,6 +680,14 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 
 .audit-toolbar label input{box-sizing:border-box;width:100%;}.audit-toolbar select,.audit-toolbar input{min-width:0;}@media(max-width:850px){.audit-toolbar{grid-template-columns:1fr!important;}.audit-toolbar label{display:block!important;}.audit-toolbar label input{margin-top:3px;}}
 .dashboard-grid{display:grid;grid-template-columns:repeat(5,minmax(120px,1fr));gap:10px;margin:12px 0}.dash-card{padding:14px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card);box-shadow:0 4px 14px rgba(0,0,0,.05)}.dash-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.05em}.dash-card strong{display:block;font-size:24px;margin-top:4px}@media(max-width:900px){.dashboard-grid{grid-template-columns:repeat(2,1fr)}}
+
+/* ===== Supplied login design reference ===== */
+#msmLoginPage{background-image:
+  radial-gradient(circle at 16% 12%,rgba(255,255,255,.08),transparent 18%),
+  radial-gradient(circle at 84% 74%,rgba(255,20,140,.14),transparent 24%),
+  radial-gradient(circle at 52% 44%,rgba(255,255,255,.06),transparent 30%),
+  linear-gradient(135deg,#07124a 0%,#2415a8 38%,#6b12b7 64%,#11072c 100%);}
+.msm-login-card{background:rgba(255,255,255,.91);}
 </style>
 </head>
 <body>
@@ -709,7 +717,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
     <div class="msm-login-card">
       <img class="msm-login-logo" src="msm-login-logo.png" alt="MSM Security Guards Logo" id="msmLoginLogo">
       <div class="msm-login-kicker">MSM SECURITY COMPANY</div>
-      <h1 class="msm-login-title">WELCOME TO MSM<br>LONGROLL DATABASE</h1>
+      <h1 class="msm-login-title">WELCOME TO THE MSM<br>LONGROLL DATABASE</h1>
       <div class="msm-login-designer">DESIGNED BY SYED JALAL HUSSAIN SHAH</div>
       <div class="msm-login-divider"></div>
 
@@ -2883,9 +2891,6 @@ function showToast(msg){
    authorizedUsers after sign-in, and calls startApp() once access is
    confirmed, which itself subscribes to the live Firestore data and
    renders the table. */
-</script>
-</body>
-</html>
 
 /* ===================== MSM Phase-1 Enhancements (fixed placement) ===================== */
 /* ===================== MSM Phase-1 Enhancements ===================== */
@@ -3068,3 +3073,6 @@ renderTable = function(){
 deleteRecord = msmMoveToRecycle;
 bulkDeleteSelected = msmBulkRecycle;
 setInterval(msmEnsureUI,1500);
+</script>
+</body>
+</html>
