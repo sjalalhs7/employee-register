@@ -7,110 +7,104 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    function authEmail() {
-      return request.auth.token.email;
+    function userEmail() {
+      return signedIn() ? request.auth.token.email : '';
     }
 
-    function userPath() {
-      return /databases/$(database)/documents/authorizedUsers/$(authEmail());
-    }
-
-    function authorized() {
-      return signedIn() && exists(userPath());
+    function myUserExists() {
+      return signedIn() && exists(
+        /databases/$(database)/documents/authorizedUsers/$(userEmail())
+      );
     }
 
     function myUser() {
-      return get(userPath());
+      return get(
+        /databases/$(database)/documents/authorizedUsers/$(userEmail())
+      );
     }
 
-    function isParent() {
+    function authorized() {
+      return myUserExists();
+    }
+
+    function parent() {
       return authorized() && myUser().data.role == 'parent';
     }
 
-    function isClient() {
+    function clientUser() {
       return authorized() && myUser().data.role == 'client';
     }
 
-    function myClient() {
-      return myUser().data.get('clientproject', '');
+    function clientProjectMatches(data) {
+      return clientUser()
+        && data.clientproject == myUser().data.get('clientproject', '');
     }
 
-    function mySector() {
-      return myUser().data.get('sector', '');
+    function clientSectorMatches(data) {
+      return !('sector' in myUser().data)
+        || myUser().data.get('sector', '') == ''
+        || data.sector == myUser().data.get('sector', '');
     }
 
-    function recordInMyScope(data) {
-      return isClient()
-        && data.get('clientproject', '') == myClient()
-        && (
-          mySector() == '' ||
-          data.get('sector', '') == mySector() ||
-          data.get('sector', '') == ''
-        );
-    }
-
-    function auditOwnedByCaller() {
-      return authorized()
-        && request.resource.data.userEmail == authEmail()
-        && request.resource.data.role == myUser().data.role
-        && request.resource.data.get('clientproject', '') == myClient()
-        && (
-          myUser().data.get('sector', '') == '' ||
-          request.resource.data.get('sector', '') == '' ||
-          request.resource.data.get('sector', '') == mySector()
-        );
-    }
-
+    // Authorized accounts. Only Parent can change access assignments.
     match /authorizedUsers/{email} {
-      allow read: if authorized() && (isParent() || email == authEmail());
-      allow create, update, delete: if isParent();
+      allow read: if parent() || (authorized() && email == userEmail());
+      allow create, update, delete: if parent();
     }
 
+    // Active long-roll records.
     match /records/{recordId} {
-      allow read: if isParent() || recordInMyScope(resource.data);
+      allow read: if parent()
+                  || (clientProjectMatches(resource.data) && clientSectorMatches(resource.data));
 
-      allow create: if isParent()
-                    || recordInMyScope(request.resource.data);
+      allow create: if parent()
+                    || (clientProjectMatches(request.resource.data) && clientSectorMatches(request.resource.data));
 
-      allow update: if isParent()
-                    || (recordInMyScope(resource.data)
-                        && recordInMyScope(request.resource.data));
+      allow update: if parent()
+                    || (clientProjectMatches(resource.data)
+                        && clientProjectMatches(request.resource.data)
+                        && clientSectorMatches(resource.data)
+                        && clientSectorMatches(request.resource.data));
 
-      // A normal delete is allowed only as part of moving the record
-      // into the Recycle Bin. Parent also has full delete control.
-      allow delete: if isParent()
-                    || recordInMyScope(resource.data);
+      // Normal delete is permitted for the assigned client/sector, but the UI
+      // moves records into recycleBin before deleting the active record.
+      allow delete: if parent()
+                    || (clientProjectMatches(resource.data) && clientSectorMatches(resource.data));
     }
 
+    // Recycle Bin: Parent has full control. A client may only create a recycle
+    // item for a record belonging to their own assigned client/sector. Clients
+    // cannot read, recover, permanently delete, or empty the bin.
     match /recycleBin/{recycleId} {
-      // Parent can manage the complete Recycle Bin.
-      allow read: if isParent();
-
-      allow create: if isParent()
-                    || (
-                      recordInMyScope(request.resource.data.recordData)
-                      && request.resource.data.originalRecordId is string
-                      && get(
-                        /databases/$(database)/documents/records/$(request.resource.data.originalRecordId)
-                      ).data.clientproject == myClient()
-                    );
-
-      allow update: if false;
-
-      allow delete: if isParent();
+      allow read: if parent();
+      allow create: if parent()
+                    || (clientUser()
+                        && request.resource.data.deletedBy == userEmail()
+                        && request.resource.data.deletedByRole == myUser().data.role
+                        && request.resource.data.clientproject == myUser().data.get('clientproject', '')
+                        && clientSectorMatches(request.resource.data.recordData));
+      allow update, delete: if parent();
     }
 
+    // Dynamic Parent-managed sector catalog.
+    match /sectorCatalog/{sectorId} {
+      allow read, create, update, delete: if parent();
+    }
+
+    // Append-only audit trail. Parent reads; any authorized account may create
+    // an entry only as itself and with its own assigned role/project.
     match /auditLogs/{logId} {
-      allow read: if isParent();
-
-      allow create: if isParent() || auditOwnedByCaller();
-
+      allow read: if parent();
+      allow create: if authorized()
+                    && request.resource.data.userEmail == userEmail()
+                    && request.resource.data.role == myUser().data.role
+                    && request.resource.data.clientproject == myUser().data.get('clientproject', '');
       allow update, delete: if false;
     }
 
-    match /transferHistory/{historyId} {
-      allow read: if isParent();
-      allow create: if isParent();
+    // Parent-only permanent transfer history.
+    match /transferHistory/{transferId} {
+      allow read, create: if parent();
       allow update, delete: if false;
     }
 
