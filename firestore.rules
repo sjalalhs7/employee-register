@@ -66,10 +66,17 @@ service cloud.firestore {
                         && clientSectorMatches(resource.data)
                         && clientSectorMatches(request.resource.data));
 
-      // Normal delete is permitted for the assigned client/sector, but the UI
-      // moves records into recycleBin before deleting the active record.
-      allow delete: if parent()
-                    || (clientProjectMatches(resource.data) && clientSectorMatches(resource.data));
+      // Active records may only be deleted as part of the Recycle Bin flow.
+      // The deterministic recycleBin/{recordId} document must be created in
+      // the same atomic batch, preventing a direct client-side hard delete.
+      allow delete: if authorized()
+                    && getAfter(/databases/$(database)/documents/recycleBin/$(recordId)).data.originalRecordId == recordId
+                    && getAfter(/databases/$(database)/documents/recycleBin/$(recordId)).data.deletedBy == userEmail()
+                    && (parent()
+                        || (clientProjectMatches(resource.data)
+                            && clientProjectMatches(getAfter(/databases/$(database)/documents/recycleBin/$(recordId)).data.recordData)
+                            && clientSectorMatches(resource.data)
+                            && clientSectorMatches(getAfter(/databases/$(database)/documents/recycleBin/$(recordId)).data.recordData)));
     }
 
     // Recycle Bin: Parent has full control. A client may only create a recycle

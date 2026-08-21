@@ -1,18 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta name="robots" content="noindex,nofollow">
-<meta name="description" content="MSM Security Guard Database — authorized enterprise management portal">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MSM Security Guards — Employee Enrollment &amp; Long Roll Register</title>
-<meta name="description" content="MSM Security Guards employee enrollment and long roll register. Authorized Parent, department, sector and client access with secure Google Sign-In.">
+<meta name="description" content="MSM Longroll Database by Syed Jalal Hussain Shah — secure MSM Security Guards employee enrollment and long roll management for authorized Parent, sector and client users.">
+<meta name="author" content="Syed Jalal Hussain Shah">
+<meta name="keywords" content="MSM Longroll, MSM Longroll Database, MSM Security Company, MSM Security Guards, employee long roll, security guards database, Syed Jalal Hussain Shah">
 <meta name="robots" content="index,follow">
 <link rel="canonical" href="https://sjalalhs7.github.io/employee-register/">
 <meta property="og:title" content="MSM Security Guards — Employee Register">
 <meta property="og:description" content="Secure employee enrollment and long roll register for authorized users.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://sjalalhs7.github.io/employee-register/">
+<meta property="og:site_name" content="MSM Longroll Database">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="msm-logo.png">
+<meta name="theme-color" content="#0c1a2a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <!-- Firebase (Google Sign-In + shared cloud database) -->
@@ -2256,14 +2260,11 @@ function editRecord(id){
   window.scrollTo({top:0, behavior:'smooth'});
 }
 
-function deleteRecord(id){
+async function deleteRecord(id){
   const rec = records.find(r=>r.id===id);
   if(!rec) return;
-  if(!confirm(`Delete record #${rec.sno} — ${rec.name}? This cannot be undone.`)) return;
-  db.collection(RECORDS_COLLECTION).doc(id).delete()
-    .then(()=>writeAuditLog('DELETE_RECORD', id, {sno:rec.sno||'', name:rec.name||'', cnic:rec.cnic||'', clientproject:rec.clientproject||'', location:rec.location||'', deployloc:rec.deployloc||'', supervisor:rec.supervisor||''}))
-    .then(()=>showToast('Record deleted.'))
-    .catch(err=>showToast('Could not delete: ' + err.message));
+  if(!confirm(`Move record #${rec.sno||''} — ${rec.name||''} to the Recycle Bin?`)) return;
+  await msmMoveToRecycle(id, false);
 }
 
 /* ===================== Table render ===================== */
@@ -2311,7 +2312,7 @@ function renderTable(){
   const q = (document.getElementById('searchBox')?.value||'').trim().toLowerCase();
   const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fstation=document.getElementById('filterStation')?.value||'', frank=document.getElementById('filterRank')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
   const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
-  const searchKeys=['name','cnic','clientproject','supervisor','msmno','location','cell','deployloc','unitrank'];
+  const searchKeys=['name','cnic','clientproject','sector','supervisor','msmno','location','cell','deployloc','unitrank'];
   let filtered=records.filter(r=>{
      if(typeof msmFilterSector==='function' && isParent() && msmActiveSector!=='full' && !msmFilterSector(r)) return false;
     if(q && !searchKeys.some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
@@ -2358,7 +2359,7 @@ function selectAllVisible(checked){
   const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fstation=document.getElementById('filterStation')?.value||'', frank=document.getElementById('filterRank')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
   const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
   const arr=records.filter(r=>{
-    if(q && !['name','cnic','clientproject','supervisor','msmno','location','cell','deployloc','unitrank'].some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
+    if(q && !['name','cnic','clientproject','sector','supervisor','msmno','location','cell','deployloc','unitrank'].some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
     if(fc&&String(r.clientproject||'')!==fc) return false; if(fl&&String(r.location||'')!==fl) return false; if(fs&&String(r.supervisor||'')!==fs) return false; if(fstation&&String(r.deployloc||'')!==fstation) return false; if(frank&&String(r.unitrank||'')!==frank) return false; if(fst&&normalizedStatus(r)!==fst) return false;
     const d=String(r.doe||'').slice(0,10); if(from&&d&&d<from)return false; if(to&&d&&d>to)return false; return true;
   });
@@ -2368,15 +2369,27 @@ function updateSelectionUI(){
   const n=window.selectedRecordIds?window.selectedRecordIds.size:0; const el=document.getElementById('selectedCount'); if(el) el.textContent=`${n} selected`; const b=document.getElementById('bulkDeleteBtn'); if(b) b.style.display=isParent()&&n?'inline-flex':'none'; const t=document.getElementById('bulkTransferBtn'); if(t) t.style.display=isParent()&&n?'inline-flex':'none';
 }
 async function bulkDeleteSelected(){
-  if(!isParent()) return showToast('Only Parent can delete selected records.');
-  const ids=[...(window.selectedRecordIds||[])]; if(!ids.length) return;
-  if(!confirm(`Delete ${ids.length} selected record(s)? This cannot be undone.`)) return;
+  if(!isParent()) return showToast('Only Parent can use bulk delete.');
+  const ids=[...(window.selectedRecordIds||[])];
+  const rows=records.filter(r=>ids.includes(r.id));
+  if(!rows.length) return;
+  if(!confirm(`Move ${rows.length} selected record(s) to the Recycle Bin?`)) return;
   try{
-    for(let i=0;i<ids.length;i+=400){ const batch=db.batch(); ids.slice(i,i+400).forEach(id=>batch.delete(db.collection(RECORDS_COLLECTION).doc(id))); await batch.commit(); }
-    await writeAuditLog('BULK_DELETE', ids.length, {count:ids.length, ids:ids.slice(0,100)});
-    window.selectedRecordIds=new Set(); showToast(`${ids.length} records deleted.`); renderTable();
-  }catch(err){ console.error(err); showToast('Bulk delete failed: '+err.message); }
+    for(let i=0;i<rows.length;i+=300){
+      const batch=db.batch();
+      rows.slice(i,i+300).forEach(r=>{
+        batch.set(db.collection(MSM_RECYCLE_COLLECTION).doc(r.id), msmRecycleItemPayload(r));
+        batch.delete(db.collection(RECORDS_COLLECTION).doc(r.id));
+      });
+      await batch.commit();
+    }
+    await writeAuditLog('BULK_DELETE', rows.length, {count:rows.length,destination:'recycleBin'});
+    window.selectedRecordIds=new Set();
+    renderTable();
+    showToast(`${rows.length} records moved to Recycle Bin.`);
+  }catch(e){console.error(e);showToast('Bulk delete failed: '+e.message);}
 }
+
 /* ===================== Parent: Bulk Client/Sector Transfer ===================== */
 function transferSourceSummary(selectedRecords){
   const counts={};
@@ -2424,6 +2437,7 @@ async function confirmBulkTransfer(){
   const ids=[...(window.selectedRecordIds||[])];
   const selected=records.filter(r=>ids.includes(r.id));
   if(!selected.length) return showToast('No guards are selected.');
+  const targetSector=(window.msmSectorCatalog||[]).find(n=>n.toLowerCase()===target.toLowerCase()) || '';
   const targetLocation=String(document.getElementById('transferTargetLocation')?.value||'').trim();
   const targetStation=String(document.getElementById('transferTargetStation')?.value||'').trim();
   const reason=String(document.getElementById('transferReason')?.value||'').trim();
@@ -2459,6 +2473,7 @@ async function confirmBulkTransfer(){
           lastTransferFrom:String(r.clientproject||''),
           lastTransferBy:(currentUser.email||'').toLowerCase()
         };
+        if(targetSector) update.sector=targetSector;
         if(targetLocation) update.location=targetLocation;
         if(targetStation) update.deployloc=targetStation;
         batch.update(ref,update);
@@ -2486,6 +2501,7 @@ async function confirmBulkTransfer(){
       batchId,
       fromSummary:sources,
       toClient:target,
+      toSector:targetSector,
       toLocation:targetLocation||'',
       toStation:targetStation||'',
       guardCount:selected.length,
@@ -3160,16 +3176,25 @@ function msmFilterSector(r){
 function msmRecycleItemPayload(rec){
   return {originalRecordId:rec.id,recordData:rec,deletedBy:(currentUser?.email||'').toLowerCase(),deletedByRole:currentAccess?.role||'',deletedAt:firebase.firestore.FieldValue.serverTimestamp(),clientproject:rec.clientproject||'',sector:msmSectorOf(rec)};
 }
-async function msmMoveToRecycle(id){
-  const rec=records.find(r=>r.id===id); if(!rec)return;
-  if(!confirm(`Move record #${rec.sno||''} — ${rec.name||''} to the Recycle Bin?`))return;
-  try{const batch=db.batch(), rr=db.collection(MSM_RECYCLE_COLLECTION).doc();batch.set(rr,msmRecycleItemPayload(rec));batch.delete(db.collection(RECORDS_COLLECTION).doc(id));await batch.commit();await writeAuditLog('DELETE_RECORD',id,{name:rec.name||'',cnic:rec.cnic||'',msmno:rec.msmno||'',clientproject:rec.clientproject||'',sector:msmSectorOf(rec),destination:'recycleBin'});showToast('Record moved to Recycle Bin.');}catch(e){console.error(e);showToast('Could not move record to Recycle Bin: '+e.message);}
+async function msmMoveToRecycle(id, ask=true){
+  const rec=records.find(r=>r.id===id); if(!rec)return false;
+  if(ask && !confirm(`Move record #${rec.sno||''} — ${rec.name||''} to the Recycle Bin?`))return false;
+  try{
+    const batch=db.batch();
+    const rr=db.collection(MSM_RECYCLE_COLLECTION).doc(id);
+    batch.set(rr,msmRecycleItemPayload(rec));
+    batch.delete(db.collection(RECORDS_COLLECTION).doc(id));
+    await batch.commit();
+    await writeAuditLog('DELETE_RECORD',id,{name:rec.name||'',cnic:rec.cnic||'',msmno:rec.msmno||'',clientproject:rec.clientproject||'',sector:msmSectorOf(rec),destination:'recycleBin'});
+    showToast('Record moved to Recycle Bin.');
+    return true;
+  }catch(e){console.error(e);showToast('Could not move record to Recycle Bin: '+e.message);return false;}
 }
 async function msmBulkRecycle(){
   if(!isParent())return showToast('Only Parent can use bulk delete.');
   const ids=[...(window.selectedRecordIds||[])], rows=records.filter(r=>ids.includes(r.id)); if(!rows.length)return;
   if(!confirm(`Move ${rows.length} selected record(s) to the Recycle Bin?`))return;
-  try{for(let i=0;i<rows.length;i+=300){const batch=db.batch();rows.slice(i,i+300).forEach(r=>{batch.set(db.collection(MSM_RECYCLE_COLLECTION).doc(),msmRecycleItemPayload(r));batch.delete(db.collection(RECORDS_COLLECTION).doc(r.id));});await batch.commit();}await writeAuditLog('BULK_DELETE',rows.length,{count:rows.length,destination:'recycleBin'});window.selectedRecordIds=new Set();renderTable();showToast(`${rows.length} records moved to Recycle Bin.`);}catch(e){console.error(e);showToast('Bulk delete failed: '+e.message);}
+  try{for(let i=0;i<rows.length;i+=300){const batch=db.batch();rows.slice(i,i+300).forEach(r=>{batch.set(db.collection(MSM_RECYCLE_COLLECTION).doc(r.id),msmRecycleItemPayload(r));batch.delete(db.collection(RECORDS_COLLECTION).doc(r.id));});await batch.commit();}await writeAuditLog('BULK_DELETE',rows.length,{count:rows.length,destination:'recycleBin'});window.selectedRecordIds=new Set();renderTable();showToast(`${rows.length} records moved to Recycle Bin.`);}catch(e){console.error(e);showToast('Bulk delete failed: '+e.message);}
 }
 function msmLoadRecycle(){
   if(!isParent())return; msmEnsureUI(); if(window.msmRecycleUnsub)window.msmRecycleUnsub();
@@ -3212,6 +3237,9 @@ renderTable = function(){
   }
 };
 setInterval(msmEnsureUI,1500);
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
+}
 </script>
 </body>
 </html>
