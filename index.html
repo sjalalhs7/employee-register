@@ -3041,157 +3041,176 @@ function showToast(msg){
    confirmed, which itself subscribes to the live Firestore data and
    renders the table. */
 
-/* ===================== MSM Sector Catalog + Recycle Bin ===================== */
+/* ===================== MSM Region + Sector Management ===================== */
 const MSM_RECYCLE_COLLECTION = 'recycleBin';
 const MSM_SECTOR_COLLECTION = 'sectorCatalog';
+const MSM_REGION_COLLECTION = 'regionCatalog';
 const MSM_DEFAULT_SECTORS = ['Islamabad','Rawalpindi','KPK','Chakwal'];
+const MSM_DEFAULT_REGIONS = ['North Region','South Region','East Region','West Region'];
 window.msmActiveSector = 'full';
+window.msmActiveRegion = 'all';
 window.msmRecycleUnsub = null;
 window.msmSectorUnsub = null;
+window.msmRegionUnsub = null;
 window.msmSectorCatalog = [...MSM_DEFAULT_SECTORS];
+window.msmRegionCatalog = MSM_DEFAULT_REGIONS.map(name=>({name,sectors:[]}));
 window.msmSectorLoading = false;
+window.msmRegionLoading = false;
 
-function msmNormSectorName(v){
-  return String(v||'').trim().replace(/\\s+/g,' ').replace(/[^\\p{L}\\p{N} _-]/gu,'').trim();
-}
-function msmSectorKeyFromName(v){
-  return msmNormSectorName(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'other';
-}
+function msmNormSectorName(v){ return String(v||'').trim().replace(/\s+/g,' ').replace(/[^\p{L}\p{N} _-]/gu,'').trim(); }
+function msmNormRegionName(v){ return String(v||'').trim().replace(/\s+/g,' ').replace(/[^\p{L}\p{N} _-]/gu,'').trim(); }
+function msmSectorKeyFromName(v){ return msmNormSectorName(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'other'; }
+function msmRegionKeyFromName(v){ return msmNormRegionName(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'') || 'other-region'; }
 function msmSectorOf(r){
-  const raw=String((r&&r.sector)|| (r&&r.clientproject)||'').trim();
-  const low=raw.toLowerCase();
+  const raw=String((r&&r.sector)|| (r&&r.clientproject)||'').trim(), low=raw.toLowerCase();
   const hit=(window.msmSectorCatalog||[]).find(name=>low===String(name).toLowerCase() || low.includes(String(name).toLowerCase()));
   return hit || (raw ? 'Other Sectors' : 'Other Sectors');
 }
 function msmSectorKey(r){ return msmSectorKeyFromName(msmSectorOf(r)); }
-function msmSectorByKey(key){
-  if(key==='full'||!key)return null;
-  return (window.msmSectorCatalog||[]).find(n=>msmSectorKeyFromName(n)===key) || null;
+function msmSectorByKey(key){ if(key==='full'||!key)return null; return (window.msmSectorCatalog||[]).find(n=>msmSectorKeyFromName(n)===key) || null; }
+function msmRegionByKey(key){ if(key==='all'||!key)return null; return (window.msmRegionCatalog||[]).find(x=>msmRegionKeyFromName(x.name)===key) || null; }
+function msmRegionForSector(name){
+  const low=String(name||'').toLowerCase();
+  return (window.msmRegionCatalog||[]).find(r=>(r.sectors||[]).some(s=>String(s).toLowerCase()===low)) || null;
 }
+function msmSectorsForRegion(region){ return (region?.sectors||[]).filter(Boolean).sort((a,b)=>a.localeCompare(b)); }
 function msmInjectStyle(){
   if(document.getElementById('msmPhase1Style'))return;
   const s=document.createElement('style');s.id='msmPhase1Style';s.textContent=`
-    .sector-nav{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:14px auto 0;max-width:1080px}
-    .sector-nav .btn{background:rgba(255,255,255,.10);color:#fff;border-color:rgba(210,173,85,.60);font-size:11px;padding:7px 11px}
+    .sector-nav{display:flex;justify-content:center;gap:7px;flex-wrap:wrap;margin:15px auto 0;max-width:1180px}
+    .sector-nav .btn{background:rgba(255,255,255,.10);color:#fff;border-color:rgba(210,173,85,.60);font-size:11px;padding:8px 12px}
     .sector-nav .btn:hover{background:rgba(255,255,255,.18);color:#fff}
     .sector-nav .btn.active{background:rgba(210,173,85,.25);box-shadow:0 0 0 1px rgba(210,173,85,.35) inset}
-    .sector-manage{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px auto 0}
-    .sector-manage .btn{font-size:11px}
-    .sector-manager{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--paper);margin:12px 0}
-    .sector-manager-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-    .sector-manager-row input{flex:1;min-width:220px}
-    .sector-list{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
-    .sector-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}
-    .sector-chip button{border:0;background:transparent;cursor:pointer;font-weight:700}
-    .recycle-summary{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px;margin:12px 0}
-    .recycle-card{padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}
-    .recycle-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase}
-    .recycle-card strong{display:block;font-size:22px;margin-top:4px}
-    @media(max-width:650px){.recycle-summary{grid-template-columns:1fr}}
+    .msm-top-menu{display:flex;gap:7px;flex-wrap:wrap;justify-content:center;margin:16px auto 0;max-width:1180px}
+    .msm-top-menu button{border:1px solid rgba(210,173,85,.72);background:rgba(2,8,14,.78);color:#fff;border-radius:9px;padding:9px 13px;font-weight:900;font-size:10px;letter-spacing:.5px;cursor:pointer}
+    .msm-top-menu button:hover{background:rgba(210,173,85,.18);transform:translateY(-1px)}
+    .msm-region-panel{position:relative;z-index:2;margin:20px 0 0;padding:20px 18px;border:1px solid rgba(202,166,83,.55);border-radius:16px;background:rgba(3,8,13,.68);box-shadow:inset 0 0 22px rgba(202,166,83,.04),0 8px 24px rgba(0,0,0,.24)}
+    .msm-region-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+    .msm-region-title{color:#f0d88f;font-weight:900;letter-spacing:2px;text-transform:uppercase;font-size:18px}
+    .msm-region-sub{color:#bfc8d0;font-size:11px;margin-top:4px}
+    .msm-region-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+    .msm-region-card{min-height:92px;padding:15px;border:1px solid rgba(202,166,83,.55);border-radius:14px;background:linear-gradient(135deg,rgba(255,255,255,.07),rgba(202,166,83,.06));color:#fff;cursor:pointer;text-align:left;transition:.18s ease}
+    .msm-region-card:hover{transform:translateY(-2px);background:rgba(202,166,83,.14);box-shadow:0 8px 18px rgba(0,0,0,.22)}
+    .msm-region-card.active{background:linear-gradient(135deg,rgba(202,166,83,.22),rgba(64,155,111,.12));border-color:#e1c36c;box-shadow:0 0 0 1px rgba(202,166,83,.18) inset}
+    .msm-region-card strong{display:block;font-size:15px;letter-spacing:1px;text-transform:uppercase}.msm-region-card span{display:block;margin-top:6px;font-size:10px;color:#bfc8d0}
+    .msm-sector-inside{margin-top:14px;padding-top:14px;border-top:1px solid rgba(202,166,83,.28)}
+    .msm-sector-inside-title{color:#f0d88f;font-weight:900;font-size:12px;letter-spacing:1.2px;text-transform:uppercase;margin-bottom:8px}
+    .msm-sector-chips{display:flex;gap:8px;flex-wrap:wrap}.msm-sector-chip{border:1px solid rgba(202,166,83,.55);background:rgba(255,255,255,.06);color:#fff;border-radius:999px;padding:8px 11px;cursor:pointer;font-size:10px;font-weight:900}.msm-sector-chip:hover{background:rgba(202,166,83,.16)}
+    .sector-manage{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin:10px auto 0}.sector-manage .btn{font-size:11px}
+    .sector-manager{padding:14px;border:1px solid var(--line);border-radius:12px;background:var(--paper);margin:12px 0}.sector-manager-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.sector-manager-row input,.sector-manager-row select{flex:1;min-width:180px}.sector-list{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}.sector-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid var(--line);border-radius:999px;background:#fff;font-size:12px}.sector-chip button{border:0;background:transparent;cursor:pointer;font-weight:700}
+    .region-manager{margin-top:14px;padding-top:14px;border-top:1px solid var(--line)}.region-manager-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:10px}.region-manager-card{border:1px solid var(--line);border-radius:10px;padding:10px;background:#fff}.region-manager-card strong{display:block;font-size:12px}.region-manager-card small{color:var(--ink-soft)}.region-manager-card .mini-row{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.region-manager-card select{flex:1;min-width:150px}
+    .recycle-summary{display:grid;grid-template-columns:repeat(3,minmax(120px,1fr));gap:10px;margin:12px 0}.recycle-card{padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--paper)}.recycle-card span{display:block;font-size:11px;color:var(--ink-soft);text-transform:uppercase}.recycle-card strong{display:block;font-size:22px;margin-top:4px}
+    @media(max-width:850px){.msm-region-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.region-manager-grid{grid-template-columns:1fr}}
+    @media(max-width:650px){.recycle-summary{grid-template-columns:1fr}.msm-region-title{font-size:15px}.msm-region-card{min-height:72px;padding:11px}.msm-region-card strong{font-size:11px}.msm-region-card span{font-size:9px}.msm-top-menu button{font-size:9px;padding:8px 9px}}
   `;document.head.appendChild(s);
 }
 function msmPopulateSectorFilter(){
-  const fs=document.getElementById('filterSector'); if(!fs)return;
-  const current=fs.value;
+  const fs=document.getElementById('filterSector');if(!fs)return;const current=fs.value;
   fs.innerHTML='<option value="">All Sectors</option>'+(window.msmSectorCatalog||[]).map(n=>`<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join('')+'<option value="Other Sectors">Other Sectors</option>';
   if([...fs.options].some(o=>o.value===current))fs.value=current;
 }
 function msmRenderRegionPanel(){
-  const box=document.getElementById('msmRegionPanel'); if(!box||!currentAccess)return;
-  const parent=isParent(), own=normalizeSectorName(mySector()||myClientProject());
-  const names=parent ? (window.msmSectorCatalog||[]) : (own?[own]:[]);
-  const active=parent ? msmActiveSector : (own?msmSectorKeyFromName(own):'full');
+  const box=document.getElementById('msmRegionPanel');if(!box||!currentAccess)return;
+  const parent=isParent(),own=normalizeSectorName(mySector()||myClientProject());
+  const regions=parent?(window.msmRegionCatalog||[]):(own?[{name:(msmRegionForSector(own)?.name||'MY REGION'),sectors:[own]}]:[]);
+  const activeRegion=parent?window.msmActiveRegion:'my-region';
+  const activeSector=parent?window.msmActiveSector:(own?msmSectorKeyFromName(own):'full');
   box.style.display='block';
-  box.innerHTML=`<div class="msm-region-head"><div><div class="msm-region-title">REGION / SECTOR</div><div class="msm-region-sub">${parent?'Open a sector directly from the home page. Add new sectors later from Manage Sectors.':'Your authorized sector is shown below.'}</div></div></div><div class="msm-region-grid">${parent?`<button class="msm-region-card ${active==='full'?'active':''}" onclick="msmOpenSector('full')"><strong>FULL DATABASE</strong><span>All authorized records</span></button>`:''}${names.map(n=>{const k=msmSectorKeyFromName(n);return `<button class="msm-region-card ${active===k?'active':''}" onclick="msmOpenSector('${k}')"><strong>${escapeHtml(String(n).toUpperCase())} SECTOR</strong><span>Open ${escapeHtml(n)} long roll</span></button>`}).join('')}${parent?`<button class="msm-region-card" onclick="msmOpenSector('other-sectors')"><strong>OTHER SECTORS</strong><span>Unmapped / other regions</span></button>`:''}</div>`;
+  let html=`<div class="msm-region-head"><div><div class="msm-region-title">REGIONS &amp; SECTORS</div><div class="msm-region-sub">${parent?'Select a large Region first, then open any Sector inside it. Regions and 100+ sectors can be managed without changing the code.':'Your authorized Region and Sector are shown below.'}</div></div></div>`;
+  if(parent) html+=`<div class="msm-region-grid"><button class="msm-region-card ${activeRegion==='all'?'active':''}" onclick="msmOpenRegion('all')"><strong>FULL DATABASE</strong><span>All regions and all sectors</span></button>${regions.map(r=>{const k=msmRegionKeyFromName(r.name),count=msmSectorsForRegion(r).length;return `<button class="msm-region-card ${activeRegion===k?'active':''}" onclick="msmOpenRegion('${k}')"><strong>${escapeHtml(r.name)}</strong><span>${count} sector${count===1?'':'s'} assigned · Click to open</span></button>`}).join('')}</div>`;
+  else html+=`<div class="msm-region-grid">${regions.map(r=>`<button class="msm-region-card active"><strong>${escapeHtml(r.name)}</strong><span>Authorized region</span></button>`).join('')}</div>`;
+  let region=null;if(parent&&activeRegion!=='all')region=msmRegionByKey(activeRegion);if(!parent)region=regions[0];
+  if(region){const sectors=msmSectorsForRegion(region);html+=`<div class="msm-sector-inside"><div class="msm-sector-inside-title">${escapeHtml(region.name)} · SECTORS</div><div class="msm-sector-chips">${sectors.length?sectors.map(n=>{const k=msmSectorKeyFromName(n);return `<button class="msm-sector-chip ${activeSector===k?'active':''}" onclick="msmOpenSector('${k}')">${escapeHtml(String(n).toUpperCase())} SECTOR</button>`}).join(''):'<span class="msm-region-sub">No sectors assigned yet. Add or move sectors below.</span>'}</div></div>`;}
+  html+=`<div class="msm-sector-inside"><div class="msm-sector-inside-title">QUICK ACCESS</div><div class="msm-sector-chips"><button class="msm-sector-chip" onclick="msmOpenSector('full')">FULL DATABASE</button><button class="msm-sector-chip" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button></div></div>`;
+  box.innerHTML=html;
 }
-
 function msmRenderSectorNav(){
-  const nav=document.getElementById('msmParentSectorNav'); if(!nav)return;
-  const buttons=[];
+  const nav=document.getElementById('msmParentSectorNav');if(!nav)return;const buttons=[];
+  buttons.push(`<button class="btn btn-sm ${msmActiveSector==='full'?'active':''}" onclick="msmOpenSector('full')">FULL DATABASE</button>`);
   if(isParent()){
-    buttons.push(`<button class="btn btn-sm ${msmActiveSector==='full'?'active':''}" onclick="msmOpenSector('full')">FULL DATABASE</button>`);
-    (window.msmSectorCatalog||[]).forEach(name=>{const key=msmSectorKeyFromName(name);buttons.push(`<button class="btn btn-sm ${msmActiveSector===key?'active':''}" onclick="msmOpenSector('${key}')">${escapeHtml(name).toUpperCase()} SECTOR</button>`);});
-    buttons.push(`<button class="btn btn-sm ${msmActiveSector==='other-sectors'?'active':''}" onclick="msmOpenSector('other-sectors')">OTHER SECTORS</button>`);
-  }
-  buttons.push(`<button class="btn btn-sm" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`);
-  nav.innerHTML=buttons.join('');
-  nav.style.display=buttons.length?'grid':'none';
+    const region=msmRegionByKey(window.msmActiveRegion);const names=region?msmSectorsForRegion(region):(window.msmSectorCatalog||[]);
+    names.forEach(name=>{const key=msmSectorKeyFromName(name);buttons.push(`<button class="btn btn-sm ${msmActiveSector===key?'active':''}" onclick="msmOpenSector('${key}')">${escapeHtml(name).toUpperCase()} SECTOR</button>`);});
+  } else {const own=normalizeSectorName(mySector()||myClientProject());if(own)buttons.push(`<button class="btn btn-sm active" onclick="msmOpenSector('${msmSectorKeyFromName(own)}')">${escapeHtml(own).toUpperCase()} SECTOR</button>`);}
+  buttons.push(`<button class="btn btn-sm" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`);nav.innerHTML=buttons.join('');nav.style.display='grid';
 }
-
+function msmRenderTopMenu(){
+  const portal=document.getElementById('sectorPortal');if(!portal||!currentAccess)return;
+  let menu=document.getElementById('msmTopMenu');if(!menu){menu=document.createElement('div');menu.id='msmTopMenu';menu.className='msm-top-menu';const frame=portal.querySelector('.msm-master-frame');(frame||portal).appendChild(menu);}
+  menu.innerHTML=`<button onclick="msmScrollHome()">HOME</button><button onclick="msmScrollRegions()">REGIONS / SECTORS</button>${isParent()?'<button onclick="msmOpenSector(\'full\')">FULL DATABASE</button>':'<button onclick="msmOpenMySector()">MY SECTOR</button>'}<button onclick="msmShowTab('instructions')">INSTRUCTIONS</button>${isParent()?'<button onclick="msmShowTab(\'admin\')">ADMIN ACCESS</button>':''}<button onclick="msmShowTab('audit')">AUDIT TRAIL</button><button onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`;
+}
+function msmScrollHome(){document.getElementById('sectorPortal')?.scrollIntoView({behavior:'smooth',block:'start'});}
+function msmScrollRegions(){document.getElementById('msmRegionPanel')?.scrollIntoView({behavior:'smooth',block:'center'});}
+function msmOpenMySector(){const own=normalizeSectorName(mySector()||myClientProject());if(own)msmOpenSector(msmSectorKeyFromName(own));else showToast('No sector is assigned to this account.');}
 function msmRenderSectorManager(){
-  const box=document.getElementById('msmSectorManager'); if(!box||!isParent())return;
-  box.innerHTML=`<div class="helper-note"><strong>Manage Sectors:</strong> Add a sector name once. It will automatically appear as its own Parent section and in the Sector filter. You can add more later without changing the code.</div>
-    <div class="sector-manager-row"><input id="msmNewSectorName" class="search-input" placeholder="e.g. Chakwal, Lahore, Peshawar..." onkeydown="if(event.key==='Enter')msmAddSector()"><button class="btn btn-sm btn-primary" onclick="msmAddSector()">+ Add Sector</button></div>
-    <div class="sector-list">${(window.msmSectorCatalog||[]).map(n=>`<span class="sector-chip">${escapeHtml(n)} <button title="Remove sector" onclick="msmRemoveSector('${encodeURIComponent(n)}')">×</button></span>`).join('')}</div>`;
+  const box=document.getElementById('msmSectorManager');if(!box||!isParent())return;
+  const regions=window.msmRegionCatalog||[];
+  box.innerHTML=`<div class="helper-note"><strong>REGION / SECTOR MANAGER:</strong> Create as many Regions and Sectors as needed. Add a sector, then assign it to any Region. Moving a sector only changes its menu grouping; existing employee records are not deleted.</div>
+    <div class="sector-manager-row"><input id="msmNewRegionName" class="search-input" placeholder="New Region e.g. North Region" onkeydown="if(event.key==='Enter')msmAddRegion()"><button class="btn btn-sm btn-primary" onclick="msmAddRegion()">+ Add Region</button></div>
+    <div class="sector-manager-row" style="margin-top:8px"><input id="msmNewSectorName" class="search-input" placeholder="New Sector e.g. Peshawar Sector" onkeydown="if(event.key==='Enter')msmAddSector()"><select id="msmNewSectorRegion"><option value="">No Region / Unassigned</option>${regions.map(r=>`<option value="${escapeHtml(r.name)}">${escapeHtml(r.name)}</option>`).join('')}</select><button class="btn btn-sm btn-primary" onclick="msmAddSector()">+ Add Sector</button></div>
+    <div class="region-manager-grid">${regions.map(r=>{const sectors=msmSectorsForRegion(r);return `<div class="region-manager-card"><strong>${escapeHtml(r.name)}</strong><small>${sectors.length} sector${sectors.length===1?'':'s'} assigned</small><div class="mini-row"><select id="regionMove_${msmRegionKeyFromName(r.name)}"><option value="">Select sector to add</option>${(window.msmSectorCatalog||[]).filter(s=>!sectors.some(x=>x.toLowerCase()===s.toLowerCase())).map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}</select><button class="btn btn-sm" onclick="msmAssignSectorToRegion('${encodeURIComponent(r.name)}')">Assign</button></div><div class="sector-list">${sectors.map(s=>`<span class="sector-chip">${escapeHtml(s)} <button title="Remove from region" onclick="msmUnassignSectorFromRegion('${encodeURIComponent(r.name)}','${encodeURIComponent(s)}')">×</button></span>`).join('')||'<span class="msm-region-sub">No sectors yet.</span>'}</div></div>`}).join('')}</div>`;
+}
+async function msmLoadRegionCatalog(){
+  if(!db||window.msmRegionLoading)return;window.msmRegionLoading=true;
+  try{
+    const snap=await db.collection(MSM_REGION_COLLECTION).orderBy('name').get();
+    const docs=snap.docs.map(d=>({name:msmNormRegionName(d.data()?.name),sectors:Array.isArray(d.data()?.sectors)?d.data().sectors.map(msmNormSectorName).filter(Boolean):[]})).filter(x=>x.name);
+    const map=new Map(docs.map(x=>[x.name.toLowerCase(),x]));
+    const firstSetup=docs.length===0;
+    for(const name of MSM_DEFAULT_REGIONS)if(!map.has(name.toLowerCase()))map.set(name.toLowerCase(),{name,sectors:[]});
+    if(firstSetup){
+      const north=map.get('north region'.toLowerCase());
+      north.sectors=[...MSM_DEFAULT_SECTORS];
+      for(const r of map.values()){await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors,createdBy:(currentUser?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});}
+      for(const sector of MSM_DEFAULT_SECTORS){await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(sector)).set({name:sector,region:'North Region'},{merge:true});}
+    }
+    window.msmRegionCatalog=[...map.values()].sort((a,b)=>a.name.localeCompare(b.name));
+  }catch(e){console.warn('Region catalog unavailable; using built-in regions.',e.message);window.msmRegionCatalog=MSM_DEFAULT_REGIONS.map(name=>({name,sectors:[]}));}
+  finally{window.msmRegionLoading=false;window.msmRegionUnsub=true;msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();}
 }
 async function msmLoadSectorCatalog(){
-  if(!db || !isParent() || window.msmSectorLoading)return;
-  window.msmSectorLoading=true;
-  try{
-    const snap=await db.collection(MSM_SECTOR_COLLECTION).orderBy('name').get();
-    const names=snap.docs.map(d=>msmNormSectorName(d.data()?.name)).filter(Boolean);
-    window.msmSectorCatalog=[...new Map([...MSM_DEFAULT_SECTORS,...names].map(n=>[n.toLowerCase(),n])).values()];
-  }catch(e){
-    console.warn('Sector catalog unavailable; using built-in sectors.',e.message);
-    window.msmSectorCatalog=[...MSM_DEFAULT_SECTORS];
-  }finally{
-    window.msmSectorLoading=false; msmPopulateSectorFilter(); msmRenderSectorNav(); msmRenderSectorManager();
-  }
+  if(!db||window.msmSectorLoading)return;window.msmSectorLoading=true;
+  try{const snap=await db.collection(MSM_SECTOR_COLLECTION).orderBy('name').get();const docs=snap.docs.map(d=>d.data()||{});const names=docs.map(x=>msmNormSectorName(x.name)).filter(Boolean);window.msmSectorCatalog=[...new Map([...MSM_DEFAULT_SECTORS,...names].map(n=>[n.toLowerCase(),n])).values()];
+    for(const d of docs){const n=msmNormSectorName(d.name),region=msmNormRegionName(d.region);if(n&&region){let r=msmRegionByKey(msmRegionKeyFromName(region));if(r&&!r.sectors.some(s=>s.toLowerCase()===n.toLowerCase()))r.sectors.push(n);}}
+  }catch(e){console.warn('Sector catalog unavailable; using built-in sectors.',e.message);window.msmSectorCatalog=[...MSM_DEFAULT_SECTORS];}
+  finally{window.msmSectorLoading=false;window.msmSectorUnsub=true;msmPopulateSectorFilter();msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();}
+}
+async function msmAddRegion(){
+  if(!isParent())return;const input=document.getElementById('msmNewRegionName'),name=msmNormRegionName(input?.value);if(!name)return showToast('Enter a region name.');if((window.msmRegionCatalog||[]).some(r=>r.name.toLowerCase()===name.toLowerCase()))return showToast('That region already exists.');
+  try{await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(name)).set({name,sectors:[],createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});window.msmRegionCatalog.push({name,sectors:[]});window.msmRegionCatalog.sort((a,b)=>a.name.localeCompare(b.name));input.value='';msmRenderSectorManager();msmRenderRegionPanel();await writeAuditLog('ADD_REGION',name,{region:name});showToast(`${name} added.`);}catch(e){showToast('Could not add region: '+e.message);}
 }
 async function msmAddSector(){
-  if(!isParent())return;
-  const input=document.getElementById('msmNewSectorName'); const name=msmNormSectorName(input?.value);
-  if(!name)return showToast('Enter a sector name.');
-  if((window.msmSectorCatalog||[]).some(n=>n.toLowerCase()===name.toLowerCase()))return showToast('That sector already exists.');
-  try{
-    await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).set({name,createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-    window.msmSectorCatalog.push(name); window.msmSectorCatalog.sort((a,b)=>a.localeCompare(b)); msmPopulateSectorFilter(); msmRenderSectorNav(); msmRenderSectorManager(); input.value='';
-    await writeAuditLog('ADD_SECTOR',name,{sector:name}); showToast(`${name} Sector added.`);
-  }catch(e){showToast('Could not add sector: '+e.message);}
+  if(!isParent())return;const input=document.getElementById('msmNewSectorName'),name=msmNormSectorName(input?.value),region=msmNormRegionName(document.getElementById('msmNewSectorRegion')?.value);if(!name)return showToast('Enter a sector name.');if((window.msmSectorCatalog||[]).some(n=>n.toLowerCase()===name.toLowerCase()))return showToast('That sector already exists.');
+  try{await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).set({name,region:region||'',createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});window.msmSectorCatalog.push(name);window.msmSectorCatalog.sort((a,b)=>a.localeCompare(b));if(region){const r=msmRegionByKey(msmRegionKeyFromName(region));if(r&&!r.sectors.some(s=>s.toLowerCase()===name.toLowerCase()))r.sectors.push(name);}input.value='';msmPopulateSectorFilter();msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();await writeAuditLog('ADD_SECTOR',name,{sector:name,region});showToast(`${name} Sector added.`);}catch(e){showToast('Could not add sector: '+e.message);}
+}
+async function msmAssignSectorToRegion(encodedRegion){
+  if(!isParent())return;const regionName=decodeURIComponent(encodedRegion),sel=document.getElementById('regionMove_'+msmRegionKeyFromName(regionName)),sector=msmNormSectorName(sel?.value);if(!sector)return showToast('Select a sector first.');const target=msmRegionByKey(msmRegionKeyFromName(regionName));if(!target)return;
+  try{for(const r of window.msmRegionCatalog||[]){if(r.sectors.some(s=>s.toLowerCase()===sector.toLowerCase())){r.sectors=r.sectors.filter(s=>s.toLowerCase()!==sector.toLowerCase());await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors},{merge:true});}}
+    if(!target.sectors.some(s=>s.toLowerCase()===sector.toLowerCase()))target.sectors.push(sector);await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(target.name)).set({name:target.name,sectors:target.sectors},{merge:true});await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(sector)).set({name:sector,region:target.name},{merge:true});msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();await writeAuditLog('ASSIGN_SECTOR_REGION',sector,{sector,region:target.name});showToast(`${sector} assigned to ${target.name}.`);
+  }catch(e){showToast('Could not assign sector: '+e.message);}
+}
+async function msmUnassignSectorFromRegion(encodedRegion,encodedSector){
+  if(!isParent())return;const regionName=decodeURIComponent(encodedRegion),sector=decodeURIComponent(encodedSector),r=msmRegionByKey(msmRegionKeyFromName(regionName));if(!r)return;try{r.sectors=r.sectors.filter(s=>s.toLowerCase()!==sector.toLowerCase());await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors},{merge:true});await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(sector)).set({name:sector,region:''},{merge:true});msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();await writeAuditLog('UNASSIGN_SECTOR_REGION',sector,{sector,region:regionName});showToast(`${sector} removed from ${regionName}.`);}catch(e){showToast('Could not remove sector from region: '+e.message);}
 }
 async function msmRemoveSector(encoded){
-  if(!isParent())return; const name=decodeURIComponent(encoded);
-  if(MSM_DEFAULT_SECTORS.some(n=>n.toLowerCase()===name.toLowerCase()))return showToast('Built-in sectors cannot be removed here.');
-  if(!confirm(`Remove the ${name} Sector button? Existing employee records will NOT be deleted.`))return;
-  try{
-    await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).delete();
-    window.msmSectorCatalog=window.msmSectorCatalog.filter(n=>n.toLowerCase()!==name.toLowerCase());
-    if(msmSectorByKey(msmActiveSector)===name)msmActiveSector='full';
-    msmPopulateSectorFilter(); msmRenderSectorNav(); msmRenderSectorManager(); renderTable();
-    await writeAuditLog('REMOVE_SECTOR',name,{sector:name}); showToast(`${name} Sector removed from the catalog.`);
-  }catch(e){showToast('Could not remove sector: '+e.message);}
+  if(!isParent())return;const name=decodeURIComponent(encoded);if(MSM_DEFAULT_SECTORS.some(n=>n.toLowerCase()===name.toLowerCase()))return showToast('Built-in sectors cannot be removed here.');if(!confirm(`Remove the ${name} Sector from the catalog? Existing employee records will NOT be deleted.`))return;
+  try{await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).delete();for(const r of window.msmRegionCatalog||[]){if(r.sectors.some(s=>s.toLowerCase()===name.toLowerCase())){r.sectors=r.sectors.filter(s=>s.toLowerCase()!==name.toLowerCase());await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors},{merge:true});}}window.msmSectorCatalog=window.msmSectorCatalog.filter(n=>n.toLowerCase()!==name.toLowerCase());if(msmSectorByKey(msmActiveSector)===name)msmActiveSector='full';msmPopulateSectorFilter();msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();renderTable();await writeAuditLog('REMOVE_SECTOR',name,{sector:name});showToast(`${name} Sector removed from the catalog.`);}catch(e){showToast('Could not remove sector: '+e.message);}
+}
+function msmOpenRegion(key){
+  if(!isParent()){msmScrollRegions();return;}window.msmActiveRegion=key||'all';if(key==='all'){msmActiveSector='full';}else{const r=msmRegionByKey(key),first=msmSectorsForRegion(r)[0];msmActiveSector=first?msmSectorKeyFromName(first):'full';}msmRenderRegionPanel();msmRenderSectorNav();msmScrollRegions();if(msmActiveSector!=='full')msmOpenSector(msmActiveSector);else {const fs=document.getElementById('filterSector');if(fs)fs.value='';renderTable();}
 }
 function msmEnsureUI(){
-  msmInjectStyle();
-  if(!currentAccess) return;
-  const portal=document.getElementById('sectorPortal');
-  if(portal && currentAccess && !document.getElementById('msmParentSectorNav')){
-    const nav=document.createElement('div'); nav.id='msmParentSectorNav'; nav.className='sector-nav';
-    portal.querySelector('.sector-portal-inner')?.appendChild(nav);
+  msmInjectStyle();if(!currentAccess)return;const portal=document.getElementById('sectorPortal');
+  if(portal&&!document.getElementById('msmParentSectorNav')){const nav=document.createElement('div');nav.id='msmParentSectorNav';nav.className='sector-nav';portal.querySelector('.msm-master-frame')?.appendChild(nav);}
+  if(portal&&!document.getElementById('msmSectorManager')&&isParent()){const box=document.createElement('div');box.id='msmSectorManager';box.className='sector-manager';portal.querySelector('.msm-master-frame')?.appendChild(box);}
+  if(currentAccess&&!document.getElementById('msmRecycleTab')){const tabs=document.querySelector('.tabs');if(tabs){const b=document.createElement('button');b.id='msmRecycleTab';b.className='tab-btn';b.dataset.tab='recycle';b.textContent='♻ Recycle Bin';b.onclick=msmOpenRecycle;tabs.appendChild(b);}}
+  if(currentAccess&&!document.getElementById('view-recycle')){const sheet=document.querySelector('#appRoot main .sheet');if(sheet){const v=document.createElement('div');v.id='view-recycle';v.style.display='none';v.innerHTML=`<div class="helper-note"><strong>Recycle Bin:</strong> Deleted employees are retained here. Parent/Admin can manage all records; sector users can manage only records in their assigned scope.</div><div class="recycle-summary"><div class="recycle-card"><span>Deleted Records</span><strong id="msmRecycleCount">0</strong></div><div class="recycle-card"><span>Access</span><strong id="msmRecycleAccess">Authorized Scope</strong></div><div class="recycle-card"><span>Permanent Delete</span><strong>Controlled</strong></div></div><div class="bulk-toolbar"><input class="search-input" id="msmRecycleSearch" placeholder="Search deleted guard, CNIC, MSM No., client, sector..." oninput="msmRenderRecycle()"><button class="btn btn-sm" onclick="msmLoadRecycle()">↻ Refresh</button><button class="btn btn-sm btn-primary" onclick="msmRecoverAll()">Recover All</button><button class="btn btn-sm btn-danger" onclick="msmEmptyRecycle()">Empty Recycle Bin</button></div><div class="table-wrap"><table class="register"><thead><tr><th>Deleted</th><th>Guard</th><th>CNIC</th><th>Guard ID</th><th>Client</th><th>Sector</th><th>Location</th><th>Deleted By</th><th>Actions</th></tr></thead><tbody id="msmRecycleTbody"><tr><td colspan="9">Loading…</td></tr></tbody></table></div>`;const audit=document.getElementById('view-audit');audit?audit.parentNode.insertBefore(v,audit):sheet.appendChild(v);}}
+  msmRenderTopMenu();msmRenderSectorNav();msmRenderRegionPanel();msmRenderSectorManager();msmPopulateSectorFilter();
+  if(!window.msmRegionUnsub){
+    window.msmRegionUnsub='loading';
+    msmLoadRegionCatalog().then(()=>{ if(isParent()&&!window.msmSectorUnsub){window.msmSectorUnsub='loading';msmLoadSectorCatalog();} });
   }
-  if(portal && isParent() && !document.getElementById('msmSectorManager')){
-    const box=document.createElement('div'); box.id='msmSectorManager'; box.className='sector-manager';
-    portal.querySelector('.sector-portal-inner')?.appendChild(box);
-  }
-  if(currentAccess && !document.getElementById('msmRecycleTab')){
-    const tabs=document.querySelector('.tabs');
-    if(tabs){ const b=document.createElement('button'); b.id='msmRecycleTab'; b.className='tab-btn'; b.dataset.tab='recycle'; b.textContent='♻ Recycle Bin'; b.onclick=msmOpenRecycle; tabs.appendChild(b); }
-  }
-  if(currentAccess && !document.getElementById('view-recycle')){
-    const sheet=document.querySelector('#appRoot main .sheet');
-    if(sheet){
-      const v=document.createElement('div'); v.id='view-recycle'; v.style.display='none';
-      v.innerHTML=`<div class="helper-note"><strong>Recycle Bin:</strong> Deleted employees are retained here. Parent/Admin can manage all records; sector users can manage only records in their assigned scope.</div>
-      <div class="recycle-summary"><div class="recycle-card"><span>Deleted Records</span><strong id="msmRecycleCount">0</strong></div><div class="recycle-card"><span>Access</span><strong id="msmRecycleAccess">Authorized Scope</strong></div><div class="recycle-card"><span>Permanent Delete</span><strong>Controlled</strong></div></div>
-      <div class="bulk-toolbar"><input class="search-input" id="msmRecycleSearch" placeholder="Search deleted guard, CNIC, MSM No., client, sector..." oninput="msmRenderRecycle()">
-      <button class="btn btn-sm" onclick="msmLoadRecycle()">↻ Refresh</button><button class="btn btn-sm btn-primary" onclick="msmRecoverAll()">Recover All</button><button class="btn btn-sm btn-danger" onclick="msmEmptyRecycle()">Empty Recycle Bin</button></div>
-      <div class="table-wrap"><table class="register"><thead><tr><th>Deleted</th><th>Guard</th><th>CNIC</th><th>Guard ID</th><th>Client</th><th>Sector</th><th>Location</th><th>Deleted By</th><th>Actions</th></tr></thead><tbody id="msmRecycleTbody"><tr><td colspan="9">Loading…</td></tr></tbody></table></div>`;
-      const audit=document.getElementById('view-audit'); audit ? audit.parentNode.insertBefore(v,audit) : sheet.appendChild(v);
-    }
-  }
-  msmRenderSectorNav(); msmRenderRegionPanel(); msmRenderSectorManager(); msmPopulateSectorFilter();
-  if(isParent() && !window.msmSectorUnsub) msmLoadSectorCatalog();
 }
+
 function msmShowTab(tab){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
   ['form','register','instructions','admin','audit','recycle'].forEach(v=>{const e=document.getElementById('view-'+v); if(e)e.style.display=tab===v?'block':'none';});

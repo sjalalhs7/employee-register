@@ -82,6 +82,19 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // Parent-managed navigation structure. Clients may read the catalog so
+    // their authorized Region/Sector navigation can render, but only Parent
+    // may create, edit or remove Regions and Sectors.
+    match /sectorCatalog/{sectorId} {
+      allow read: if authorized();
+      allow create, update, delete: if isParent();
+    }
+
+    match /regionCatalog/{regionId} {
+      allow read: if authorized();
+      allow create, update, delete: if isParent();
+    }
+
     match /{document=**} { allow read, write: if false; }
   }
 }
