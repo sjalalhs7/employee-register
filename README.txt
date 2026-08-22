@@ -1,36 +1,27 @@
-MSM LONGROLL — FINAL MERGED UPDATE
+MSM LONGROLL DATABASE — FINAL UI/SECTOR UPDATE
 
-BASE:
-The existing dynamic-sector/recycle-bin index.html was preserved.
-The supplied MSM login design (logo + watermark + Google/Gmail + Email/Password + reset) was merged into that base.
+Files:
+1. index-final.html -> upload/replace repository index.html
+2. msm-security-guards-logo.png -> upload beside index.html
+3. firestore.rules -> publish in Firebase Console > Firestore Database > Rules
 
-IMPORTANT:
-There must be ONE active index.html in the GitHub repository root.
-Do NOT upload a second index.html.
+Included updates:
+- Supplied MSM Security Guards logo used across login and main website.
+- Parent home page receives a subtle centered logo watermark.
+- Login remains colorful/premium and uses the supplied logo.
+- Parent homepage has REGION / SECTOR cards; sector names from the catalog appear automatically.
+- Parent can add future sectors from Manage Sectors; they appear on the homepage.
+- Sector users see their authorized sector and can open it from the homepage.
+- Sector users can see legacy/imported records where Client/Project is the sector name, even if sector field was not present.
+- Sector users get Import Long Roll (.xlsx) and their imports are automatically stamped with their authorized Client/Project and Sector when missing.
+- Sector users get a scoped Recycle Bin with recover/permanent-delete controls limited by Firestore rules.
+- Parent behavior, Instructions, Audit Trail, Export, Print, and existing long-roll features are preserved.
 
-UPLOAD:
-1. Replace GitHub's current index.html with this package's index.html.
-2. Keep your existing Firebase config, manifest, service worker, images and other working files.
-3. In Firebase Console -> Firestore Database -> Rules, replace the current rules with firestore.rules from this package and Publish.
-4. Hard-refresh the website after GitHub Pages deploys.
-
-PRESERVED / MERGED:
-- Supplied login visual design and watermark
-- Google/Gmail authentication
-- Email/password authentication and password reset
-- Existing enrollment/long-roll form
-- Search/filter/sort/import/export/printing/audit
-- Parent and client access
-- FULL DATABASE
-- Islamabad / Rawalpindi / KPK / Chakwal sector sections
-- Dynamic sector catalog for future sectors
-- Recycle Bin: Delete -> Recycle Bin -> Recover / Permanent Delete / Empty
-- Parent bulk transfer and transfer history
-- Instructions page updated for the sector/recycle workflow
-
-SECURITY:
-The supplied rules make active-record deletion Parent-only through the application's recycle-bin flow, keep sector catalog Parent-only, keep recycle-bin Parent-only, and make audit logs append-only.
-
-TEST ORDER:
-Parent login -> sector buttons -> Add Sector -> add one dummy guard -> delete -> Recycle Bin -> recover -> transfer two dummy guards -> client login isolation -> audit.
-Do not permanently delete real records during testing.
+Important deployment order:
+A) Replace index.html with index-final.html content.
+B) Upload msm-security-guards-logo.png to the same GitHub Pages folder.
+C) Publish firestore.rules in Firebase Console.
+D) Hard refresh the website / clear GitHub Pages cache.
+E) Test Parent login -> Islamabad sector -> 427 records.
+F) Test Islamabad sector Gmail -> same records visible.
+G) Test sector Import and scoped Recycle Bin.
