@@ -3157,10 +3157,18 @@ async function msmLoadRegionCatalog(){
     const map=new Map(docs.map(x=>[x.name.toLowerCase(),x]));
     const firstSetup=docs.length===0;
     for(const name of MSM_DEFAULT_REGIONS)if(!map.has(name.toLowerCase()))map.set(name.toLowerCase(),{name,sectors:[]});
-    if(firstSetup){
+    // First setup: place the built-in sectors under North Region.
+    // Recovery setup: if Regions already exist but none has any sector assigned,
+    // restore the built-in sector grouping without disturbing existing employee data.
+    const anyAssigned=[...map.values()].some(r=>Array.isArray(r.sectors)&&r.sectors.length>0);
+    if(firstSetup || !anyAssigned){
       const north=map.get('north region'.toLowerCase());
-      north.sectors=[...MSM_DEFAULT_SECTORS];
-      for(const r of map.values()){await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors,createdBy:(currentUser?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});}
+      if(north){
+        const merged=[...(north.sectors||[])];
+        for(const sector of MSM_DEFAULT_SECTORS) if(!merged.some(x=>String(x).toLowerCase()===sector.toLowerCase())) merged.push(sector);
+        north.sectors=merged;
+      }
+      for(const r of map.values()){await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors||[],createdBy:(currentUser?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
       for(const sector of MSM_DEFAULT_SECTORS){await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(sector)).set({name:sector,region:'North Region'},{merge:true});}
     }
     window.msmRegionCatalog=[...map.values()].sort((a,b)=>a.name.localeCompare(b.name));
