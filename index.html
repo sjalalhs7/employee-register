@@ -761,8 +761,18 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 #sectorPortal .portal-record-stamp .msm-record-top{color:#d8c58e;font-size:9px;letter-spacing:1.2px}
 #sectorPortal .portal-record-stamp .n{display:block;color:#fff;font-size:42px;line-height:1;font-weight:900}
 #sectorPortal .portal-record-stamp small{color:#d8c58e;font-size:9px;letter-spacing:1.2px;margin-top:4px}
-#msmParentSectorNav{max-width:1080px !important;margin:20px auto 0 !important;position:relative;z-index:2}
-#msmParentSectorNav .btn{min-height:46px;border-radius:10px;background:rgba(8,12,17,.75);color:#fff;border:1px solid rgba(202,166,83,.75)}
+#sectorPortal::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background-image:url('msm-security-guards-logo.png');background-repeat:no-repeat;background-position:center 48%;background-size:min(520px,72vw);opacity:.055;filter:grayscale(.25) contrast(.95);mix-blend-mode:screen}
+#sectorPortal .msm-master-frame{position:relative;z-index:1}
+#sectorPortal .portal-record-stamp{transform:perspective(520px) rotateX(3deg);transition:transform .25s ease,box-shadow .25s ease}
+#sectorPortal .portal-record-stamp:hover{transform:perspective(520px) rotateX(3deg) translateY(-4px) scale(1.035);box-shadow:inset 0 8px 10px rgba(255,255,255,.14),0 14px 28px rgba(0,0,0,.55),0 0 22px rgba(202,166,83,.20)}
+#sectorPortal .portal-record-stamp::marker{display:none}
+#sectorPortal .portal-record-stamp .n{font-variant-numeric:tabular-nums;text-shadow:0 2px 0 #000,0 0 12px rgba(255,255,255,.25)}
+#sectorPortal .portal-record-stamp{animation:msmRecordFloat 3.8s ease-in-out infinite}
+@keyframes msmRecordFloat{0%,100%{transform:perspective(520px) rotateX(3deg) translateY(0)}50%{transform:perspective(520px) rotateX(3deg) translateY(-3px)}}
+#msmParentSectorNav{display:none !important}
+.msm-top-menu{position:relative;z-index:8 !important;margin:18px auto 22px !important;padding:8px;border:1px solid rgba(202,166,83,.58);border-radius:14px;background:linear-gradient(180deg,rgba(5,12,18,.94),rgba(12,18,24,.86));box-shadow:0 8px 22px rgba(0,0,0,.30),inset 0 1px 0 rgba(255,255,255,.06);justify-content:center !important}
+.msm-top-menu button{min-height:42px !important;font-size:11px !important;padding:10px 14px !important;border-radius:10px !important}
+@media(max-width:650px){.msm-top-menu{margin:14px 0 18px !important;padding:6px;gap:5px}.msm-top-menu button{min-height:38px !important;font-size:9px !important;padding:8px 9px !important}}
 .cover{display:none !important;}
 @media(max-width:650px){
   .msm-master-frame{padding:14px 12px 24px;border-left-width:1px;border-right-width:1px}
@@ -3116,16 +3126,27 @@ function msmRenderRegionPanel(){
   const activeRegion=parent?window.msmActiveRegion:'my-region';
   const activeSector=parent?window.msmActiveSector:(own?msmSectorKeyFromName(own):'full');
   box.style.display='block';
-  let html=`<div class="msm-region-head"><div><div class="msm-region-title">REGIONS &amp; SECTORS</div><div class="msm-region-sub">${parent?'Select a large Region first, then open any Sector inside it. Regions and 100+ sectors can be managed without changing the code.':'Your authorized Region and Sector are shown below.'}</div></div></div>`;
-  if(parent) html+=`<div class="msm-region-grid"><button class="msm-region-card ${activeRegion==='all'?'active':''}" onclick="msmOpenRegion('all')"><strong>FULL DATABASE</strong><span>All regions and all sectors</span></button>${regions.map(r=>{const k=msmRegionKeyFromName(r.name),count=msmSectorsForRegion(r).length;return `<button class="msm-region-card ${activeRegion===k?'active':''}" onclick="msmOpenRegion('${k}')"><strong>${escapeHtml(r.name)}</strong><span>${count} sector${count===1?'':'s'} assigned · Click to open</span></button>`}).join('')}</div>`;
-  else html+=`<div class="msm-region-grid">${regions.map(r=>`<button class="msm-region-card active"><strong>${escapeHtml(r.name)}</strong><span>Authorized region</span></button>`).join('')}</div>`;
+  let html=`<div class="msm-region-head"><div><div class="msm-region-title">REGIONS &amp; SECTORS</div><div class="msm-region-sub">${parent?'Select a Region to reveal its Sectors. Add as many Regions/Sectors as needed.':'Your authorized Region and Sector are shown below.'}</div></div></div>`;
+  if(parent){
+    html+=`<div class="msm-region-grid"><button class="msm-region-card ${activeRegion==='all'?'active':''}" onclick="msmOpenRegion('all')"><strong>FULL DATABASE</strong><span>All regions and all sectors</span></button>${regions.map(r=>{const k=msmRegionKeyFromName(r.name),count=msmSectorsForRegion(r).length;return `<button class="msm-region-card ${activeRegion===k?'active':''}" onclick="msmOpenRegion('${k}')"><strong>${escapeHtml(r.name)}</strong><span>${count} sector${count===1?'':'s'} assigned · Click to open</span></button>`}).join('')}</div>`;
+  } else {
+    html+=`<div class="msm-region-grid">${regions.map(r=>`<button class="msm-region-card active" onclick="msmOpenSector('${msmSectorKeyFromName(own)}')"><strong>${escapeHtml(r.name)}</strong><span>Authorized region · Click to open sector</span></button>`).join('')}</div>`;
+  }
   let region=null;if(parent&&activeRegion!=='all')region=msmRegionByKey(activeRegion);if(!parent)region=regions[0];
-  if(region){const sectors=msmSectorsForRegion(region);html+=`<div class="msm-sector-inside"><div class="msm-sector-inside-title">${escapeHtml(region.name)} · SECTORS</div><div class="msm-sector-chips">${sectors.length?sectors.map(n=>{const k=msmSectorKeyFromName(n);return `<button class="msm-sector-chip ${activeSector===k?'active':''}" onclick="msmOpenSector('${k}')">${escapeHtml(String(n).toUpperCase())} SECTOR</button>`}).join(''):'<span class="msm-region-sub">No sectors assigned yet. Add or move sectors below.</span>'}</div></div>`;}
-  html+=`<div class="msm-sector-inside"><div class="msm-sector-inside-title">QUICK ACCESS</div><div class="msm-sector-chips"><button class="msm-sector-chip" onclick="msmOpenSector('full')">FULL DATABASE</button><button class="msm-sector-chip" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button></div></div>`;
+  if(region){
+    const sectors=msmSectorsForRegion(region);
+    html+=`<div class="msm-sector-inside"><div class="msm-sector-inside-title">${escapeHtml(region.name)} · SECTORS</div><div class="msm-sector-chips">${sectors.length?sectors.map(n=>{const k=msmSectorKeyFromName(n);return `<button class="msm-sector-chip ${activeSector===k?'active':''}" onclick="msmOpenSector('${k}')">${escapeHtml(String(n).toUpperCase())} SECTOR</button>`}).join(''):'<span class="msm-region-sub">No sectors assigned yet. Use the manager below to add or assign one.</span>'}</div></div>`;
+  }
+  if(parent){
+    html+=`<div class="msm-sector-inside"><div class="msm-sector-inside-title">QUICK ACCESS</div><div class="msm-sector-chips"><button class="msm-sector-chip" onclick="msmOpenSector('full')">FULL DATABASE</button><button class="msm-sector-chip" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button></div></div>`;
+  }else{
+    html+=`<div class="msm-sector-inside"><div class="msm-sector-inside-title">QUICK ACCESS</div><div class="msm-sector-chips"><button class="msm-sector-chip" onclick="msmOpenMySector()">MY SECTOR</button><button class="msm-sector-chip" onclick="msmShowTab('form')">NEW ENTRY</button><button class="msm-sector-chip" onclick="msmShowTab('register')">REGISTER</button><button class="msm-sector-chip" onclick="msmOpenRecycle()">♻ RECYCLE BIN</button></div></div>`;
+  }
   box.innerHTML=html;
 }
 function msmRenderSectorNav(){
-  const nav=document.getElementById('msmParentSectorNav');if(!nav)return;const buttons=[];
+  const nav=document.getElementById('msmParentSectorNav');if(!nav)return;nav.innerHTML='';nav.style.display='none';return;
+  const buttons=[];
   buttons.push(`<button class="btn btn-sm ${msmActiveSector==='full'?'active':''}" onclick="msmOpenSector('full')">FULL DATABASE</button>`);
   if(isParent()){
     const region=msmRegionByKey(window.msmActiveRegion);const names=region?msmSectorsForRegion(region):(window.msmSectorCatalog||[]);
@@ -3135,8 +3156,16 @@ function msmRenderSectorNav(){
 }
 function msmRenderTopMenu(){
   const portal=document.getElementById('sectorPortal');if(!portal||!currentAccess)return;
-  let menu=document.getElementById('msmTopMenu');if(!menu){menu=document.createElement('div');menu.id='msmTopMenu';menu.className='msm-top-menu';const frame=portal.querySelector('.msm-master-frame');(frame||portal).appendChild(menu);}
-  menu.innerHTML=`<button onclick="msmScrollHome()">HOME</button><button onclick="msmScrollRegions()">REGIONS / SECTORS</button>${isParent()?'<button onclick="msmOpenSector(\'full\')">FULL DATABASE</button>':'<button onclick="msmOpenMySector()">MY SECTOR</button>'}<button onclick="msmShowTab('instructions')">INSTRUCTIONS</button>${isParent()?'<button onclick="msmShowTab(\'admin\')">ADMIN ACCESS</button>':''}<button onclick="msmShowTab('audit')">AUDIT TRAIL</button><button onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`;
+  let menu=document.getElementById('msmTopMenu');
+  if(!menu){menu=document.createElement('div');menu.id='msmTopMenu';menu.className='msm-top-menu';}
+  const anchor=portal.querySelector('.msm-client-section');
+  if(anchor && menu.parentNode!==anchor.parentNode) anchor.parentNode.insertBefore(menu,anchor);
+  else if(anchor && menu.previousElementSibling!==portal.querySelector('.sector-badge-row')) anchor.parentNode.insertBefore(menu,anchor);
+  if(isParent()){
+    menu.innerHTML=`<button onclick="msmScrollHome()">HOME</button><button onclick="msmScrollRegions()">REGIONS / SECTORS</button><button onclick="msmOpenSector('full')">FULL DATABASE</button><button onclick="msmShowTab('instructions')">INSTRUCTIONS</button><button onclick="msmShowTab('admin')">ADMIN ACCESS</button><button onclick="msmShowTab('audit')">AUDIT TRAIL</button><button onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`;
+  }else{
+    menu.innerHTML=`<button onclick="msmScrollHome()">HOME</button><button onclick="msmOpenMySector()">MY SECTOR</button><button onclick="msmShowTab('form')">NEW ENTRY</button><button onclick="msmShowTab('register')">REGISTER</button><button onclick="msmShowTab('instructions')">INSTRUCTIONS</button><button onclick="msmShowTab('audit')">AUDIT TRAIL</button><button onclick="msmOpenRecycle()">♻ RECYCLE BIN</button>`;
+  }
 }
 function msmScrollHome(){document.getElementById('sectorPortal')?.scrollIntoView({behavior:'smooth',block:'start'});}
 function msmScrollRegions(){document.getElementById('msmRegionPanel')?.scrollIntoView({behavior:'smooth',block:'center'});}
@@ -3155,21 +3184,18 @@ async function msmLoadRegionCatalog(){
     const snap=await db.collection(MSM_REGION_COLLECTION).orderBy('name').get();
     const docs=snap.docs.map(d=>({name:msmNormRegionName(d.data()?.name),sectors:Array.isArray(d.data()?.sectors)?d.data().sectors.map(msmNormSectorName).filter(Boolean):[]})).filter(x=>x.name);
     const map=new Map(docs.map(x=>[x.name.toLowerCase(),x]));
-    const firstSetup=docs.length===0;
     for(const name of MSM_DEFAULT_REGIONS)if(!map.has(name.toLowerCase()))map.set(name.toLowerCase(),{name,sectors:[]});
-    // First setup: place the built-in sectors under North Region.
-    // Recovery setup: if Regions already exist but none has any sector assigned,
-    // restore the built-in sector grouping without disturbing existing employee data.
-    const anyAssigned=[...map.values()].some(r=>Array.isArray(r.sectors)&&r.sectors.length>0);
-    if(firstSetup || !anyAssigned){
-      const north=map.get('north region'.toLowerCase());
-      if(north){
-        const merged=[...(north.sectors||[])];
-        for(const sector of MSM_DEFAULT_SECTORS) if(!merged.some(x=>String(x).toLowerCase()===sector.toLowerCase())) merged.push(sector);
-        north.sectors=merged;
+    // One-time repair and ongoing self-heal: if built-in sectors exist but are not assigned,
+    // keep the records untouched and place only unassigned built-ins under North Region.
+    if(isParent()){
+      const north=map.get('north region');
+      const assigned=new Set([...map.values()].flatMap(r=>r.sectors||[]).map(x=>x.toLowerCase()));
+      const missing=MSM_DEFAULT_SECTORS.filter(s=>!assigned.has(s.toLowerCase()));
+      if(north && missing.length){
+        north.sectors=[...new Set([...(north.sectors||[]),...missing])];
+        await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(north.name)).set({name:north.name,sectors:north.sectors,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+        for(const sector of missing)await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(sector)).set({name:sector,region:north.name,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
       }
-      for(const r of map.values()){await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors||[],createdBy:(currentUser?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}
-      for(const sector of MSM_DEFAULT_SECTORS){await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(sector)).set({name:sector,region:'North Region'},{merge:true});}
     }
     window.msmRegionCatalog=[...map.values()].sort((a,b)=>a.name.localeCompare(b.name));
   }catch(e){console.warn('Region catalog unavailable; using built-in regions.',e.message);window.msmRegionCatalog=MSM_DEFAULT_REGIONS.map(name=>({name,sectors:[]}));}
@@ -3188,7 +3214,12 @@ async function msmAddRegion(){
 }
 async function msmAddSector(){
   if(!isParent())return;const input=document.getElementById('msmNewSectorName'),name=msmNormSectorName(input?.value),region=msmNormRegionName(document.getElementById('msmNewSectorRegion')?.value);if(!name)return showToast('Enter a sector name.');if((window.msmSectorCatalog||[]).some(n=>n.toLowerCase()===name.toLowerCase()))return showToast('That sector already exists.');
-  try{await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).set({name,region:region||'',createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});window.msmSectorCatalog.push(name);window.msmSectorCatalog.sort((a,b)=>a.localeCompare(b));if(region){const r=msmRegionByKey(msmRegionKeyFromName(region));if(r&&!r.sectors.some(s=>s.toLowerCase()===name.toLowerCase()))r.sectors.push(name);}input.value='';msmPopulateSectorFilter();msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();await writeAuditLog('ADD_SECTOR',name,{sector:name,region});showToast(`${name} Sector added.`);}catch(e){showToast('Could not add sector: '+e.message);}
+  try{
+    await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).set({name,region:region||'',createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+    window.msmSectorCatalog.push(name);window.msmSectorCatalog.sort((a,b)=>a.localeCompare(b));
+    if(region){const r=msmRegionByKey(msmRegionKeyFromName(region));if(r){if(!r.sectors.some(s=>s.toLowerCase()===name.toLowerCase()))r.sectors.push(name);await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});}}
+    input.value='';msmPopulateSectorFilter();msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();await writeAuditLog('ADD_SECTOR',name,{sector:name,region});showToast(`${name} Sector added${region?' to '+region:''}.`);
+  }catch(e){console.error(e);showToast('Could not add sector: '+e.message);}
 }
 async function msmAssignSectorToRegion(encodedRegion){
   if(!isParent())return;const regionName=decodeURIComponent(encodedRegion),sel=document.getElementById('regionMove_'+msmRegionKeyFromName(regionName)),sector=msmNormSectorName(sel?.value);if(!sector)return showToast('Select a sector first.');const target=msmRegionByKey(msmRegionKeyFromName(regionName));if(!target)return;
@@ -3208,8 +3239,9 @@ function msmOpenRegion(key){
 }
 function msmEnsureUI(){
   msmInjectStyle();if(!currentAccess)return;const portal=document.getElementById('sectorPortal');
-  if(portal&&!document.getElementById('msmParentSectorNav')){const nav=document.createElement('div');nav.id='msmParentSectorNav';nav.className='sector-nav';portal.querySelector('.msm-master-frame')?.appendChild(nav);}
-  if(portal&&!document.getElementById('msmSectorManager')&&isParent()){const box=document.createElement('div');box.id='msmSectorManager';box.className='sector-manager';portal.querySelector('.msm-master-frame')?.appendChild(box);}
+  const frame=portal?.querySelector('.msm-master-frame');
+  if(portal&&!document.getElementById('msmParentSectorNav')){const nav=document.createElement('div');nav.id='msmParentSectorNav';nav.className='sector-nav';frame?.appendChild(nav);}
+  if(portal&&!document.getElementById('msmSectorManager')&&isParent()){const box=document.createElement('div');box.id='msmSectorManager';box.className='sector-manager';frame?.appendChild(box);}
   if(currentAccess&&!document.getElementById('msmRecycleTab')){const tabs=document.querySelector('.tabs');if(tabs){const b=document.createElement('button');b.id='msmRecycleTab';b.className='tab-btn';b.dataset.tab='recycle';b.textContent='♻ Recycle Bin';b.onclick=msmOpenRecycle;tabs.appendChild(b);}}
   if(currentAccess&&!document.getElementById('view-recycle')){const sheet=document.querySelector('#appRoot main .sheet');if(sheet){const v=document.createElement('div');v.id='view-recycle';v.style.display='none';v.innerHTML=`<div class="helper-note"><strong>Recycle Bin:</strong> Deleted employees are retained here. Parent/Admin can manage all records; sector users can manage only records in their assigned scope.</div><div class="recycle-summary"><div class="recycle-card"><span>Deleted Records</span><strong id="msmRecycleCount">0</strong></div><div class="recycle-card"><span>Access</span><strong id="msmRecycleAccess">Authorized Scope</strong></div><div class="recycle-card"><span>Permanent Delete</span><strong>Controlled</strong></div></div><div class="bulk-toolbar"><input class="search-input" id="msmRecycleSearch" placeholder="Search deleted guard, CNIC, MSM No., client, sector..." oninput="msmRenderRecycle()"><button class="btn btn-sm" onclick="msmLoadRecycle()">↻ Refresh</button><button class="btn btn-sm btn-primary" onclick="msmRecoverAll()">Recover All</button><button class="btn btn-sm btn-danger" onclick="msmEmptyRecycle()">Empty Recycle Bin</button></div><div class="table-wrap"><table class="register"><thead><tr><th>Deleted</th><th>Guard</th><th>CNIC</th><th>Guard ID</th><th>Client</th><th>Sector</th><th>Location</th><th>Deleted By</th><th>Actions</th></tr></thead><tbody id="msmRecycleTbody"><tr><td colspan="9">Loading…</td></tr></tbody></table></div>`;const audit=document.getElementById('view-audit');audit?audit.parentNode.insertBefore(v,audit):sheet.appendChild(v);}}
   msmRenderTopMenu();msmRenderSectorNav();msmRenderRegionPanel();msmRenderSectorManager();msmPopulateSectorFilter();
