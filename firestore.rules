@@ -1,69 +1,79 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() {
-      return request.auth != null;
-    }
+    function signedIn() { return request.auth != null; }
+    function authEmail() { return request.auth.token.email; }
+    function userPath() { return /databases/$(database)/documents/authorizedUsers/$(authEmail()); }
+    function authorized() { return signedIn() && exists(userPath()); }
+    function myUser() { return get(userPath()); }
+    function isParent() { return authorized() && myUser().data.role == 'parent'; }
+    function isClient() { return authorized() && myUser().data.role == 'client'; }
+    function myClient() { return myUser().data.get('clientproject', ''); }
+    function mySector() { return myUser().data.get('sector', ''); }
 
-    function hasUser() {
-      return signedIn() && exists(
-        /databases/$(database)/documents/authorizedUsers/$(request.auth.token.email)
+    // A sector-scoped account may see records tagged with its sector, or legacy
+    // records whose Client/Project is the sector name (e.g. "Islamabad Sector").
+    function recordInMyScope(data) {
+      return isClient() && (
+        (mySector() != '' && (
+          data.get('sector', '') == mySector() ||
+          data.get('clientproject', '') == mySector() ||
+          data.get('clientproject', '') == myClient()
+        )) ||
+        (mySector() == '' && data.get('clientproject', '') == myClient())
       );
     }
 
-    function myUser() {
-      return get(
-        /databases/$(database)/documents/authorizedUsers/$(request.auth.token.email)
+    function recycleInMyScope(data) {
+      return isClient() && (
+        (mySector() != '' && (
+          data.get('sector', '') == mySector() ||
+          data.get('clientproject', '') == mySector() ||
+          data.get('clientproject', '') == myClient()
+        )) ||
+        (mySector() == '' && data.get('clientproject', '') == myClient())
       );
     }
 
-    function isParent() {
-      return hasUser() && myUser().data.role == 'parent';
-    }
-
-    function isClient() {
-      return hasUser() && myUser().data.role == 'client';
-    }
-
-    function myClient() {
-      return myUser().data.clientproject;
-    }
-
-    function clientScopeMatches(data) {
-      return isClient()
-        && data.clientproject == myClient()
-        && (!('sector' in myUser().data) || !('sector' in data) || data.sector == myUser().data.sector);
+    function auditOwnedByCaller() {
+      return authorized()
+        && request.resource.data.userEmail == authEmail()
+        && request.resource.data.role == myUser().data.role
+        && (
+          (mySector() != '' && (
+            request.resource.data.get('sector', '') == mySector() ||
+            request.resource.data.get('clientproject', '') == mySector() ||
+            request.resource.data.get('clientproject', '') == myClient()
+          )) ||
+          (mySector() == '' && request.resource.data.get('clientproject', '') == myClient())
+        );
     }
 
     match /authorizedUsers/{email} {
-      allow read: if hasUser() && (isParent() || email == request.auth.token.email);
+      allow read: if authorized() && (isParent() || email == authEmail());
       allow create, update, delete: if isParent();
     }
 
     match /records/{recordId} {
-      allow read: if isParent() || clientScopeMatches(resource.data);
-      allow create: if isParent() || clientScopeMatches(request.resource.data);
-      allow update: if isParent()
-        || (clientScopeMatches(resource.data) && clientScopeMatches(request.resource.data));
-      // Normal deletion is intentionally blocked. The application moves records
-      // to recycleBin using a Parent-only batch operation.
-      allow delete: if false;
+      allow read: if isParent() || recordInMyScope(resource.data);
+      allow create: if isParent() || recordInMyScope(request.resource.data);
+      allow update: if isParent() || (recordInMyScope(resource.data) && recordInMyScope(request.resource.data));
+      allow delete: if isParent() || recordInMyScope(resource.data);
     }
 
-    match /recycleBin/{recordId} {
-      allow read, create, update, delete: if isParent();
-    }
-
-    match /sectorCatalog/{sectorId} {
-      allow read, create, update, delete: if isParent();
+    match /recycleBin/{recycleId} {
+      allow read: if isParent() || recycleInMyScope(resource.data);
+      allow create: if isParent() || (
+        recordInMyScope(request.resource.data.recordData) &&
+        request.resource.data.originalRecordId is string
+      );
+      allow update: if false;
+      allow delete: if isParent() || recycleInMyScope(resource.data);
     }
 
     match /auditLogs/{logId} {
       allow read: if isParent();
-      allow create: if hasUser()
-        && request.resource.data.userEmail == request.auth.token.email
-        && request.resource.data.role == myUser().data.role
-        && request.resource.data.clientproject == myUser().data.clientproject;
+      allow create: if isParent() || auditOwnedByCaller();
       allow update, delete: if false;
     }
 
@@ -72,8 +82,6 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /{document=**} { allow read, write: if false; }
   }
 }
