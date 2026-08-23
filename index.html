@@ -3414,6 +3414,17 @@ if ('serviceWorker' in navigator) {
     @keyframes msmDiamondShine{0%{transform:translateX(-55%) rotate(10deg)}100%{transform:translateX(55%) rotate(10deg)}}
 
     /* ===== Login/public navigation ===== */
+    /* FINAL LOGIN HEADER FIX: keep public menu as a full-width top header, never beside the login card */
+    #msmLoginPage{display:block !important;position:relative !important;min-height:100vh !important;padding:92px 14px 30px !important;}
+    #msmLoginPage > .msm-public-nav{position:absolute !important;top:14px !important;left:50% !important;transform:translateX(-50%) !important;width:min(1100px,calc(100% - 28px)) !important;margin:0 !important;display:flex !important;flex-direction:row !important;align-items:center !important;justify-content:flex-start !important;z-index:50 !important;}
+    #msmLoginPage > .msm-login-card{display:block !important;margin:0 auto !important;position:relative !important;z-index:2 !important;}
+    @media(max-width:650px){
+      #msmLoginPage{padding:126px 10px 24px !important;}
+      #msmLoginPage > .msm-public-nav{top:10px !important;width:calc(100% - 20px) !important;}
+      #msmLoginPage > .msm-public-nav .nav-brand{width:100% !important;margin-right:0 !important;justify-content:center !important;}
+      #msmLoginPage > .msm-public-nav{justify-content:center !important;gap:5px !important;}
+      #msmLoginPage > .msm-public-nav button{font-size:9px !important;padding:7px 8px !important;}
+    }
     .msm-public-nav{position:relative;z-index:5;width:min(1100px,100%);display:flex;align-items:center;justify-content:flex-start;gap:7px;flex-wrap:wrap;margin:0 auto;padding:8px 10px;border:1px solid rgba(240,204,108,.55);border-radius:14px;background:linear-gradient(90deg,rgba(14,47,86,.94),rgba(105,15,43,.92),rgba(15,52,96,.94));box-shadow:0 8px 24px rgba(0,0,0,.25);backdrop-filter:blur(10px);}
     .msm-public-nav .nav-brand{display:flex;align-items:center;gap:8px;margin-right:auto;color:#ffe09a;font-weight:1000;letter-spacing:.7px;font-size:11px;white-space:nowrap;}
     .msm-public-nav .nav-brand img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:2px;}
