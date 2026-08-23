@@ -526,8 +526,8 @@
 
 /* ===== MSM Premium Login Redesign ===== */
 #msmLoginPage{
-  min-height:100vh;display:flex;align-items:center;justify-content:center;
-  padding:24px 14px;position:relative;overflow:hidden;
+  min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
+  gap:18px;padding:14px 14px 30px;position:relative;overflow:hidden;
   background:
     radial-gradient(ellipse at 10% 18%,rgba(65,30,255,.88) 0 10%,transparent 34%),
     radial-gradient(ellipse at 92% 78%,rgba(255,20,140,.80) 0 10%,transparent 33%),
@@ -3414,15 +3414,17 @@ if ('serviceWorker' in navigator) {
     @keyframes msmDiamondShine{0%{transform:translateX(-55%) rotate(10deg)}100%{transform:translateX(55%) rotate(10deg)}}
 
     /* ===== Login/public navigation ===== */
-    .msm-public-nav{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin:0 auto 16px;max-width:900px;padding:9px;border:1px solid rgba(240,204,108,.55);border-radius:14px;background:linear-gradient(90deg,rgba(14,47,86,.86),rgba(105,15,43,.84),rgba(15,52,96,.86));box-shadow:0 8px 24px rgba(0,0,0,.25);}
-    .msm-public-nav button{border:1px solid rgba(255,220,130,.55);background:rgba(0,0,0,.24);color:#fff;border-radius:8px;padding:7px 10px;font-weight:900;font-size:10px;cursor:pointer;}
+    .msm-public-nav{position:relative;z-index:5;width:min(1100px,100%);display:flex;align-items:center;justify-content:flex-start;gap:7px;flex-wrap:wrap;margin:0 auto;padding:8px 10px;border:1px solid rgba(240,204,108,.55);border-radius:14px;background:linear-gradient(90deg,rgba(14,47,86,.94),rgba(105,15,43,.92),rgba(15,52,96,.94));box-shadow:0 8px 24px rgba(0,0,0,.25);backdrop-filter:blur(10px);}
+    .msm-public-nav .nav-brand{display:flex;align-items:center;gap:8px;margin-right:auto;color:#ffe09a;font-weight:1000;letter-spacing:.7px;font-size:11px;white-space:nowrap;}
+    .msm-public-nav .nav-brand img{width:34px;height:34px;object-fit:contain;border-radius:8px;background:#fff;padding:2px;}
+    .msm-public-nav button{border:1px solid rgba(255,220,130,.55);background:rgba(0,0,0,.24);color:#fff;border-radius:8px;padding:8px 11px;font-weight:900;font-size:10px;cursor:pointer;}
     .msm-public-nav button:hover{background:rgba(255,255,255,.10);transform:translateY(-1px);}
     .msm-info-modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(0,0,0,.72);backdrop-filter:blur(8px);}
     .msm-info-card{width:min(560px,94vw);max-height:85vh;overflow:auto;border:1px solid rgba(240,204,108,.72);border-radius:20px;padding:22px;background:linear-gradient(135deg,#0b2038,#431028);color:#fff;box-shadow:0 25px 80px rgba(0,0,0,.55);}
     .msm-info-card h2{margin:0 0 10px;color:#ffe09a;font-family:Georgia,serif;}
     .msm-info-card p,.msm-info-card li{color:#eee6d7;line-height:1.55;}
     .msm-info-close{float:right;border:1px solid rgba(255,220,130,.5);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;padding:5px 9px;cursor:pointer;}
-    @media(max-width:650px){.msm-final-topnav .nav-brand{width:100%;margin-right:0}.msm-final-topnav{top:3px}.msm-final-topnav button{font-size:9px;padding:7px 8px}.portal-record-stamp{width:92px !important;height:92px !important;min-width:92px !important}.portal-record-stamp .n{font-size:26px !important;}}
+    @media(max-width:650px){.msm-public-nav .nav-brand{width:100%;margin-right:0}.msm-public-nav{justify-content:center}.msm-public-nav button{font-size:9px;padding:7px 8px}.msm-final-topnav .nav-brand{width:100%;margin-right:0}.msm-final-topnav{top:3px}.msm-final-topnav button{font-size:9px;padding:7px 8px}.portal-record-stamp{width:92px !important;height:92px !important;min-width:92px !important}.portal-record-stamp .n{font-size:26px !important;}}
   `;
   document.head.appendChild(style);
 
@@ -3450,7 +3452,7 @@ if ('serviceWorker' in navigator) {
   function makePublicNav(){
     const page=document.getElementById('msmLoginPage');if(!page||document.getElementById('msmPublicNav'))return;
     const nav=document.createElement('div');nav.id='msmPublicNav';nav.className='msm-public-nav';
-    nav.innerHTML='<button onclick="window.scrollTo({top:0,behavior:\'smooth\'})">HOME</button><button onclick="msmInfo(\'about\')">ABOUT</button><button onclick="msmInfo(\'services\')">SERVICES</button><button onclick="msmInfo(\'contact\')">CONTACT</button><button onclick="document.querySelector(\'.msm-google-btn\')?.click()">LOGIN</button><button onclick="msmInstallApp()">INSTALL APP</button>';
+    nav.innerHTML='<div class="nav-brand"><img src="msm-security-guards-logo.png" alt="MSM logo"><span>MSM SECURITY GUARDS</span></div><button onclick="window.scrollTo({top:0,behavior:\'smooth\'})">HOME</button><button onclick="msmInfo(\'about\')">ABOUT</button><button onclick="msmInfo(\'services\')">SERVICES</button><button onclick="msmInfo(\'contact\')">CONTACT</button><button onclick="document.querySelector(\'.msm-google-btn\')?.click()">LOGIN</button><button onclick="msmInstallApp()">INSTALL APP</button>';
     page.insertBefore(nav,page.firstElementChild);
   }
 
