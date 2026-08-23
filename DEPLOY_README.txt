@@ -35,3 +35,10 @@ ANDROID / APK
 The PWA is installable from the deployed HTTPS website using the INSTALL APP option.
 For a native APK, use the supplied Android project and point it to the final HTTPS Hosting URL.
 A signed APK requires Android SDK/Gradle and a signing key; it is not claimed as compiled in this package.
+
+
+FINAL FIXES
+- Login page now has a proper upper header; Home/About/Services/Contact/Login/Install App are not placed as an awkward inline menu over the login card.
+- Firebase Web configuration updated to project msm-security-guards-data-2131b.
+- Google Sign-In error now explains the exact Firebase setting required.
+IMPORTANT: In Firebase Console -> Authentication -> Sign-in method, enable Google. The previous auth/configuration-not-found error means the Google provider is not enabled/configured for this project.
