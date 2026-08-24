@@ -1,7 +1,4 @@
-plugins { id 'com.android.application'; id 'org.jetbrains.kotlin.android' }
-
-android { namespace 'com.msm.securityguards'; compileSdk 35
-    defaultConfig { applicationId 'com.msm.securityguards'; minSdk 23; targetSdk 35; versionCode 1; versionName '1.0' }
+plugins {
+    id 'com.android.application' version '8.5.2' apply false
+    id 'org.jetbrains.kotlin.android' version '1.9.24' apply false
 }
-
-kotlin { jvmToolchain(17) }
