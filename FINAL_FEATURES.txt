@@ -19,3 +19,6 @@ web/index.html
 
 ANDROID SOURCE:
 android/
+
+
+REGION/SECTOR FIX: Latest login-header/CNIC/Employment version retained; Region/Sector role and loading fixes applied.
