@@ -6,7 +6,7 @@ service cloud.firestore {
     function userPath() { return /databases/$(database)/documents/authorizedUsers/$(authEmail()); }
     function authorized() { return signedIn() && exists(userPath()); }
     function myUser() { return get(userPath()); }
-    function isParent() { return authorized() && myUser().data.role == 'parent'; }
+    function isParent() { return authorized() && (myUser().data.role == 'parent' || myUser().data.role == 'admin' || myUser().data.role == 'Parent' || myUser().data.role == 'Admin'); }
     function isClient() { return authorized() && myUser().data.role == 'client'; }
     function myClient() { return myUser().data.get('clientproject', ''); }
     function mySector() { return myUser().data.get('sector', ''); }
