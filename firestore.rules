@@ -6,13 +6,10 @@ service cloud.firestore {
     function userPath() { return /databases/$(database)/documents/authorizedUsers/$(authEmail()); }
     function authorized() { return signedIn() && exists(userPath()); }
     function myUser() { return get(userPath()); }
-    function isParent() { return authorized() && (myUser().data.role == 'parent' || myUser().data.role == 'admin' || myUser().data.role == 'Parent' || myUser().data.role == 'Admin'); }
+    function isParent() { return authorized() && myUser().data.role == 'parent'; }
     function isClient() { return authorized() && myUser().data.role == 'client'; }
     function myClient() { return myUser().data.get('clientproject', ''); }
     function mySector() { return myUser().data.get('sector', ''); }
-
-    // A sector-scoped account may see records tagged with its sector, or legacy
-    // records whose Client/Project is the sector name (e.g. "Islamabad Sector").
     function recordInMyScope(data) {
       return isClient() && (
         (mySector() != '' && (
@@ -23,7 +20,6 @@ service cloud.firestore {
         (mySector() == '' && data.get('clientproject', '') == myClient())
       );
     }
-
     function recycleInMyScope(data) {
       return isClient() && (
         (mySector() != '' && (
@@ -34,7 +30,6 @@ service cloud.firestore {
         (mySector() == '' && data.get('clientproject', '') == myClient())
       );
     }
-
     function auditOwnedByCaller() {
       return authorized()
         && request.resource.data.userEmail == authEmail()
@@ -48,30 +43,26 @@ service cloud.firestore {
           (mySector() == '' && request.resource.data.get('clientproject', '') == myClient())
         );
     }
-
     match /authorizedUsers/{email} {
       allow read: if authorized() && (isParent() || email == authEmail());
       allow create, update, delete: if isParent();
     }
-
-    // Region/Sector catalog: all authorized users may read; only Parent may manage.
     match /regionCatalog/{regionId} {
       allow read: if authorized();
       allow create, update, delete: if isParent();
     }
-
     match /sectorCatalog/{sectorId} {
       allow read: if authorized();
       allow create, update, delete: if isParent();
     }
-
     match /records/{recordId} {
       allow read: if isParent() || recordInMyScope(resource.data);
       allow create: if isParent() || recordInMyScope(request.resource.data);
-      allow update: if isParent() || (recordInMyScope(resource.data) && recordInMyScope(request.resource.data));
+      allow update: if isParent() || (
+        recordInMyScope(resource.data) && recordInMyScope(request.resource.data)
+      );
       allow delete: if isParent() || recordInMyScope(resource.data);
     }
-
     match /recycleBin/{recycleId} {
       allow read: if isParent() || recycleInMyScope(resource.data);
       allow create: if isParent() || (
@@ -81,18 +72,17 @@ service cloud.firestore {
       allow update: if false;
       allow delete: if isParent() || recycleInMyScope(resource.data);
     }
-
     match /auditLogs/{logId} {
       allow read: if isParent();
       allow create: if isParent() || auditOwnedByCaller();
       allow update, delete: if false;
     }
-
     match /transferHistory/{historyId} {
       allow read, create: if isParent();
       allow update, delete: if false;
     }
-
-    match /{document=**} { allow read, write: if false; }
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }
