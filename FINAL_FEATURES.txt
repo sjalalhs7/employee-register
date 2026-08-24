@@ -1,0 +1,21 @@
+MSM SECURITY GUARDS — FEATURE UPDATE
+
+Preserved existing website/UI and production Firebase project.
+
+NEW:
+[1] CNIC-based database upsert for imports: update existing, insert new.
+[2] Non-empty import fields only overwrite existing values.
+[3] Duplicate CNIC rows in the same import are merged.
+[4] Employment Status: Active / Left Job / Removed.
+[5] Status appears in entry form, central register, sector views, search/filter,
+    dashboard and export.
+[6] Former staff remain historical records; no automatic permanent deletion.
+
+PRODUCTION PROJECT:
+msm-security-guards-database
+
+WEB:
+web/index.html
+
+ANDROID SOURCE:
+android/
