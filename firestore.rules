@@ -54,6 +54,17 @@ service cloud.firestore {
       allow create, update, delete: if isParent();
     }
 
+    // Region/Sector catalog: all authorized users may read; only Parent may manage.
+    match /regionCatalog/{regionId} {
+      allow read: if authorized();
+      allow create, update, delete: if isParent();
+    }
+
+    match /sectorCatalog/{sectorId} {
+      allow read: if authorized();
+      allow create, update, delete: if isParent();
+    }
+
     match /records/{recordId} {
       allow read: if isParent() || recordInMyScope(resource.data);
       allow create: if isParent() || recordInMyScope(request.resource.data);
