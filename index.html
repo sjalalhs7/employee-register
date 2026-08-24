@@ -1040,6 +1040,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
         <div class="form-section-title"><span class="idx">04</span>Employment</div>
         <div class="grid">
           <div class="field"><label>Date of Joining</label><input id="f_joining" type="date"></div>
+          <div class="field"><label>Employment Status</label><select id="f_employmentStatus"><option value="Active">Active</option><option value="Left Job">Left Job</option><option value="Removed">Removed</option></select></div>
           <div class="field"><label>Deployment Location</label><input id="f_deployloc"></div>
           <div class="field"><label>Police Verification</label>
             <select id="f_policeverif"><option value=""></option><option>Done</option><option>Pending</option><option>N/A</option></select>
@@ -1109,8 +1110,8 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
       <div class="dashboard-grid" id="registerDashboard">
         <div class="dash-card"><span>Total</span><strong id="dashTotal">0</strong></div>
         <div class="dash-card"><span>Active</span><strong id="dashActive">0</strong></div>
-        <div class="dash-card"><span>On Leave</span><strong id="dashLeave">0</strong></div>
-        <div class="dash-card"><span>Terminated</span><strong id="dashTerminated">0</strong></div>
+        <div class="dash-card"><span>Left Job</span><strong id="dashLeave">0</strong></div>
+        <div class="dash-card"><span>Removed</span><strong id="dashTerminated">0</strong></div>
         <div class="dash-card"><span>Filtered</span><strong id="dashFiltered">0</strong></div>
       </div>
       <div class="register-controls">
@@ -1121,7 +1122,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
         <div class="control"><label>Supervisor</label><select id="filterSupervisor" onchange="renderTable()"><option value="">All Supervisors</option></select></div>
         <div class="control"><label>Deployment Station</label><select id="filterStation" onchange="renderTable()"><option value="">All Stations</option></select></div>
         <div class="control"><label>Rank / Unit</label><select id="filterRank" onchange="renderTable()"><option value="">All Ranks / Units</option></select></div>
-        <div class="control"><label>Status / Type</label><select id="filterStatus" onchange="renderTable()"><option value="">All Status</option><option value="active">Active</option><option value="on-leave">On Leave</option><option value="terminated">Terminated</option><option value="new">New</option><option value="old">Old</option></select></div>
+        <div class="control"><label>Employment Status</label><select id="filterStatus" onchange="renderTable()"><option value="">All Employment Status</option><option value="active">Active</option><option value="left-job">Left Job</option><option value="removed">Removed</option></select></div>
         <div class="control"><label>Sort By</label><select id="sortField" onchange="renderTable()">
           <option value="sno">S No.</option><option value="name">Guard Name</option><option value="clientproject">Client Name</option><option value="location">Location</option><option value="supervisor">Supervisor</option><option value="msmno">MSM No.</option><option value="cnic">CNIC</option><option value="doe">Employment Date</option><option value="createdAt">Created Date/Time</option><option value="updatedAt">Updated Date/Time</option>
         </select></div>
@@ -1560,6 +1561,7 @@ const COLUMNS = [
   {key:'cashreliever', label:'Cash / Reliver'},
   {key:'uniformdate', label:'Uniform Last Date of issue'},
   {key:'newold', label:'New / Old'},
+  {key:'employmentStatus', label:'Employment Status'},
   {key:'supervisor', label:'Supervisor'},
   {key:'clientproject', label:'Client/Project'},
   {key:'location', label:'Location'},
@@ -2080,6 +2082,7 @@ function readForm(){
     cashreliever: g('f_cashreliever'),
     uniformdate: g('f_uniformdate'),
     newold: g('f_newold'),
+    employmentStatus: g('f_employmentStatus') || 'Active',
     supervisor: g('f_supervisor'),
     clientproject: g('f_clientproject') || clientTop,
     location: g('f_deployloc'),
@@ -2132,7 +2135,7 @@ function fillForm(rec){
   s('f_actitle', rec.actitle); s('f_acno', rec.acno); s('f_iban', rec.iban);
   s('f_bank', rec.bank); s('f_branchname', rec.branchname); s('f_branchcode', rec.branchcode);
   s('f_msmno', rec.msmno); s('f_dischargemsm', rec.dischargemsm); s('f_cashreliever', rec.cashreliever);
-  s('f_uniformdate', rec.uniformdate); s('f_newold', rec.newold); s('f_supervisor', rec.supervisor);
+  s('f_uniformdate', rec.uniformdate); s('f_newold', rec.newold); s('f_employmentStatus', rec.employmentStatus || rec.status || 'Active'); s('f_supervisor', rec.supervisor);
   s('f_clientproject', rec.clientproject); s('f_photo', rec.photo); s('f_specialbranch', rec.specialbranch);
   s('f_remarks', rec.remarks);
 
@@ -2148,6 +2151,7 @@ function resetForm(){
   if(currentAccess && !isParent()){
     document.getElementById('f_clientproject').value = myClientProject();
   }
+  const statusEl=document.getElementById('f_employmentStatus'); if(statusEl) statusEl.value='Active';
   uploadState.photoData = '';
   uploadState.policeVerifDoc = '';
   uploadState.photoSettings = {scale:1,x:0,y:0};
@@ -2264,32 +2268,41 @@ function renderAuditLogs(){
 }
 
 /* ===================== Save / Edit / Delete (Firestore) ===================== */
-function saveEntry(){
+async function saveEntry(){
   const name = document.getElementById('f_name').value.trim();
-  if(!name){
-    showToast('Employee Name is required.');
-    document.getElementById('f_name').focus();
-    return;
-  }
+  if(!name){ showToast('Employee Name is required.'); document.getElementById('f_name').focus(); return; }
   const data = readForm();
+  data.employmentStatus = data.employmentStatus || 'Active';
+  data.cnicKey = normalizeCnicKey(data.cnic);
   data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
-  if(!isParent()) { data.clientproject = myClientProject(); data.sector = mySector() || msmCanonicalSector(myClientProject()); } // client role can never save into another tenant
-
-  if(editingId){
-    const targetId=editingId;
-    db.collection(RECORDS_COLLECTION).doc(targetId).update(data)
-      .then(()=>writeAuditLog('UPDATE_RECORD', targetId, {name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||'', location:data.location||'', deployloc:data.deployloc||'', supervisor:data.supervisor||''}))
-      .then(()=>{ showToast('Record updated in the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
-      .catch(err=>showToast('Could not save: ' + err.message));
-  } else {
-    const nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
-    db.collection(RECORDS_COLLECTION).add({sno: nextSno, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...data})
-      .then(docRef=>writeAuditLog('CREATE_RECORD', docRef.id, {sno:nextSno, name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||'', location:data.location||'', deployloc:data.deployloc||'', supervisor:data.supervisor||''}))
-      .then(()=>{ showToast('Saved — added to the Long Roll register.'); persistMeta(); resetForm(); switchTab('register'); })
-      .catch(err=>showToast('Could not save: ' + err.message));
-  }
+  if(!isParent()) { data.clientproject = myClientProject(); data.sector = mySector() || msmCanonicalSector(myClientProject()); }
+  try{
+    if(!editingId && data.cnicKey){
+      const snap=await db.collection(RECORDS_COLLECTION).where('cnicKey','==',data.cnicKey).limit(1).get();
+      if(!snap.empty){
+        editingId=snap.docs[0].id;
+        const existing={id:editingId,...snap.docs[0].data()};
+        const patch=mergeNonEmptyFields({},data); delete patch.createdAt;
+        await db.collection(RECORDS_COLLECTION).doc(editingId).update(patch);
+        await writeAuditLog('UPDATE_RECORD_BY_CNIC',editingId,{name:data.name||'',cnic:data.cnic||'',clientproject:data.clientproject||'',employmentStatus:data.employmentStatus});
+        showToast('Existing guard updated by CNIC — duplicate prevented.');
+        persistMeta(); resetForm(); switchTab('register'); return;
+      }
+    }
+    if(editingId){
+      const targetId=editingId;
+      await db.collection(RECORDS_COLLECTION).doc(targetId).update(data);
+      await writeAuditLog('UPDATE_RECORD', targetId, {name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||'', employmentStatus:data.employmentStatus});
+      showToast('Record updated in the Long Roll register.');
+    } else {
+      const nextSno = records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
+      const docRef=await db.collection(RECORDS_COLLECTION).add({sno: nextSno, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...data});
+      await writeAuditLog('CREATE_RECORD', docRef.id, {sno:nextSno, name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||'', employmentStatus:data.employmentStatus});
+      showToast('Saved — added to the Long Roll register.');
+    }
+    persistMeta(); resetForm(); switchTab('register');
+  }catch(err){showToast('Could not save: ' + err.message);}
 }
-
 function editRecord(id){
   const rec = records.find(r=>r.id===id);
   if(!rec) return;
@@ -2314,9 +2327,15 @@ function recordTimestampValue(v){
   try{ if(v.toDate) return v.toDate().getTime(); if(v.seconds) return Number(v.seconds)*1000; const t=Date.parse(v); return isNaN(t)?0:t; }catch(e){ return 0; }
 }
 function normalizedStatus(r){
-  const v=String(r.status||r.newold||'').trim().toLowerCase();
-  if(['active','on leave','on-leave','terminated'].includes(v)) return v.replace(' ','-');
-  if(v==='new') return 'new'; if(v==='old') return 'old'; return '';
+  const raw=String(r.employmentStatus||r.status||'').trim().toLowerCase();
+  if(raw==='left job'||raw==='left-job'||raw==='leftjob'||raw==='on leave'||raw==='on-leave') return 'left-job';
+  if(raw==='removed'||raw==='terminated') return 'removed';
+  if(raw==='active'||!raw) return 'active';
+  return raw==='new'?'new':(raw==='old'?'old':'active');
+}
+function employmentStatusLabel(r){
+  const s=normalizedStatus(r);
+  return s==='left-job'?'Left Job':s==='removed'?'Removed':'Active';
 }
 function uniqueFilterValues(key){
   return [...new Set(records.map(r=>String(r[key]??'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true,sensitivity:'base'}));
@@ -2353,7 +2372,7 @@ function renderTable(){
   const q = (document.getElementById('searchBox')?.value||'').trim().toLowerCase();
   const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fstation=document.getElementById('filterStation')?.value||'', frank=document.getElementById('filterRank')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
   const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
-  const searchKeys=['name','cnic','clientproject','sector','supervisor','msmno','location','cell','deployloc','unitrank'];
+  const searchKeys=['name','cnic','clientproject','sector','supervisor','msmno','location','cell','deployloc','unitrank','employmentStatus'];
   let filtered=records.filter(r=>{
      if(typeof msmFilterSector==='function' && isParent() && msmActiveSector!=='full' && !msmFilterSector(r)) return false;
     if(q && !searchKeys.some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
@@ -2380,7 +2399,7 @@ function renderTable(){
   const selected=new Set(window.selectedRecordIds||[]);
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = filtered.map(r=>{
-    const cells = COLUMNS.map(c=>`<td>${escapeHtml(r[c.key] ?? '')}</td>`).join('');
+    const cells = COLUMNS.map(c=>`<td>${escapeHtml(c.key==='employmentStatus'?employmentStatusLabel(r):(r[c.key] ?? ''))}</td>`).join('');
     const photoLink = r.photoData ? `<a href="${r.photoData}" target="_blank" rel="noopener" title="View photo"><img src="${r.photoData}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>` : '';
     const verifLink = r.policeVerifDoc ? (r.policeVerifDoc.startsWith('data:image') ? `<a href="${r.policeVerifDoc}" target="_blank" rel="noopener" title="View police verification document"><img src="${r.policeVerifDoc}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>` : `<a class="btn btn-sm" href="${r.policeVerifDoc}" target="_blank" rel="noopener">🛡 Verif Doc</a>`) : '';
     return `<tr><td><input class="row-check record-check" type="checkbox" value="${escapeHtml(r.id)}" ${selected.has(r.id)?'checked':''} onchange="toggleRecordSelection('${r.id}',this.checked)"></td>${cells}<td class="row-actions"><button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button><button class="btn btn-sm" onclick="printRecordForm('${r.id}')">🖨 Print</button>${photoLink}${verifLink}<button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button></td></tr>`;
@@ -2400,7 +2419,7 @@ function selectAllVisible(checked){
   const fc=document.getElementById('filterClient')?.value||'', fl=document.getElementById('filterLocation')?.value||'', fs=document.getElementById('filterSupervisor')?.value||'', fstation=document.getElementById('filterStation')?.value||'', frank=document.getElementById('filterRank')?.value||'', fst=document.getElementById('filterStatus')?.value||'';
   const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
   const arr=records.filter(r=>{
-    if(q && !['name','cnic','clientproject','sector','supervisor','msmno','location','cell','deployloc','unitrank'].some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
+    if(q && !['name','cnic','clientproject','sector','supervisor','msmno','location','cell','deployloc','unitrank','employmentStatus'].some(k=>String(r[k]??'').toLowerCase().includes(q))) return false;
     if(fc&&String(r.clientproject||'')!==fc) return false; if(fl&&String(r.location||'')!==fl) return false; if(fs&&String(r.supervisor||'')!==fs) return false; if(fstation&&String(r.deployloc||'')!==fstation) return false; if(frank&&String(r.unitrank||'')!==frank) return false; if(fst&&normalizedStatus(r)!==fst) return false;
     const d=String(r.doe||'').slice(0,10); if(from&&d&&d<from)return false; if(to&&d&&d>to)return false; return true;
   });
@@ -2647,7 +2666,8 @@ const IMPORT_ALIASES = {
   dischargemsm:['dischargedatemsm','dischargedatemsm','msmdischarge','dischargedate'],
   cashreliever:['cashreliver','cashreliever','cashrelievername'],
   uniformdate:['uniformlastdateofissue','uniformdate','uniformissue','lastuniformdate'],
-  newold:['newold','new/old','status'],
+  newold:['newold','new/old'],
+  employmentStatus:['employmentstatus','employment status','employment_status','status','employeestatus','guardstatus'],
   supervisor:['supervisor'],
   clientproject:['clientproject','client','project','clientname'],
   location:['location','deploymentlocation','deployloc'],
@@ -2704,24 +2724,39 @@ function findImportColumn(headers, aliases){
 let pendingImport = null;
 function closeImportPreview(){ pendingImport=null; const m=document.getElementById('importPreviewModal'); if(m)m.style.display='none'; }
 function importKey(v){ return String(v||'').trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
-function validateImportRows(imported){
-  const byMsm=new Map(), byCnic=new Map();
-  records.forEach(r=>{
-    const m=importKey(r.msmno), c=importKey(r.cnic);
-    if(m) byMsm.set(m,r.id); if(c) byCnic.set(c,r.id);
+function normalizeCnicKey(v){
+  return String(v||'').trim().replace(/\s+/g,'').replace(/-/g,'').toLowerCase();
+}
+function mergeNonEmptyFields(base, incoming){
+  const out={...base};
+  Object.keys(incoming||{}).forEach(k=>{
+    if(k.startsWith('__')) return;
+    const v=incoming[k];
+    if(v!==undefined && v!==null && String(v).trim()!=='') out[k]=v;
   });
-  const seenMsm=new Set(), seenCnic=new Set();
-  return imported.map((rec,idx)=>{
-    const reasons=[]; const m=importKey(rec.msmno), c=importKey(rec.cnic);
+  return out;
+}
+function collapseImportByCnic(imported){
+  const out=[]; const by=new Map();
+  imported.forEach(rec=>{
+    const key=normalizeCnicKey(rec.cnic);
+    if(!key){ out.push({...rec}); return; }
+    if(!by.has(key)){ const copy={...rec}; by.set(key,out.length); out.push(copy); }
+    else out[by.get(key)]=mergeNonEmptyFields(out[by.get(key)],rec);
+  });
+  return out;
+}
+function validateImportRows(imported){
+  const byCnic=new Map();
+  records.forEach(r=>{ const c=normalizeCnicKey(r.cnic); if(c && !byCnic.has(c)) byCnic.set(c,r.id); });
+  const normalized=collapseImportByCnic(imported);
+  return normalized.map((rec,idx)=>{
+    const reasons=[]; const c=normalizeCnicKey(rec.cnic);
     if(!rec.name) reasons.push('Guard name missing');
-    if(!rec.cnic) reasons.push('CNIC missing');
-    if(m && seenMsm.has(m)) reasons.push('Duplicate MSM No. inside file');
-    if(c && seenCnic.has(c)) reasons.push('Duplicate CNIC inside file');
-    if(m && byMsm.has(m)) reasons.push('MSM No. already exists — will update');
-    if(c && byCnic.has(c) && (!m || byCnic.get(c)!==byMsm.get(m))) reasons.push('CNIC belongs to another existing record');
-    if(m) seenMsm.add(m); if(c) seenCnic.add(c);
-    const blocked=reasons.some(x=>/missing|another existing|duplicate/i.test(x));
-    return {...rec,__row:idx+1,__ok:!blocked,__reason:reasons.join('; ')||'Ready to add'};
+    if(!c) reasons.push('CNIC missing');
+    if(byCnic.has(c)) reasons.push('CNIC already exists — will update this guard');
+    rec.employmentStatus = rec.employmentStatus || 'Active';
+    return {...rec,__row:idx+1,__ok:!reasons.some(x=>/missing/i.test(x)),__reason:reasons.join('; ')||'Ready to upsert'};
   });
 }
 function showImportPreview(rows,fileName){
@@ -2764,33 +2799,58 @@ function importLongRoll(file){
 async function confirmLongRollImport(){
   if(!currentAccess||!pendingImport)return;
   const rows=pendingImport.rows.filter(r=>r.__ok); if(!rows.length)return;
-  const btn=document.getElementById('confirmImportBtn'); btn.disabled=true; btn.textContent='Importing…';
+  const btn=document.getElementById('confirmImportBtn'); btn.disabled=true; btn.textContent='Upserting…';
   try{
-    const existingByMsm=new Map(records.map(r=>[importKey(r.msmno),r])); const existingByCnic=new Map(records.map(r=>[importKey(r.cnic),r]));
+    // CNIC is the unique guard identifier. Query the production collection in chunks
+    // so an import can match a guard even if the existing Firestore document ID differs.
+    const existingByCnic=new Map();
+    const keys=[...new Set(rows.map(r=>normalizeCnicKey(r.cnic)).filter(Boolean))];
+    for(let i=0;i<keys.length;i+=30){
+      const chunk=keys.slice(i,i+30);
+      const snap=await db.collection(RECORDS_COLLECTION).where('cnicKey','in',chunk).get();
+      snap.docs.forEach(d=>existingByCnic.set(String(d.data().cnicKey||''),{id:d.id,...d.data()}));
+    }
+    // Backward compatibility for records created before cnicKey existed.
+    if(existingByCnic.size<keys.length){
+      const snap=await db.collection(RECORDS_COLLECTION).get();
+      snap.docs.forEach(d=>{
+        const r=d.data()||{}, key=normalizeCnicKey(r.cnic);
+        if(key && !existingByCnic.has(key)) existingByCnic.set(key,{id:d.id,...r});
+      });
+    }
     let nextSno=records.length?Math.max(...records.map(r=>Number(r.sno)||0))+1:1,added=0,updated=0;
     for(let i=0;i<rows.length;i+=400){
       const batch=db.batch();
       rows.slice(i,i+400).forEach(rec=>{
-        const m=importKey(rec.msmno),c=importKey(rec.cnic); const existing=(m&&existingByMsm.get(m))||(c&&existingByCnic.get(c));
         const clean={...rec}; delete clean.__row; delete clean.__ok; delete clean.__reason;
+        const cnicKey=normalizeCnicKey(clean.cnic); clean.cnicKey=cnicKey;
+        clean.employmentStatus=clean.employmentStatus||'Active';
         clean.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
-        if(existing){batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id),clean);updated++;}
-        else{const ref=db.collection(RECORDS_COLLECTION).doc();batch.set(ref,{sno:clean.sno?(Number(clean.sno)||nextSno):nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),...clean});nextSno++;added++;}
+        const existing=existingByCnic.get(cnicKey);
+        if(existing){
+          // Only non-empty imported fields overwrite existing values. Untouched fields survive.
+          const patch=mergeNonEmptyFields({},clean);
+          delete patch.sno; delete patch.createdAt;
+          batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id),patch); updated++;
+        } else {
+          const ref=db.collection(RECORDS_COLLECTION).doc();
+          batch.set(ref,{sno:clean.sno?(Number(clean.sno)||nextSno):nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),...clean});
+          nextSno++; added++;
+        }
       });
       await batch.commit();
     }
-    try{await writeAuditLog('BULK_IMPORT',rows.length,{count:rows.length,added,updated,sourceFile:pendingImport.fileName||''});}catch(e){console.warn('Import succeeded; audit write failed:',e);}
-    closeImportPreview(); showToast(`Import complete: ${added} added, ${updated} updated, ${rows.length} valid rows.`); renderTable();
+    try{await writeAuditLog('CNIC_UPSERT_IMPORT',pendingImport.fileName||'import',{count:rows.length,added,updated,uniqueIdentifier:'CNIC'});}catch(e){console.warn('Import succeeded; audit write failed:',e);}
+    closeImportPreview(); showToast(`Import complete: ${added} added, ${updated} updated by CNIC.`); renderTable();
   }catch(err){console.error(err);showToast('Import failed before completion: '+err.message);}finally{btn.disabled=false;}
 }
-
 function getFilteredRecordsForExport(){
   const q=(document.getElementById('searchBox')?.value||'').trim().toLowerCase();
   const client=document.getElementById('filterClient')?.value||'', loc=document.getElementById('filterLocation')?.value||'', sup=document.getElementById('filterSupervisor')?.value||'', status=document.getElementById('filterStatus')?.value||'';
   const from=document.getElementById('filterDateFrom')?.value||'', to=document.getElementById('filterDateTo')?.value||'';
   const arr=records.filter(r=>{
     const hay=[r.name,r.cnic,r.msmno,r.cell,r.clientproject,r.location,r.deployloc,r.supervisor,r.unitrank].join(' ').toLowerCase();
-    if(q&&!hay.includes(q))return false; if(client&&String(r.clientproject||'')!==client)return false; if(loc&&String(r.location||r.deployloc||'')!==loc)return false; if(sup&&String(r.supervisor||'')!==sup)return false; if(status&&String(r.newold||'').toLowerCase()!==status.toLowerCase())return false;
+    if(q&&!hay.includes(q))return false; if(client&&String(r.clientproject||'')!==client)return false; if(loc&&String(r.location||r.deployloc||'')!==loc)return false; if(sup&&String(r.supervisor||'')!==sup)return false; if(status&&normalizedStatus(r)!==status.toLowerCase())return false;
     const d=String(r.doe||r.enrolldate||r.joining||'').slice(0,10); if(from&&(!d||d<from))return false; if(to&&(!d||d>to))return false; return true;
   }); return arr;
 }
