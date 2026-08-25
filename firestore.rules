@@ -1,96 +1,172 @@
 rules_version = '2';
 
-// ============================================================================
-// MSM LONGROLL DATABASE — Firestore Security Rules
-// Matched exactly to index.html: collections, field names and role model below.
-// Deploy target: msm-security-guards-database (Firebase Console → Firestore → Rules)
-// ============================================================================
+// MSM Longroll Database — final hybrid rules
+// Based on the successfully published 88-line structure, with the
+// stronger Parent/Admin handling from the reviewed 105-line version.
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------- helpers ----------
     function signedIn() {
       return request.auth != null && request.auth.token.email != null;
     }
-    function myEmail() {
+
+    function authEmail() {
       return request.auth.token.email.lower();
     }
-    function myAuthDoc() {
-      return get(/databases/$(database)/documents/authorizedUsers/$(myEmail()));
-    }
-    function authorized() {
-      return signedIn() && exists(/databases/$(database)/documents/authorizedUsers/$(myEmail()));
-    }
-    function myRole() {
-      return authorized() ? myAuthDoc().data.role.lower() : '';
-    }
-    function isParent() {
-      return authorized() && (myRole() == 'parent' || myRole() == 'admin');
-    }
-    function myClient() {
-      return authorized() ? myAuthDoc().data.clientproject : '__none__';
-    }
-    function mySector() {
-      return authorized() ? myAuthDoc().data.sector : '__none__';
-    }
-    function inMyScope(data) {
-      return data.clientproject == myClient() || (mySector() != '__none__' && data.sector == mySector());
+
+    function userPath() {
+      return /databases/$(database)/documents/authorizedUsers/$(authEmail());
     }
 
-    // ---------- authorizedUsers ----------
-    // Doc id = lowercase email. Every signed-in user must be able to read their OWN
-    // doc (that is how the app decides role / client / sector on login).
-    // Only Parent/Admin may list everyone or write access records.
+    function authorized() {
+      return signedIn() && exists(userPath());
+    }
+
+    function myUser() {
+      return get(userPath());
+    }
+
+    function isParent() {
+      return authorized()
+        && myUser().data.get('role', '').lower() in ['parent', 'admin'];
+    }
+
+    function isClient() {
+      return authorized()
+        && myUser().data.get('role', '').lower() == 'client';
+    }
+
+    function myClient() {
+      return myUser().data.get('clientproject', '');
+    }
+
+    function mySector() {
+      return myUser().data.get('sector', '');
+    }
+
+    // Sector-aware access retained from the successfully published 88-line rules.
+    function recordInMyScope(data) {
+      return isClient() && (
+        (mySector() != '' && (
+          data.get('sector', '') == mySector() ||
+          data.get('clientproject', '') == mySector() ||
+          data.get('clientproject', '') == myClient()
+        )) ||
+        (mySector() == '' && data.get('clientproject', '') == myClient())
+      );
+    }
+
+    function recycleInMyScope(data) {
+      return isClient() && (
+        (mySector() != '' && (
+          data.get('sector', '') == mySector() ||
+          data.get('clientproject', '') == mySector() ||
+          data.get('clientproject', '') == myClient()
+        )) ||
+        (mySector() == '' && data.get('clientproject', '') == myClient())
+      );
+    }
+
+    function auditOwnedByCaller() {
+      return authorized()
+        && request.resource.data.get('userEmail', '').lower() == authEmail()
+        && request.resource.data.get('role', '').lower()
+             == myUser().data.get('role', '').lower()
+        && (
+          (mySector() != '' && (
+            request.resource.data.get('sector', '') == mySector() ||
+            request.resource.data.get('clientproject', '') == mySector() ||
+            request.resource.data.get('clientproject', '') == myClient()
+          )) ||
+          (mySector() == '' && request.resource.data.get('clientproject', '') == myClient())
+        );
+    }
+
+    // ------------------------------------------------------------
+    // Authorized users
+    // ------------------------------------------------------------
     match /authorizedUsers/{email} {
-      allow get:    if signedIn() && (myEmail() == email || isParent());
-      allow list:   if isParent();
+      // A signed-in user may read only their own authorization record;
+      // Parent/Admin may read the full list for Admin: Access.
+      allow get: if authorized() && (isParent() || email == authEmail());
+      allow list: if isParent();
+
+      // Parent/Admin manages client/sector accounts.
+      allow create: if isParent();
+      allow update: if isParent()
+        && !(resource.data.get('role', '').lower() in ['parent', 'admin']);
+      allow delete: if isParent()
+        && !(resource.data.get('role', '').lower() in ['parent', 'admin']);
+    }
+
+    // ------------------------------------------------------------
+    // Region / Sector catalog
+    // ------------------------------------------------------------
+    match /regionCatalog/{regionId} {
+      allow read: if authorized();
       allow create, update, delete: if isParent();
     }
 
-    // ---------- records (the Long Roll register) ----------
-    match /records/{recordId} {
-      allow read:   if isParent() || (authorized() && inMyScope(resource.data));
-      allow create: if isParent() || (authorized() && inMyScope(request.resource.data));
-      allow update: if isParent() || (authorized() && inMyScope(resource.data) && inMyScope(request.resource.data));
-      allow delete: if isParent() || (authorized() && inMyScope(resource.data));
-    }
-
-    // ---------- recycleBin (soft-deleted records) ----------
-    match /recycleBin/{recordId} {
-      allow read:   if isParent() || (authorized() && inMyScope(resource.data));
-      allow create: if isParent() || (authorized() && inMyScope(resource.data));
-      allow update: if isParent() || (authorized() && inMyScope(resource.data));
-      allow delete: if isParent() || (authorized() && inMyScope(resource.data));
-    }
-
-    // ---------- regionCatalog / sectorCatalog ----------
-    // Every authorized user needs to READ these (dropdowns, filters).
-    // Only Parent/Admin may add, rename or re-assign regions/sectors.
-    match /regionCatalog/{regionId} {
-      allow read:  if authorized();
-      allow write: if isParent();
-    }
     match /sectorCatalog/{sectorId} {
-      allow read:  if authorized();
-      allow write: if isParent();
+      allow read: if authorized();
+      allow create, update, delete: if isParent();
     }
 
-    // ---------- auditLogs (Unified Activity Log — Parent/Admin only view) ----------
+    // ------------------------------------------------------------
+    // Long Roll records
+    // ------------------------------------------------------------
+    match /records/{recordId} {
+      allow read: if isParent() || recordInMyScope(resource.data);
+
+      allow create: if isParent()
+        || recordInMyScope(request.resource.data);
+
+      allow update: if isParent()
+        || (
+          recordInMyScope(resource.data) &&
+          recordInMyScope(request.resource.data)
+        );
+
+      allow delete: if isParent() || recordInMyScope(resource.data);
+    }
+
+    // ------------------------------------------------------------
+    // Recycle Bin
+    // ------------------------------------------------------------
+    match /recycleBin/{recycleId} {
+      allow read: if isParent() || recycleInMyScope(resource.data);
+
+      allow create: if isParent() || (
+        request.resource.data.get('recordData', null) is map &&
+        recordInMyScope(request.resource.data.recordData) &&
+        request.resource.data.get('originalRecordId', null) is string
+      );
+
+      allow update: if isParent();
+      allow delete: if isParent() || recycleInMyScope(resource.data);
+    }
+
+    // ------------------------------------------------------------
+    // Audit logs
+    // ------------------------------------------------------------
     match /auditLogs/{logId} {
-      allow read:   if isParent();
-      allow create: if authorized();           // every user logs their own actions
-      allow update, delete: if false;          // logs are permanent, never edited
-    }
-
-    // ---------- transferHistory (Bulk Transfer — Parent only) ----------
-    match /transferHistory/{historyId} {
-      allow read:   if isParent();
-      allow create: if isParent();
+      allow read: if isParent();
+      allow create: if isParent() || auditOwnedByCaller();
       allow update, delete: if false;
     }
 
-    // Deny everything else by default.
+    // ------------------------------------------------------------
+    // Transfer history
+    // ------------------------------------------------------------
+    match /transferHistory/{historyId} {
+      allow read, create: if isParent();
+      allow update, delete: if false;
+    }
+
+    // ------------------------------------------------------------
+    // Default deny
+    // ------------------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
     }
