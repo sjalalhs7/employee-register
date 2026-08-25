@@ -1,44 +1,36 @@
-MSM LONGROLL — FINAL DEPLOYMENT PACKAGE
-=======================================
-Firebase project: msm-security-guards-data-2131b
+MSM SECURITY GUARDS — FINAL PROFESSIONAL CLOUD/RBAC BUILD
 
-WEB
----
-1. Upload this whole folder to the Firebase project/Cloud Shell.
-2. Run:
-   firebase use msm-security-guards-data-2131b
-   firebase deploy --only hosting,firestore
-3. Open the Hosting URL shown by Firebase.
+BASE
+- Latest stable 2026-08-25 index.html preserved as the application foundation.
+- Existing Firebase project: msm-security-guards-database.
+- Existing CNIC upsert, Employment Status, Regions/Sectors, Recycle Bin, Audit Trail, Transfer History, import/export, print and PWA behavior preserved.
+
+NEW IN THIS BUILD
+1. Shared Firestore companySettings/main document for company/about/contact/navigation information.
+2. Parent/Admin Company Settings editor.
+3. Dynamic post-login company strip with cloud address, phone and sector links.
+4. Company information modal for all authorized users.
+5. Explicit UI messaging that employee data is stored in shared Firestore, not browser memory.
+6. Firestore rule for companySettings: authorized users read; Parent/Admin write; delete disabled.
+7. Responsive company/sector navigation styling for desktop and mobile.
+
+DEFAULT COMPANY INFORMATION
+Source: MSM Security Guards public website/contact page.
+Head office: House No. 36-E, Cricketer Colony, Near NETSOL Technologies, Airport Road, Lahore.
+Phones: 0423-7169344 / 0301-1010959
+Email: msmsecurity11@gmail.com
+Hours: Mon-Sat 09:00 AM-06:00 PM
+Regional offices: North/Islamabad, Rawalpindi, Faisalabad, Multan, South/Karachi.
+
+DEPLOY
+1. Replace repository index.html with this package's index.html.
+2. Keep the existing msm-security-guards-logo.png beside index.html.
+3. Publish firestore.rules in Firebase project msm-security-guards-database.
+4. Keep firebase.json and firestore.indexes.json in the Firebase deployment folder.
+5. Hard refresh GitHub Pages.
+6. Login as Parent and open COMPANY SETTINGS. Save the company data once.
+7. Test: Parent -> Regions/Sectors -> Long Roll -> CNIC Upsert -> Employment Status -> Recycle Bin.
+8. Test a Sector Gmail in another browser/device and confirm the same Firestore data appears.
 
 IMPORTANT
----------
-- index.html is the final entry page.
-- Firebase Web App config is already set to msm-security-guards-data-2131b.
-- Firestore rules are included as firestore.rules.
-- manifest.webmanifest and icons are included for PWA installation.
-- Do NOT paste the Firebase API key into email/messages or change it manually.
-- Firestore Security Rules + Authentication protect the database.
-
-FIRST LOGIN
------------
-After deployment, sign in with the Google account that will be Parent/Admin.
-In Firestore, create authorizedUsers/{lowercase-email} with:
-  role: "parent"
-
-THEN
-----
-Parent can add Regions/Sectors and authorized client users from Admin Access.
-The old 427 records are intentionally NOT restored. They can be entered manually later.
-
-ANDROID / APK
--------------
-The PWA is installable from the deployed HTTPS website using the INSTALL APP option.
-For a native APK, use the supplied Android project and point it to the final HTTPS Hosting URL.
-A signed APK requires Android SDK/Gradle and a signing key; it is not claimed as compiled in this package.
-
-
-FINAL FIXES
-- Login page now has a proper upper header; Home/About/Services/Contact/Login/Install App are not placed as an awkward inline menu over the login card.
-- Firebase Web configuration updated to project msm-security-guards-data-2131b.
-- Google Sign-In error now explains the exact Firebase setting required.
-IMPORTANT: In Firebase Console -> Authentication -> Sign-in method, enable Google. The previous auth/configuration-not-found error means the Google provider is not enabled/configured for this project.
+Do not mix this index.html with older index.html files. This is a merged build based on the latest stable application.

@@ -840,6 +840,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 @keyframes msmWiggle{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(8deg);}}
 .msm-celebrate-text{font-size:13.5px;line-height:1.5;}
 </style>
+<meta name="msm-build" content="FINAL PROFESSIONAL CLOUD RBAC • 2026-08-25">
 </head>
 <body>
 
@@ -1247,7 +1248,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
         <div style="background:var(--paper-dark);border:1px solid var(--line);border-radius:8px;padding:12px;font-family:monospace;word-break:break-all;">
           https://sjalalhs7.github.io/employee-register/
         </div>
-        <p style="margin-bottom:0;">Access is controlled by <strong>Google Sign-In + authorized Gmail + assigned Client / Project</strong>. This means users can use the system from mobile, laptop or desktop anywhere they have internet access.</p>
+        <p style="margin-bottom:0;">Access is controlled by <strong>Google Sign-In + authorized Gmail + assigned Client / Project</strong>. Employee records, Regions, Sectors, Audit Logs, Recycle Bin and Company Settings are stored in the shared Firebase Firestore database — not in browser memory — so authorized sessions share the same cloud data.</p>
       </div>
 
       <div class="form-section-title"><span class="idx">04</span>Daily Data Entry &amp; Printing</div>
@@ -1299,6 +1300,25 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
       <div class="helper-note" style="margin-top:10px;">
         <strong>Login method:</strong> Google/Gmail remains the default and requires no password. Optional Email/Password sign-in is available on the login screen for Firebase Authentication accounts. Passwords are never stored in this database. A Parent should create/provision password accounts through Firebase Authentication/Admin tooling, then add the same email here as an authorized user.
       </div>
+
+      <div class="form-section-title" style="margin-top:30px;"><span class="idx">⌂</span>Company Settings — Cloud Shared</div>
+      <div class="helper-note">These details are stored in Firestore <strong>companySettings/main</strong>, not browser local storage. Parent/Admin can update them and every authorized session receives the same values.</div>
+      <div class="grid company-settings-grid">
+        <div class="field"><label>Company Name</label><input id="cs_companyName" placeholder="MSM Security Guards (Pvt) Ltd"></div>
+        <div class="field"><label>Tagline</label><input id="cs_tagline" placeholder="Professional Security Nationwide Protection"></div>
+        <div class="field"><label>Head Office Address</label><input id="cs_address" placeholder="House No. 36-E, Cricketer Colony, Airport Road, Lahore"></div>
+        <div class="field"><label>Phone 1</label><input id="cs_phone1" placeholder="0423-7169344"></div>
+        <div class="field"><label>Phone 2</label><input id="cs_phone2" placeholder="0301-1010959"></div>
+        <div class="field"><label>Email</label><input id="cs_email" type="email" placeholder="msmsecurity11@gmail.com"></div>
+        <div class="field"><label>Office Hours</label><input id="cs_hours" placeholder="Mon – Sat : 09:00 AM to 06:00 PM"></div>
+        <div class="field"><label>Website</label><input id="cs_website" placeholder="https://msmsecurityguards.com/"></div>
+        <div class="field" style="grid-column:1/-1"><label>Regional Offices — one per line: Region | Office | Phone</label><textarea id="cs_regions" rows="5" placeholder="North Region | G-8, Islamabad | 051-2340294
+Rawalpindi Region | Iqbal Plaza, Committee Chowk |
+Faisalabad Region | Madina Town |
+Multan Region | Old Shujabad Road |
+South Region | Carlton Court, Karachi | 021-35386648"></textarea></div>
+      </div>
+      <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap;"><button class="btn btn-primary" type="button" onclick="msmSaveCompanySettings()">Save Company Settings</button><button class="btn" type="button" onclick="msmLoadCompanySettings(true)">Reload Cloud Settings</button></div>
 
       <div class="form-section-title" style="margin-top:30px;"><span class="idx">✓</span>Currently authorized</div>
       <div class="table-wrap">
@@ -1549,6 +1569,7 @@ function initFirebase(){
     if(recordsUnsub){ recordsUnsub(); recordsUnsub=null; }
     if(adminUsersUnsub){ adminUsersUnsub(); adminUsersUnsub=null; }
     if(auditUnsub){ auditUnsub(); auditUnsub=null; }
+    if(companySettingsUnsub){ try{companySettingsUnsub();}catch(e){} companySettingsUnsub=null; }
     if(!user){ currentUser=null; currentAccess=null; const seo=document.getElementById('publicSeoInfo'); if(seo) seo.style.display='none'; showOnly('loginGate'); return; }
     currentUser = user;
     const email = (user.email||'').toLowerCase();
@@ -1657,9 +1678,26 @@ const RECORDS_COLLECTION = 'records';
 const AUTHUSERS_COLLECTION = 'authorizedUsers';
 const AUDIT_COLLECTION = 'auditLogs';
 const TRANSFER_HISTORY_COLLECTION = 'transferHistory';
+const COMPANY_SETTINGS_COLLECTION = 'companySettings';
+const COMPANY_SETTINGS_DOC = 'main';
+let companySettingsUnsub = null;
+window.msmCompanySettings = {
+  companyName:'MSM Security Guards (Pvt) Ltd',
+  tagline:'Professional Security Nationwide Protection',
+  address:'House No. 36-E, Cricketer Colony, Near NETSOL Technologies, Airport Road, Lahore.',
+  phone1:'0423-7169344', phone2:'0301-1010959', email:'msmsecurity11@gmail.com',
+  hours:'Mon – Sat : 09:00 AM to 06:00 PM', website:'https://msmsecurityguards.com/',
+  regionalOffices:[
+    {region:'North Region',office:'Office No 5, 1st Floor, 20-B Block, Kashif Blair Plaza, G-8, Islamabad',phone:'051-2340294'},
+    {region:'Rawalpindi Region',office:'Plot No. I.89, 4th Floor, Iqbal Plaza, Alam Khan Road, Committee Chowk Near College Road, Rawalpindi.',phone:''},
+    {region:'Faisalabad Region',office:'House No. 4w8, Madina Town, Faisalabad',phone:''},
+    {region:'Multan Region',office:'Old Shujabad Road Near 21 No Chungi Gangla Chowk Niaz Town Multan',phone:''},
+    {region:'South Region',office:'Flat No 5-C, 3rd Floor, Carlton Court, Plot No. 52, Near Hascol Pump, Korangi Road, Karachi',phone:'021-35386648'}
+  ]
+};
 let transferHistoryUnsub = null;
 window.transferHistory = [];
-const META_KEY = 'longRollRegister_branding_v1'; // branding only (logo/company name) — not sensitive, kept per-device
+const META_KEY = 'longRollRegister_branding_v1'; // UI-only preference; ALL employee records remain in shared Firestore
 let records = [];
 let editingId = null;
 
@@ -1671,6 +1709,52 @@ function safeSave(key, value){
   try{ localStorage.setItem(key, JSON.stringify(value)); return true; }
   catch(e){ return false; }
 }
+function normalizeCompanySettings(raw){
+  const x=raw||{};
+  const base=window.msmCompanySettings||{};
+  let regionalOffices=Array.isArray(x.regionalOffices)?x.regionalOffices:base.regionalOffices;
+  regionalOffices=regionalOffices.map(o=>({region:String(o?.region||'').trim(),office:String(o?.office||'').trim(),phone:String(o?.phone||'').trim()})).filter(o=>o.region||o.office);
+  return {...base,...x,regionalOffices};
+}
+function renderCompanySettingsForm(){
+  const x=window.msmCompanySettings||{};
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v??'';};
+  set('cs_companyName',x.companyName);set('cs_tagline',x.tagline);set('cs_address',x.address);set('cs_phone1',x.phone1);set('cs_phone2',x.phone2);set('cs_email',x.email);set('cs_hours',x.hours);set('cs_website',x.website);
+  set('cs_regions',(x.regionalOffices||[]).map(o=>[o.region,o.office,o.phone].join(' | ')).join('\n'));
+}
+async function msmLoadCompanySettings(force=false){
+  if(!db||!currentAccess)return;
+  try{
+    const snap=await db.collection(COMPANY_SETTINGS_COLLECTION).doc(COMPANY_SETTINGS_DOC).get();
+    if(snap.exists){window.msmCompanySettings=normalizeCompanySettings(snap.data());}
+    else if(isParent()){
+      await db.collection(COMPANY_SETTINGS_COLLECTION).doc(COMPANY_SETTINGS_DOC).set({...window.msmCompanySettings,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:(currentUser?.email||'').toLowerCase()},{merge:true});
+    }
+    renderCompanySettingsForm();
+    window.msmRenderTopMenu?.();
+  }catch(e){console.warn('Company settings load failed:',e.message);}
+}
+async function msmSubscribeCompanySettings(){
+  if(!db||!currentAccess)return;
+  if(companySettingsUnsub){try{companySettingsUnsub();}catch(e){}}
+  companySettingsUnsub=db.collection(COMPANY_SETTINGS_COLLECTION).doc(COMPANY_SETTINGS_DOC).onSnapshot(s=>{
+    if(s.exists){window.msmCompanySettings=normalizeCompanySettings(s.data());renderCompanySettingsForm();window.msmRenderTopMenu?.();}
+  },e=>console.warn('Company settings subscription:',e.message));
+}
+async function msmSaveCompanySettings(){
+  if(!isParent())return showToast('Parent/Admin access is required.');
+  const g=id=>String(document.getElementById(id)?.value||'').trim();
+  const regionalOffices=g('cs_regions').split(/\r?\n/).map(line=>line.split('|').map(x=>x.trim())).filter(a=>a.some(Boolean)).map(a=>({region:a[0]||'',office:a[1]||'',phone:a[2]||''})).filter(o=>o.region||o.office);
+  const payload={companyName:g('cs_companyName')||window.msmCompanySettings.companyName,tagline:g('cs_tagline'),address:g('cs_address'),phone1:g('cs_phone1'),phone2:g('cs_phone2'),email:g('cs_email'),hours:g('cs_hours'),website:g('cs_website'),regionalOffices,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:(currentUser?.email||'').toLowerCase()};
+  try{await db.collection(COMPANY_SETTINGS_COLLECTION).doc(COMPANY_SETTINGS_DOC).set(payload,{merge:true});await writeAuditLog('UPDATE_COMPANY_SETTINGS','companySettings/main',{companyName:payload.companyName,address:payload.address});showToast('Company settings saved to shared cloud database.');}
+  catch(e){showToast('Could not save company settings: '+(e.message||e));}
+}
+function companyInfoBody(){
+  const x=window.msmCompanySettings||{};
+  const offices=(x.regionalOffices||[]).map(o=>`${o.region}: ${o.office}${o.phone?' — '+o.phone:''}`).join('\n');
+  return `${x.companyName||'MSM Security Guards'}\n${x.tagline||''}\n\nHead Office: ${x.address||'—'}\nPhone: ${[x.phone1,x.phone2].filter(Boolean).join(' | ')}\nEmail: ${x.email||'—'}\nHours: ${x.hours||'—'}\n\nRegional Offices:\n${offices||'—'}`;
+}
+
 function persistMeta(){
   safeSave(META_KEY, { companyName: document.getElementById('companyName').value });
 }
@@ -1752,6 +1836,8 @@ function startApp(){
 
   subscribeRecords();
   if(isParent()){ subscribeAdminUsers(); subscribeAuditLogs(); subscribeTransferHistory(); }
+  msmLoadCompanySettings();
+  msmSubscribeCompanySettings();
   resetForm();
   switchTab('form');
   if(typeof msmEnsureUI==='function') msmEnsureUI();
@@ -3565,6 +3651,15 @@ if ('serviceWorker' in navigator) {
     .msm-final-topnav button:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(230,42,70,.22);}
     .msm-final-topnav .account{font-size:9px;color:#e9e1d1;opacity:.9;border-left:1px solid rgba(255,255,255,.15);padding-left:8px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
     #msmParentSectorNav{display:none !important;}
+    .msm-company-strip{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-8px 0 14px;padding:8px 10px;border:1px solid rgba(240,204,108,.35);border-radius:12px;background:linear-gradient(90deg,rgba(9,27,48,.92),rgba(50,10,32,.78));box-shadow:inset 0 0 18px rgba(255,255,255,.025);color:#e9e1d1;font-size:10px;}
+    .msm-company-strip .company-main{font-weight:900;color:#ffe39a;letter-spacing:.4px;}
+    .msm-company-strip .company-detail{opacity:.9;}
+    .msm-company-strip .company-sector-links{display:flex;gap:5px;flex-wrap:wrap;margin-left:auto;}
+    .msm-company-strip .sector-link{border:1px solid rgba(240,204,108,.45);border-radius:999px;padding:4px 8px;background:rgba(255,255,255,.05);color:#fff;cursor:pointer;font-weight:800;}
+    .msm-company-strip .sector-link:hover{background:rgba(240,204,108,.14);transform:translateY(-1px);}
+    .company-settings-grid textarea{width:100%;resize:vertical;font:inherit;padding:9px;border:1px solid var(--line);border-radius:8px;background:var(--white);color:var(--ink);}
+    @media(max-width:720px){.msm-company-strip{font-size:9px}.msm-company-strip .company-sector-links{width:100%;margin-left:0;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}.msm-company-strip .sector-link{white-space:nowrap}.company-settings-grid{grid-template-columns:1fr !important;}}
+
 
     /* ===== Regions / manager ===== */
     .msm-region-panel{background:linear-gradient(135deg,rgba(9,34,55,.90),rgba(65,10,31,.78)) !important;border-color:rgba(240,204,108,.65) !important;}
@@ -3627,7 +3722,8 @@ if ('serviceWorker' in navigator) {
     const data={
       about:{title:'About MSM Longroll',body:'MSM Security Company — MSM Longroll Database. A controlled employee enrollment, long-roll, region/sector and audit system designed for authorized users.'},
       services:{title:'Services',body:'Employee enrollment • Long Roll register • Region/Sector management • Excel import/export • Print forms • Audit trail • Recycle Bin • Authorized Gmail access.'},
-      contact:{title:'Contact / Account',body:'MSM Security Company\nDesigned by Syed Jalal Hussain Shah\nDatabase access is restricted to authorized accounts. After login, your authorized Gmail, role and sector/client scope are shown in the upper menu.'}
+      contact:{title:'Contact / Company',body:companyInfoBody()},
+      company:{title:'Company Information',body:companyInfoBody()}
     }[type]||null;
     if(!data)return;
     const old=document.getElementById('msmInfoModal');if(old)old.remove();
@@ -3649,15 +3745,24 @@ if ('serviceWorker' in navigator) {
     let nav=document.getElementById('msmFinalTopNav');
     if(!nav){nav=document.createElement('nav');nav.id='msmFinalTopNav';nav.className='msm-final-topnav';frame.insertBefore(nav,frame.firstElementChild);}
     const email=(currentUser&&currentUser.email)||'';
-    const role=isParent()?'PARENT MASTER':('SECTOR USER');
+    const role=isParent()?'PARENT MASTER':'SECTOR USER';
+    const x=window.msmCompanySettings||{};
     nav.innerHTML='<div class="nav-brand"><img src="msm-security-guards-logo.png" alt="MSM logo"><span>MSM LONGROLL</span></div>'+
       '<button onclick="msmScrollHome()">HOME</button><button onclick="msmScrollRegions()">REGIONS / SECTORS</button>'+
       (isParent()?'<button onclick="msmOpenSector(\'full\')">FULL DATABASE</button>':'<button onclick="msmOpenMySector()">MY SECTOR</button>')+
       '<button onclick="msmInfo(\'about\')">ABOUT</button><button onclick="msmInfo(\'services\')">SERVICES</button><button onclick="msmInfo(\'contact\')">CONTACT</button>'+
       '<button onclick="msmShowTab(\'instructions\')">INSTRUCTIONS</button>'+
+      (isParent()?'<button onclick="msmShowTab(\'admin\');setTimeout(()=>document.getElementById(\'cs_companyName\')?.scrollIntoView({behavior:\'smooth\',block:\'center\'}),80)">COMPANY SETTINGS</button>':'')+
       (isParent()?'<button onclick="msmShowTab(\'admin\')">ADMIN</button>':'')+
       '<button onclick="msmShowTab(\'audit\')">AUDIT</button><button onclick="msmOpenRecycle()">♻ RECYCLE</button><button onclick="msmInstallApp()">INSTALL APP</button><button onclick="doSignOut()">SIGN OUT</button>'+
       '<span class="account" title="Authorized account">'+escapeHtml(email)+' · '+role+'</span>';
+    let strip=document.getElementById('msmCompanyStrip');
+    if(!strip){strip=document.createElement('div');strip.id='msmCompanyStrip';strip.className='msm-company-strip';nav.insertAdjacentElement('afterend',strip);}
+    const sectors=(window.msmSectorCatalog||[]).slice(0,14);
+    strip.innerHTML='<span class="company-main">'+escapeHtml(x.companyName||'MSM Security Guards')+'</span><span class="company-detail">'+escapeHtml(x.address||'')+'</span>'+
+      '<span class="company-detail">☎ '+escapeHtml([x.phone1,x.phone2].filter(Boolean).join(' · '))+'</span>'+
+      '<span class="company-sector-links">'+sectors.map(sec=>{const key=escapeHtml(msmSectorKeyFromName(sec));return '<button class="sector-link" data-sector="'+key+'">'+escapeHtml(sec)+'</button>';}).join('')+'</span>';
+    strip.querySelectorAll('.sector-link').forEach(btn=>btn.addEventListener('click',()=>msmOpenSector(btn.dataset.sector)));
   };
 
   /* Robust region/sector operations: use the same Firestore collections but always refresh the UI. */
