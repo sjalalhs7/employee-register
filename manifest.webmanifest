@@ -2,8 +2,8 @@
   "name": "MSM Longroll Database",
   "short_name": "MSM Longroll",
   "description": "MSM Security Guards employee enrollment and long roll database.",
-  "start_url": "/employee-register/",
-  "scope": "/employee-register/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "display_override": [
     "window-controls-overlay",
