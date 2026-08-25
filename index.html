@@ -601,6 +601,13 @@
   margin-top:24px;padding-top:17px;border-top:1px solid #E7DFCF;
   color:#77746b;font-size:10.5px;line-height:1.6;
 }
+.msm-login-contact{
+  margin-top:16px;padding:12px 14px;border-radius:10px;
+  background:linear-gradient(135deg,rgba(168,128,47,.10),rgba(27,42,58,.06));
+  border:1px solid rgba(201,162,83,.35);
+  display:flex;flex-direction:column;gap:4px;
+}
+.msm-login-contact-item{color:#3a3a33;font-size:11px;line-height:1.5;font-weight:600;}
 #msmLoginError{display:none;margin-top:13px;color:#9B3A31;font-size:12px;font-weight:650;line-height:1.45}
 
 
@@ -791,6 +798,47 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
   #sectorPortal .portal-record-stamp .n{font-size:29px}#sectorPortal .portal-record-stamp .msm-record-top,#sectorPortal .portal-record-stamp small{font-size:7px}
   #msmParentSectorNav{grid-template-columns:1fr 1fr !important;gap:8px !important}
 }
+/* ===================== Cinematic Card View + Mascot (original artwork, no third-party IP) ===================== */
+.msm-view-toggle{display:flex;gap:6px;}
+.msm-view-btn{opacity:.65;}
+.msm-view-btn.active{opacity:1;background:var(--brass);color:#fff;border-color:var(--brass);}
+.msm-cards-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:18px;
+  padding:18px 2px 8px;perspective:1200px;
+}
+.msm-3d-card{
+  border-radius:14px;background:linear-gradient(160deg,var(--white),var(--paper-dark));
+  border:1px solid var(--line);box-shadow:0 6px 16px rgba(27,42,58,.14);
+  transition:transform .35s ease, box-shadow .35s ease;transform-style:preserve-3d;overflow:hidden;
+}
+.msm-3d-card:hover{
+  transform:rotateX(4deg) rotateY(-4deg) translateY(-6px) scale(1.02);
+  box-shadow:0 22px 40px rgba(27,42,58,.28);
+}
+.msm-card-photo{position:relative;height:120px;background:linear-gradient(135deg,var(--navy),var(--navy-soft));display:flex;align-items:center;justify-content:center;}
+.msm-card-photo img{width:100%;height:100%;object-fit:cover;}
+.msm-card-mascot{font-size:44px;filter:drop-shadow(0 4px 6px rgba(0,0,0,.35));}
+.msm-card-status-badge{position:absolute;top:8px;right:8px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800;letter-spacing:.4px;background:rgba(255,255,255,.92);color:var(--navy);}
+.msm-status-active .msm-card-status-badge{background:var(--success);color:#fff;}
+.msm-status-left .msm-card-status-badge{background:var(--brass);color:#fff;}
+.msm-status-removed .msm-card-status-badge{background:var(--danger);color:#fff;}
+.msm-card-body{padding:12px 14px 6px;}
+.msm-card-body h4{margin:0 0 6px;font-size:14.5px;color:var(--navy);font-family:Georgia,serif;}
+.msm-card-row{font-size:11.5px;color:var(--ink-soft);line-height:1.6;}
+.msm-card-actions{display:flex;gap:6px;padding:10px 14px 14px;flex-wrap:wrap;}
+
+.msm-celebrate{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;z-index:9999;opacity:0;transition:opacity .35s ease;}
+.msm-celebrate.show{opacity:1;}
+.msm-celebrate-card{
+  background:linear-gradient(135deg,var(--navy),var(--navy-soft));color:#fff;border:2px solid var(--brass-soft);
+  border-radius:16px;padding:18px 26px;display:flex;align-items:center;gap:14px;box-shadow:0 24px 60px rgba(0,0,0,.4);
+  transform:translateY(14px) scale(.92);transition:transform .35s ease;
+}
+.msm-celebrate.show .msm-celebrate-card{transform:translateY(0) scale(1);}
+.msm-mascot-guard{font-size:36px;position:relative;animation:msmWiggle 1.1s ease-in-out infinite;}
+.msm-mascot-shield{position:absolute;font-size:16px;right:-8px;bottom:-4px;}
+@keyframes msmWiggle{0%,100%{transform:rotate(-6deg);}50%{transform:rotate(8deg);}}
+.msm-celebrate-text{font-size:13.5px;line-height:1.5;}
 </style>
 </head>
 <body>
@@ -852,6 +900,11 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
       <div class="msm-login-security">
         🔐 <strong>Authorized Access Only</strong><br>
         Your Gmail is checked against the MSM authorized-user list. Unauthorized accounts cannot access the Long Roll database.
+      </div>
+      <div class="msm-login-contact">
+        <div class="msm-login-contact-item">📍 House No. 36-E, Cricketer Colony, Airport Road, Lahore</div>
+        <div class="msm-login-contact-item">📞 0423-7169344 &nbsp;|&nbsp; 0301-1010959</div>
+        <div class="msm-login-contact-item">✉️ msmsecurity11@gmail.com</div>
       </div>
       <div class="msm-login-footer">
         <strong>MSM Longroll Database © All Rights Reserved</strong><br>
@@ -1106,6 +1159,10 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
     <div id="view-register" style="display:none;">
       <div class="register-toolbar">
         <span class="count-pill" id="rowCountPill">0 entries</span>
+        <div class="msm-view-toggle">
+          <button type="button" class="btn btn-sm msm-view-btn active" id="msmTableViewBtn" onclick="msmSetRegisterView('table')">📋 Table View</button>
+          <button type="button" class="btn btn-sm msm-view-btn" id="msmCardViewBtn" onclick="msmSetRegisterView('cards')">🎬 Card View</button>
+        </div>
       </div>
       <div class="dashboard-grid" id="registerDashboard">
         <div class="dash-card"><span>Total</span><strong id="dashTotal">0</strong></div>
@@ -1146,6 +1203,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
           <tbody id="tbody"></tbody>
         </table>
       </div>
+      <div class="msm-cards-grid" id="msmCardsGrid" style="display:none;"></div>
       <div class="empty-state" id="emptyState" style="display:none;">
         <div class="glyph">—</div>
         No records yet. Add an entry from the <strong>New Entry</strong> tab and it will appear here automatically.
@@ -2299,6 +2357,7 @@ async function saveEntry(){
       const docRef=await db.collection(RECORDS_COLLECTION).add({sno: nextSno, createdAt: firebase.firestore.FieldValue.serverTimestamp(), ...data});
       await writeAuditLog('CREATE_RECORD', docRef.id, {sno:nextSno, name:data.name||'', cnic:data.cnic||'', clientproject:data.clientproject||'', employmentStatus:data.employmentStatus});
       showToast('Saved — added to the Long Roll register.');
+      if(typeof msmCelebrateSave==='function') msmCelebrateSave(data.name);
     }
     persistMeta(); resetForm(); switchTab('register');
   }catch(err){showToast('Could not save: ' + err.message);}
@@ -2406,8 +2465,65 @@ function renderTable(){
   }).join('');
   document.getElementById('rowCountPill').textContent = `${filtered.length} of ${records.length} entries`;
   document.getElementById('emptyState').style.display = records.length ? 'none' : 'block';
-  document.getElementById('registerTable').style.display = records.length ? 'table' : 'none';
+  document.getElementById('registerTable').style.display = (records.length && msmRegisterView!=='cards') ? 'table' : 'none';
   updateSelectionUI();
+  if(typeof msmRenderCards==='function') msmRenderCards(filtered);
+}
+
+/* ===================== Cinematic Card View (original MSM mascot, no third-party IP) ===================== */
+let msmRegisterView = 'table';
+function msmSetRegisterView(mode){
+  msmRegisterView = mode==='cards' ? 'cards' : 'table';
+  document.getElementById('msmTableViewBtn')?.classList.toggle('active', msmRegisterView==='table');
+  document.getElementById('msmCardViewBtn')?.classList.toggle('active', msmRegisterView==='cards');
+  const grid=document.getElementById('msmCardsGrid'), tbl=document.getElementById('registerTable');
+  if(grid) grid.style.display = msmRegisterView==='cards' ? 'grid' : 'none';
+  if(tbl) tbl.style.display = (records.length && msmRegisterView==='table') ? 'table' : 'none';
+}
+function msmStatusClass(r){
+  const s=normalizedStatus(r);
+  if(s==='left-job') return 'msm-status-left';
+  if(s==='removed') return 'msm-status-removed';
+  return 'msm-status-active';
+}
+function msmRenderCards(filtered){
+  const grid=document.getElementById('msmCardsGrid'); if(!grid) return;
+  if(msmRegisterView!=='cards'){ grid.style.display='none'; return; }
+  grid.style.display='grid';
+  if(!filtered.length){ grid.innerHTML='<div class="empty-state">No records match the current filters.</div>'; return; }
+  grid.innerHTML = filtered.map(r=>{
+    const photo = r.photoData ? `<img src="${r.photoData}" alt="${escapeHtml(r.name||'Guard')}">` : `<div class="msm-card-mascot">🛡️</div>`;
+    return `<div class="msm-3d-card ${msmStatusClass(r)}">
+      <div class="msm-3d-card-inner">
+        <div class="msm-card-photo">${photo}<span class="msm-card-status-badge">${escapeHtml(employmentStatusLabel(r))}</span></div>
+        <div class="msm-card-body">
+          <h4>${escapeHtml(r.name||'Unnamed Guard')}</h4>
+          <div class="msm-card-row"><b>CNIC:</b> ${escapeHtml(r.cnic||'—')}</div>
+          <div class="msm-card-row"><b>MSM No.:</b> ${escapeHtml(r.msmno||'—')}</div>
+          <div class="msm-card-row"><b>Client:</b> ${escapeHtml(r.clientproject||'—')}</div>
+          <div class="msm-card-row"><b>Sector:</b> ${escapeHtml(r.sector||'—')}</div>
+          <div class="msm-card-row"><b>Location:</b> ${escapeHtml(r.location||'—')}</div>
+        </div>
+        <div class="msm-card-actions">
+          <button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button>
+          <button class="btn btn-sm" onclick="printRecordForm('${r.id}')">🖨 Print</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+/* Friendly original mascot celebration — plays after a NEW guard is saved. No third-party characters used. */
+function msmCelebrateSave(name){
+  const old=document.getElementById('msmCelebrate'); if(old) old.remove();
+  const box=document.createElement('div'); box.id='msmCelebrate'; box.className='msm-celebrate';
+  box.innerHTML=`<div class="msm-celebrate-card">
+      <div class="msm-mascot-guard">🐾<span class="msm-mascot-shield">🛡️</span></div>
+      <div class="msm-celebrate-text"><b>${escapeHtml(name||'New guard')}</b> added to the Long Roll!</div>
+    </div>`;
+  document.body.appendChild(box);
+  requestAnimationFrame(()=>box.classList.add('show'));
+  setTimeout(()=>{ box.classList.remove('show'); setTimeout(()=>box.remove(),400); },2200);
 }
 function toggleRecordSelection(id,checked){
   if(!isParent()) { showToast('Only Parent can select records for bulk actions.'); return; }
