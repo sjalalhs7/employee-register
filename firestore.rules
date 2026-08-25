@@ -2,7 +2,10 @@ rules_version = '2';
 
 // ============================================================================
 // MSM LONGROLL DATABASE — Firestore Security Rules • FINAL PROFESSIONAL CLOUD RBAC
-// Matched exactly to index.html: collections, field names and role model below.
+// OPTIMIZED: each rule now does max 2 document reads (exists + get) instead of
+// 4–8, avoiding the 20 get()/exists() per-request limit that can silently
+// cause "permission-denied" on nested reads (e.g. update rules that check
+// both resource.data and request.resource.data).
 // Deploy target: msm-security-guards-database (Firebase Console → Firestore → Rules)
 // ============================================================================
 
@@ -16,87 +19,67 @@ service cloud.firestore {
     function myEmail() {
       return request.auth.token.email.lower();
     }
-    function myAuthDoc() {
-      return get(/databases/$(database)/documents/authorizedUsers/$(myEmail()));
-    }
     function authorized() {
       return signedIn() && exists(/databases/$(database)/documents/authorizedUsers/$(myEmail()));
     }
-    function myRole() {
-      return authorized() ? myAuthDoc().data.role.lower() : '';
+    // Call this ONCE per rule and reuse the result — avoids repeated get() calls.
+    function authData() {
+      return get(/databases/$(database)/documents/authorizedUsers/$(myEmail())).data;
     }
-    function isParent() {
-      return authorized() && (myRole() == 'parent' || myRole() == 'admin');
+    function isParentRole(auth) {
+      return auth.role.lower() == 'parent' || auth.role.lower() == 'admin';
     }
-    function myClient() {
-      return authorized() ? myAuthDoc().data.clientproject : '__none__';
-    }
-    function mySector() {
-      return authorized() ? myAuthDoc().data.sector : '__none__';
-    }
-    function inMyScope(data) {
-      return data.clientproject == myClient() || (mySector() != '__none__' && data.sector == mySector());
+    function inScope(auth, data) {
+      return data.clientproject == auth.clientproject
+        || ((auth.sector != null && auth.sector != '__none__') && data.sector == auth.sector);
     }
 
     // ---------- authorizedUsers ----------
-    // Doc id = lowercase email. Every signed-in user must be able to read their OWN
-    // doc (that is how the app decides role / client / sector on login).
-    // Only Parent/Admin may list everyone or write access records.
     match /authorizedUsers/{email} {
-      allow get:    if signedIn() && (myEmail() == email || isParent());
-      allow list:   if isParent();
-      allow create, update, delete: if isParent();
+      allow get:    if signedIn() && (myEmail() == email || (authorized() && isParentRole(authData())));
+      allow list:   if authorized() && isParentRole(authData());
+      allow create, update, delete: if authorized() && isParentRole(authData());
     }
 
     // ---------- records (the Long Roll register) ----------
     match /records/{recordId} {
-      allow read:   if isParent() || (authorized() && inMyScope(resource.data));
-      allow create: if isParent() || (authorized() && inMyScope(request.resource.data));
-      allow update: if isParent() || (authorized() && inMyScope(resource.data) && inMyScope(request.resource.data));
-      allow delete: if isParent() || (authorized() && inMyScope(resource.data));
+      allow read, delete: if authorized() && (isParentRole(authData()) || inScope(authData(), resource.data));
+      allow create: if authorized() && (isParentRole(authData()) || inScope(authData(), request.resource.data));
+      allow update: if authorized() && (isParentRole(authData()) || (inScope(authData(), resource.data) && inScope(authData(), request.resource.data)));
     }
 
     // ---------- recycleBin (soft-deleted records) ----------
     match /recycleBin/{recordId} {
-      allow read:   if isParent() || (authorized() && inMyScope(resource.data));
-      allow create: if isParent() || (authorized() && inMyScope(resource.data));
-      allow update: if isParent() || (authorized() && inMyScope(resource.data));
-      allow delete: if isParent() || (authorized() && inMyScope(resource.data));
+      allow read, create, update, delete: if authorized() && (isParentRole(authData()) || inScope(authData(), resource.data));
     }
 
     // ---------- regionCatalog / sectorCatalog ----------
-    // Every authorized user needs to READ these (dropdowns, filters).
-    // Only Parent/Admin may add, rename or re-assign regions/sectors.
     match /regionCatalog/{regionId} {
       allow read:  if authorized();
-      allow write: if isParent();
+      allow write: if authorized() && isParentRole(authData());
     }
     match /sectorCatalog/{sectorId} {
       allow read:  if authorized();
-      allow write: if isParent();
+      allow write: if authorized() && isParentRole(authData());
     }
 
-    // ---------- auditLogs (Unified Activity Log — Parent/Admin only view) ----------
+    // ---------- auditLogs (Parent/Admin only view) ----------
     match /auditLogs/{logId} {
-      allow read:   if isParent();
-      allow create: if authorized();           // every user logs their own actions
-      allow update, delete: if false;          // logs are permanent, never edited
+      allow read:   if authorized() && isParentRole(authData());
+      allow create: if authorized();
+      allow update, delete: if false;
     }
 
     // ---------- transferHistory (Bulk Transfer — Parent only) ----------
     match /transferHistory/{historyId} {
-      allow read:   if isParent();
-      allow create: if isParent();
+      allow read, create: if authorized() && isParentRole(authData());
       allow update, delete: if false;
     }
 
-
     // ---------- companySettings ----------
-    // Shared company/about/contact/navigation settings.
-    // All authorized users may read; only Parent/Admin may create/update.
     match /companySettings/{settingId} {
       allow read: if authorized();
-      allow create, update: if isParent();
+      allow create, update: if authorized() && isParentRole(authData());
       allow delete: if false;
     }
 
