@@ -1,15 +1,51 @@
 rules_version = '2';
+
+// MSM Longroll Database — final hybrid rules
+// Based on the successfully published 88-line structure, with the
+// stronger Parent/Admin handling from the reviewed 105-line version.
+
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function authEmail() { return request.auth.token.email; }
-    function userPath() { return /databases/$(database)/documents/authorizedUsers/$(authEmail()); }
-    function authorized() { return signedIn() && exists(userPath()); }
-    function myUser() { return get(userPath()); }
-    function isParent() { return authorized() && myUser().data.role == 'parent'; }
-    function isClient() { return authorized() && myUser().data.role == 'client'; }
-    function myClient() { return myUser().data.get('clientproject', ''); }
-    function mySector() { return myUser().data.get('sector', ''); }
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function authEmail() {
+      return request.auth.token.email.lower();
+    }
+
+    function userPath() {
+      return /databases/$(database)/documents/authorizedUsers/$(authEmail());
+    }
+
+    function authorized() {
+      return signedIn() && exists(userPath());
+    }
+
+    function myUser() {
+      return get(userPath());
+    }
+
+    function isParent() {
+      return authorized()
+        && myUser().data.get('role', '').lower() in ['parent', 'admin'];
+    }
+
+    function isClient() {
+      return authorized()
+        && myUser().data.get('role', '').lower() == 'client';
+    }
+
+    function myClient() {
+      return myUser().data.get('clientproject', '');
+    }
+
+    function mySector() {
+      return myUser().data.get('sector', '');
+    }
+
+    // Sector-aware access retained from the successfully published 88-line rules.
     function recordInMyScope(data) {
       return isClient() && (
         (mySector() != '' && (
@@ -20,6 +56,7 @@ service cloud.firestore {
         (mySector() == '' && data.get('clientproject', '') == myClient())
       );
     }
+
     function recycleInMyScope(data) {
       return isClient() && (
         (mySector() != '' && (
@@ -30,10 +67,12 @@ service cloud.firestore {
         (mySector() == '' && data.get('clientproject', '') == myClient())
       );
     }
+
     function auditOwnedByCaller() {
       return authorized()
-        && request.resource.data.userEmail == authEmail()
-        && request.resource.data.role == myUser().data.role
+        && request.resource.data.get('userEmail', '').lower() == authEmail()
+        && request.resource.data.get('role', '').lower()
+             == myUser().data.get('role', '').lower()
         && (
           (mySector() != '' && (
             request.resource.data.get('sector', '') == mySector() ||
@@ -43,44 +82,91 @@ service cloud.firestore {
           (mySector() == '' && request.resource.data.get('clientproject', '') == myClient())
         );
     }
+
+    // ------------------------------------------------------------
+    // Authorized users
+    // ------------------------------------------------------------
     match /authorizedUsers/{email} {
-      allow read: if authorized() && (isParent() || email == authEmail());
-      allow create, update, delete: if isParent();
+      // A signed-in user may read only their own authorization record;
+      // Parent/Admin may read the full list for Admin: Access.
+      allow get: if authorized() && (isParent() || email == authEmail());
+      allow list: if isParent();
+
+      // Parent/Admin manages client/sector accounts.
+      allow create: if isParent();
+      allow update: if isParent()
+        && !(resource.data.get('role', '').lower() in ['parent', 'admin']);
+      allow delete: if isParent()
+        && !(resource.data.get('role', '').lower() in ['parent', 'admin']);
     }
+
+    // ------------------------------------------------------------
+    // Region / Sector catalog
+    // ------------------------------------------------------------
     match /regionCatalog/{regionId} {
       allow read: if authorized();
       allow create, update, delete: if isParent();
     }
+
     match /sectorCatalog/{sectorId} {
       allow read: if authorized();
       allow create, update, delete: if isParent();
     }
+
+    // ------------------------------------------------------------
+    // Long Roll records
+    // ------------------------------------------------------------
     match /records/{recordId} {
       allow read: if isParent() || recordInMyScope(resource.data);
-      allow create: if isParent() || recordInMyScope(request.resource.data);
-      allow update: if isParent() || (
-        recordInMyScope(resource.data) && recordInMyScope(request.resource.data)
-      );
+
+      allow create: if isParent()
+        || recordInMyScope(request.resource.data);
+
+      allow update: if isParent()
+        || (
+          recordInMyScope(resource.data) &&
+          recordInMyScope(request.resource.data)
+        );
+
       allow delete: if isParent() || recordInMyScope(resource.data);
     }
+
+    // ------------------------------------------------------------
+    // Recycle Bin
+    // ------------------------------------------------------------
     match /recycleBin/{recycleId} {
       allow read: if isParent() || recycleInMyScope(resource.data);
+
       allow create: if isParent() || (
+        request.resource.data.get('recordData', null) is map &&
         recordInMyScope(request.resource.data.recordData) &&
-        request.resource.data.originalRecordId is string
+        request.resource.data.get('originalRecordId', null) is string
       );
-      allow update: if false;
+
+      allow update: if isParent();
       allow delete: if isParent() || recycleInMyScope(resource.data);
     }
+
+    // ------------------------------------------------------------
+    // Audit logs
+    // ------------------------------------------------------------
     match /auditLogs/{logId} {
       allow read: if isParent();
       allow create: if isParent() || auditOwnedByCaller();
       allow update, delete: if false;
     }
+
+    // ------------------------------------------------------------
+    // Transfer history
+    // ------------------------------------------------------------
     match /transferHistory/{historyId} {
       allow read, create: if isParent();
       allow update, delete: if false;
     }
+
+    // ------------------------------------------------------------
+    // Default deny
+    // ------------------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
     }
