@@ -1,12 +1,27 @@
 {
   "indexes": [
-    {"collectionGroup":"auditLogs","queryScope":"COLLECTION","fields":[{"fieldPath":"createdAt","order":"DESCENDING"}]},
-    {"collectionGroup":"transferHistory","queryScope":"COLLECTION","fields":[{"fieldPath":"createdAt","order":"DESCENDING"}]},
-    {"collectionGroup":"records","queryScope":"COLLECTION","fields":[{"fieldPath":"clientproject","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}]},
-    {"collectionGroup":"records","queryScope":"COLLECTION","fields":[{"fieldPath":"sector","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}]},
-    {"collectionGroup":"records","queryScope":"COLLECTION","fields":[{"fieldPath":"region","order":"ASCENDING"},{"fieldPath":"createdAt","order":"DESCENDING"}]},
-    {"collectionGroup":"recycleBin","queryScope":"COLLECTION","fields":[{"fieldPath":"deletedAt","order":"DESCENDING"}]},
-    {"collectionGroup":"sectors","queryScope":"COLLECTION","fields":[{"fieldPath":"regionId","order":"ASCENDING"},{"fieldPath":"order","order":"ASCENDING"}]}
+    {
+      "collectionGroup": "auditLogs",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "transferHistory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    },
+    {
+      "collectionGroup": "records",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {"fieldPath": "clientproject", "order": "ASCENDING"},
+        {"fieldPath": "createdAt", "order": "DESCENDING"}
+      ]
+    }
   ],
   "fieldOverrides": []
 }

@@ -1,18 +1,23 @@
-# MSM Longroll Final Website
+# MSM SECURITY GUARDS PVT LTD — Final Region/Sector Build
 
-Files:
-- `index.html` — merged final web application
-- `msm-logo.png` — supplied MSM Security Guards logo
-- `msm-login-logo.png` — same supplied logo used on login
-- `firestore.rules` — updated rules for sector-scoped access and scoped Recycle Bin
+## What is fixed
+- Parent login shows **Regions first**. Loose top-level Islamabad/Rawalpindi/KPK/Chakwal sector buttons are removed.
+- **North Region is purple/highlighted** and appears first.
+- Islamabad, Rawalpindi, KPK and Chakwal are **not auto-assigned**. Parent must manually add/assign them.
+- Parent can add unlimited Regions and Sectors and move/arrange sectors between Regions.
+- Region cards stay open after click; sector buttons appear inside the selected Region.
+- Regional Office is locked to its assigned Region and can add/arrange sectors only inside that Region.
+- Regional Office can update Regional Office locations.
+- Employee entry for Regional Office requires a Sector from its own Region.
+- Login and logged-in branding: **MSM SECURITY GUARDS PVT LTD**.
+- English + Urdu instructions are included side-by-side and mobile-friendly.
+- Records area keeps the existing long-roll, search, import/export, recycle bin and 3D-style record presentation.
 
-Key fixes:
-1. Parent dashboard is colorful/dark navy-gold, matching the supplied premium visual direction.
-2. Supplied MSM logo is used throughout the login and portal.
-3. Parent sector buttons are dynamic: new sector names appear as sector data/access is added.
-4. Sector users can see existing legacy records by sector field OR Client/Project name, so existing Islamabad data can appear without re-importing.
-5. Import Long Roll is available to authorized scoped users and automatically stamps their sector/client scope.
-6. Recycle Bin is available to authorized scoped users; parent still has full access.
-7. The previously misplaced Phase-1 JavaScript was moved inside the main script so the Recycle Bin and sector module actually execute.
+## Firebase
+1. Deploy `index.html` with the existing logo asset `msm-security-guards-logo.png`.
+2. Publish `firestore.rules` in the same Firebase project.
+3. Deploy `firestore.indexes.json` if Firebase asks for indexes.
+4. Regional Office access records created by Parent now store both `region` and `regionId`.
 
-Deployment: replace the repository `index.html`, upload both PNG logo files, and publish `firestore.rules` in Firebase Console > Firestore Database > Rules. Then hard-refresh the site.
+## Important
+The four old sector names are intentionally not seeded into a Region. Your Parent account should manually test adding/assigning them under North Region.
