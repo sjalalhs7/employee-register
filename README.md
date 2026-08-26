@@ -1,23 +1,31 @@
-# MSM SECURITY GUARDS PVT LTD — Final Region/Sector Build
+# MSM SECURITY GUARDS PVT LTD — Renewed Final Region/Sector Build
 
-## What is fixed
-- Parent login shows **Regions first**. Loose top-level Islamabad/Rawalpindi/KPK/Chakwal sector buttons are removed.
-- **North Region is purple/highlighted** and appears first.
-- Islamabad, Rawalpindi, KPK and Chakwal are **not auto-assigned**. Parent must manually add/assign them.
-- Parent can add unlimited Regions and Sectors and move/arrange sectors between Regions.
-- Region cards stay open after click; sector buttons appear inside the selected Region.
-- Regional Office is locked to its assigned Region and can add/arrange sectors only inside that Region.
-- Regional Office can update Regional Office locations.
-- Employee entry for Regional Office requires a Sector from its own Region.
-- Login and logged-in branding: **MSM SECURITY GUARDS PVT LTD**.
-- English + Urdu instructions are included side-by-side and mobile-friendly.
-- Records area keeps the existing long-roll, search, import/export, recycle bin and 3D-style record presentation.
+## Official company branding
+- The **official company logo supplied by the user** is included as `msm-security-guards-logo.png`.
+- The official company name is **MSM Security Guards (Pvt) Ltd** / **MSM SECURITY GUARDS PVT LTD**.
+- Official contact strip used in the renewed web UI:
+  - House No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore
+  - Tel: 042-37169344
+  - Cell: 0346-7780660
+  - Email: msmsecurity11@gmail.com
 
-## Firebase
-1. Deploy `index.html` with the existing logo asset `msm-security-guards-logo.png`.
+## Workflow
+Parent → Region → Sector → Regional Office
+
+- Parent login shows Regions first.
+- North Region is highlighted in purple.
+- Islamabad, Rawalpindi, KPK and Chakwal are NOT automatically assigned.
+- Parent manually creates/assigns sectors to Regions.
+- Regional Office is restricted to its assigned Region.
+- Regional Office can add/arrange sectors and manage locations/employees for its Region.
+- Existing long-roll, import/export, recycle bin, search and audit features are preserved.
+- English + Urdu instructions remain available.
+
+## Firebase deployment
+1. Upload/deploy `index.html` and the included `msm-security-guards-logo.png` together.
 2. Publish `firestore.rules` in the same Firebase project.
-3. Deploy `firestore.indexes.json` if Firebase asks for indexes.
-4. Regional Office access records created by Parent now store both `region` and `regionId`.
+3. Deploy `firestore.indexes.json` if prompted.
+4. Keep `firebase.json` with the hosting site configuration.
 
-## Important
-The four old sector names are intentionally not seeded into a Region. Your Parent account should manually test adding/assigning them under North Region.
+## Important test
+The old sector names are intentionally not seeded into North Region. Use the Parent account to manually add/assign them and verify the new Region → Sector workflow.
