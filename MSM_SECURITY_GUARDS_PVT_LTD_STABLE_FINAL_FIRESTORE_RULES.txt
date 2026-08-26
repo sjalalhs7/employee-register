@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function authEmail() { return request.auth.token.email; }
+    function userPath() { return /databases/$(database)/documents/authorizedUsers/$(authEmail()); }
+    function authorized() { return signedIn() && exists(userPath()); }
+    function myUser() { return get(userPath()); }
+    function isParent() { return authorized() && myUser().data.role == 'parent'; }
+    function isClient() { return authorized() && myUser().data.role == 'client'; }
+    function isRegional() { return authorized() && myUser().data.role == 'regional'; }
+    function myRegion() { return myUser().data.get('region', ''); }
+    function myRegionId() { return myUser().data.get('regionId', ''); }
+    function regionDoc() { return /databases/$(database)/documents/regionCatalog/$(myRegionId()); }
+    function inMyRegion(data) {
+      return isRegional()
+        && myRegionId() != ''
+        && exists(regionDoc())
+        && (
+          (data.get('sector','') != '' && get(regionDoc()).data.get('sectors', []).hasAny([data.get('sector','')])) ||
+          (data.get('sector','') == '' && data.get('clientproject','') != '' && get(regionDoc()).data.get('sectors', []).hasAny([data.get('clientproject','')]))
+        );
+    }
+    function myClient() { return myUser().data.get('clientproject', ''); }
+    function mySector() { return myUser().data.get('sector', ''); }
+
+    // A sector-scoped account may see records tagged with its sector, or legacy
+    // records whose Client/Project is the sector name (e.g. "Islamabad Sector").
+    function recordInMyScope(data) {
+      return (isRegional() && inMyRegion(data)) || (isClient() && (
+        (mySector() != '' && (
+          data.get('sector', '') == mySector() ||
+          data.get('clientproject', '') == mySector() ||
+          data.get('clientproject', '') == myClient()
+        )) ||
+        (mySector() == '' && data.get('clientproject', '') == myClient())
+      ));
+    }
+
+    function recycleInMyScope(data) {
+      return (isRegional() && inMyRegion(data)) || (isClient() && (
+        (mySector() != '' && (
+          data.get('sector', '') == mySector() ||
+          data.get('clientproject', '') == mySector() ||
+          data.get('clientproject', '') == myClient()
+        )) ||
+        (mySector() == '' && data.get('clientproject', '') == myClient())
+      ));
+    }
+
+    function auditOwnedByCaller() {
+      return authorized()
+        && request.resource.data.userEmail == authEmail()
+        && request.resource.data.role == myUser().data.role
+        && (isRegional() || isClient());
+    }
+
+    match /authorizedUsers/{email} {
+      allow read: if authorized() && (isParent() || email == authEmail());
+      allow create, update, delete: if isParent();
+    }
+
+    // Region/Sector catalog. All authorized users can read dropdowns.
+    // Parent manages all Regions/Sectors; Regional Office manages only its own Region.
+    match /regionCatalog/{regionId} {
+      allow read: if authorized();
+      allow create, delete: if isParent();
+      allow update: if isParent() || (isRegional() && regionId == myRegionId());
+    }
+
+    match /sectorCatalog/{sectorId} {
+      allow read: if authorized();
+      allow create: if isParent() || (isRegional() && request.resource.data.get('region','') == myRegion());
+      allow update: if isParent() || (isRegional()
+        && request.resource.data.get('region','') == myRegion()
+        && (resource.data.get('region','') == myRegion() || resource.data.get('region','') == ''));
+      allow delete: if isParent();
+    }
+
+    match /records/{recordId} {
+      allow read: if isParent() || recordInMyScope(resource.data);
+      allow create: if isParent() || recordInMyScope(request.resource.data);
+      allow update: if isParent() || (recordInMyScope(resource.data) && recordInMyScope(request.resource.data));
+      allow delete: if isParent() || recordInMyScope(resource.data);
+    }
+
+    match /recycleBin/{recycleId} {
+      allow read: if isParent() || recycleInMyScope(resource.data);
+      allow create: if isParent() || (
+        recordInMyScope(request.resource.data.recordData) &&
+        request.resource.data.originalRecordId is string
+      );
+      allow update: if false;
+      allow delete: if isParent() || recycleInMyScope(resource.data);
+    }
+
+    match /auditLogs/{logId} {
+      allow read: if isParent();
+      allow create: if isParent() || auditOwnedByCaller();
+      allow update, delete: if false;
+    }
+
+    match /transferHistory/{historyId} {
+      allow read, create: if isParent();
+      allow update, delete: if false;
+    }
+
+    match /{document=**} { allow read, write: if false; }
+  }
+}
