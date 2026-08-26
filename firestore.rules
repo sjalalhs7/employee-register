@@ -1,70 +1,63 @@
 rules_version = '2';
 
-// ============================================================================
-// MSM LONGROLL DATABASE — Firestore Security Rules
-// FINAL 1-STEP FIX
-// Deploy target: msm-security-guards-database
-//
-// IMPORTANT FIXES:
-// 1) CREATE operations use request.resource.data (not resource.data).
-// 2) Sector + Client/Project scope is supported.
-// 3) Role checks are protected against missing role fields.
-// ============================================================================
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ---------- helpers ----------
     function signedIn() {
-      return request.auth != null && request.auth.token.email != null;
+      return request.auth != null
+        && request.auth.token.email != null;
     }
 
     function myEmail() {
       return request.auth.token.email.lower();
     }
 
-    function authData() {
-      return get(
-        /databases/$(database)/documents/authorizedUsers/$(myEmail())
-      ).data;
-    }
-
     function authorized() {
       return signedIn()
-        && exists(
-          /databases/$(database)/documents/authorizedUsers/$(myEmail())
-        );
+        && exists(/databases/$(database)/documents/authorizedUsers/$(myEmail()));
     }
 
-    function isParentRole(data) {
-      return data.role != null
-        && (data.role.lower() == 'parent' || data.role.lower() == 'admin');
+    function myUser() {
+      return get(/databases/$(database)/documents/authorizedUsers/$(myEmail())).data;
     }
 
     function isParent() {
-      return authorized() && isParentRole(authData());
+      return authorized()
+        && myUser().role is string
+        && (myUser().role.lower() == 'parent'
+            || myUser().role.lower() == 'admin');
     }
 
-    function myClientProject() {
-      return authorized() && authData().clientproject != null
-        ? authData().clientproject
-        : '__none__';
+    function myClient() {
+      return myUser().clientproject;
     }
 
     function mySector() {
-      return authorized() && authData().sector != null
-        ? authData().sector
-        : '__none__';
+      return myUser().sector;
     }
 
+    // FIX: null == null no longer grants scope. A user or record missing
+    // clientproject/sector can never match on that field.
     function inScope(data) {
-      return data.clientproject == myClientProject()
-        || (mySector() != '__none__'
-            && data.sector != null
-            && data.sector == mySector());
+      return (myClient() != null
+              && 'clientproject' in data
+              && data.clientproject == myClient())
+          || (mySector() != null
+              && 'sector' in data
+              && data.sector == mySector());
     }
 
-    // ---------- authorizedUsers ----------
+    // Restrict what fields a record write may contain and their types.
+    // Adjust the field list to match your actual record schema.
+    function validRecordFields(data) {
+      return data.keys().hasOnly([
+        'clientproject', 'sector', 'title', 'description',
+        'status', 'createdAt', 'updatedAt', 'createdBy', 'updatedBy'
+      ])
+      && (!('clientproject' in data) || data.clientproject is string)
+      && (!('sector' in data) || data.sector is string);
+    }
+
     match /authorizedUsers/{email} {
       allow get: if signedIn()
         && (myEmail() == email || isParent());
@@ -73,39 +66,39 @@ service cloud.firestore {
 
       allow create, update: if isParent();
 
-      // Protect Parent/Admin seed accounts from deletion.
       allow delete: if isParent()
-        && !(resource.data.role != null
+        && !(resource.data.role is string
              && (resource.data.role.lower() == 'parent'
                  || resource.data.role.lower() == 'admin'));
     }
 
-    // ---------- records / Long Roll ----------
     match /records/{recordId} {
       allow read: if isParent()
         || (authorized() && inScope(resource.data));
 
-      // FIX: CREATE MUST USE request.resource.data
       allow create: if isParent()
-        || (authorized() && inScope(request.resource.data));
+        || (authorized()
+            && inScope(request.resource.data)
+            && validRecordFields(request.resource.data));
 
       allow update: if isParent()
         || (authorized()
             && inScope(resource.data)
-            && inScope(request.resource.data));
+            && inScope(request.resource.data)
+            && validRecordFields(request.resource.data));
 
       allow delete: if isParent()
         || (authorized() && inScope(resource.data));
     }
 
-    // ---------- recycleBin ----------
     match /recycleBin/{recordId} {
       allow read: if isParent()
         || (authorized() && inScope(resource.data));
 
-      // FIX: CREATE MUST USE request.resource.data
       allow create: if isParent()
-        || (authorized() && inScope(request.resource.data));
+        || (authorized()
+            && inScope(request.resource.data)
+            && validRecordFields(request.resource.data));
 
       allow update: if isParent()
         || (authorized() && inScope(resource.data));
@@ -114,7 +107,6 @@ service cloud.firestore {
         || (authorized() && inScope(resource.data));
     }
 
-    // ---------- regionCatalog / sectorCatalog ----------
     match /regionCatalog/{regionId} {
       allow read: if authorized();
       allow write: if isParent();
@@ -125,20 +117,21 @@ service cloud.firestore {
       allow write: if isParent();
     }
 
-    // ---------- auditLogs ----------
     match /auditLogs/{logId} {
       allow read: if isParent();
-      allow create: if authorized();
+      // FIX: any authorized user could create arbitrary/fake audit entries.
+      // Now the log's actor field must match the caller's own email.
+      allow create: if authorized()
+        && request.resource.data.actor is string
+        && request.resource.data.actor.lower() == myEmail();
       allow update, delete: if false;
     }
 
-    // ---------- transferHistory ----------
     match /transferHistory/{historyId} {
       allow read, create: if isParent();
       allow update, delete: if false;
     }
 
-    // ---------- deny everything else ----------
     match /{document=**} {
       allow read, write: if false;
     }
