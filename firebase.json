@@ -4,15 +4,7 @@
   },
   "hosting": {
     "public": ".",
-    "ignore": [
-      "firebase.json",
-      "firestore.rules",
-      ".firebaserc",
-      "README.md",
-      "node_modules/**",
-      ".git/**"
-    ],
-    "cleanUrls": true,
-    "trailingSlash": false
+    "ignore": ["firebase.json", "firestore.rules", "README.md", "FINAL_DEPLOYMENT.md", ".firebaserc"],
+    "cleanUrls": true
   }
 }

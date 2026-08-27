@@ -3,23 +3,19 @@
     {
       "collectionGroup": "auditLogs",
       "queryScope": "COLLECTION",
-      "fields": [
-        {"fieldPath": "createdAt", "order": "DESCENDING"}
-      ]
+      "fields": [{"fieldPath":"createdAt","order":"DESCENDING"}]
     },
     {
       "collectionGroup": "transferHistory",
       "queryScope": "COLLECTION",
-      "fields": [
-        {"fieldPath": "createdAt", "order": "DESCENDING"}
-      ]
+      "fields": [{"fieldPath":"createdAt","order":"DESCENDING"}]
     },
     {
       "collectionGroup": "records",
       "queryScope": "COLLECTION",
       "fields": [
-        {"fieldPath": "clientproject", "order": "ASCENDING"},
-        {"fieldPath": "createdAt", "order": "DESCENDING"}
+        {"fieldPath":"clientproject","order":"ASCENDING"},
+        {"fieldPath":"createdAt","order":"DESCENDING"}
       ]
     }
   ],

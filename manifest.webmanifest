@@ -1,16 +1,11 @@
 {
-  "name": "MSM Security Guards \u2014 Longroll Database",
+  "name": "MSM Longroll Database",
   "short_name": "MSM Longroll",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#020817",
-  "theme_color": "#061b42",
-  "description": "MSM Security Guards secure employee long-roll management portal.",
-  "icons": [
-    {
-      "src": "msm-security-guards-logo.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    }
-  ]
+  "background_color": "#061326",
+  "theme_color": "#071b3a",
+  "description": "MSM Security Guards Pvt Ltd secure Longroll database",
+  "icons": [{"src":"msm-logo-shield.jpg","sizes":"462x388","type":"image/jpeg","purpose":"any maskable"}]
 }
