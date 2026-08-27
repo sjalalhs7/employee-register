@@ -1,35 +1,15 @@
 {
-  "name": "MSM Longroll Database",
+  "name": "MSM SECURITY GUARDS PVT LTD — Long Roll Database",
   "short_name": "MSM Longroll",
-  "description": "MSM Security Guards employee enrollment and long roll database.",
+  "description": "Secure MSM Security Guards employee long roll and region/sector management portal.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "display_override": [
-    "window-controls-overlay",
-    "standalone"
-  ],
-  "orientation": "portrait",
-  "background_color": "#071522",
-  "theme_color": "#071522",
+  "orientation": "portrait-primary",
+  "background_color": "#08162a",
+  "theme_color": "#08162a",
   "icons": [
-    {
-      "src": "./icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "./icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "./icon-512-maskable.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
-    }
+    {"src":"icons/msm-icon-192.png","sizes":"192x192","type":"image/png","purpose":"any maskable"},
+    {"src":"icons/msm-icon-512.png","sizes":"512x512","type":"image/png","purpose":"any maskable"}
   ]
 }
