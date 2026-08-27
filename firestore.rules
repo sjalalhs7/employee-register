@@ -3,6 +3,15 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ================================================================
+    // MSM SECURITY GUARDS — PRODUCTION ACCESS MODEL
+    // authorizedUsers/{lowercase-email} is the source of truth.
+    // Supported roles in the existing web app:
+    //   parent / admin = full control
+    //   client         = restricted to clientproject (+ optional sector)
+    //   regional       = restricted to region / regionId
+    // ================================================================
+
     function signedIn() {
       return request.auth != null && request.auth.token.email != null;
     }
@@ -15,142 +24,170 @@ service cloud.firestore {
       return get(/databases/$(database)/documents/authorizedUsers/$(email()));
     }
 
-    function isAuthorized() {
+    function authorized() {
       return signedIn()
         && exists(/databases/$(database)/documents/authorizedUsers/$(email()));
     }
 
     function role() {
-      return isAuthorized() ? userDoc().data.get('role', '').lower() : '';
+      return authorized() ? userDoc().data.get('role', '').lower() : '';
     }
 
     function isParent() {
-      return isAuthorized() && (role() == 'parent' || role() == 'admin');
+      return authorized() && (role() == 'parent' || role() == 'admin');
+    }
+
+    function isClient() {
+      return authorized() && role() == 'client';
     }
 
     function isRegional() {
-      return isAuthorized() && role() == 'regional';
-    }
-
-    function myRegion() {
-      return isAuthorized() ? userDoc().data.get('region', '') : '';
-    }
-
-    function myRegionId() {
-      return isAuthorized() ? userDoc().data.get('regionId', '') : '';
-    }
-
-    function mySector() {
-      return isAuthorized() ? userDoc().data.get('sector', '') : '';
+      return authorized() && role() == 'regional';
     }
 
     function myClient() {
-      return isAuthorized() ? userDoc().data.get('clientproject', '') : '';
+      return authorized() ? userDoc().data.get('clientproject', '') : '';
     }
 
-    function regionalRecord(data) {
-      return isRegional() && (
-        data.get('region', '') == myRegion()
-        || data.get('regionId', '') == myRegionId()
-      );
+    function mySector() {
+      return authorized() ? userDoc().data.get('sector', '') : '';
     }
 
-    function sectorRecord(data) {
-      return isAuthorized()
-        && mySector() != ''
-        && data.get('sector', '') == mySector();
+    function myRegion() {
+      return authorized() ? userDoc().data.get('region', '') : '';
+    }
+
+    function myRegionId() {
+      return authorized() ? userDoc().data.get('regionId', '') : '';
     }
 
     function clientRecord(data) {
-      return isAuthorized()
+      return isClient()
         && myClient() != ''
-        && data.get('clientproject', '') == myClient();
+        && data.get('clientproject', '') == myClient()
+        && (mySector() == ''
+            || data.get('sector', '') == mySector()
+            || (data.get('sector', '') == '' && data.get('clientproject', '') == myClient()));
     }
 
+    function regionalRecord(data) {
+      return isRegional()
+        && ((myRegionId() != '' && data.get('regionId', '') == myRegionId())
+            || (myRegion() != '' && data.get('region', '') == myRegion()));
+    }
+
+    function scopedRecord(data) {
+      return clientRecord(data) || regionalRecord(data);
+    }
+
+    // ---------------------------------------------------------------
     // Authorized users
+    // ---------------------------------------------------------------
     match /authorizedUsers/{userEmail} {
       allow get: if isParent() || (signedIn() && email() == userEmail);
       allow list: if isParent();
       allow create, update, delete: if isParent();
     }
 
-    // Long Roll records
-    match /records/{recordId} {
-      allow get: if isParent() || regionalRecord(resource.data) || sectorRecord(resource.data) || clientRecord(resource.data);
-      allow list: if isParent() || regionalRecord(resource.data) || sectorRecord(resource.data) || clientRecord(resource.data);
+    // ---------------------------------------------------------------
+    // Company settings
+    // Existing app reads companySettings/main for every authorized user,
+    // while only Parent/Admin may change it.
+    // ---------------------------------------------------------------
+    match /companySettings/{settingsId} {
+      allow get: if authorized();
+      allow list: if isParent();
+      allow create, update, delete: if isParent();
+    }
 
-      allow create: if isParent()
-        || regionalRecord(request.resource.data)
-        || sectorRecord(request.resource.data)
-        || clientRecord(request.resource.data);
+    // ---------------------------------------------------------------
+    // Long Roll employee records
+    // Queries from client users must include their clientproject/sector
+    // constraint so Firestore can prove the whole query is permitted.
+    // ---------------------------------------------------------------
+    match /records/{recordId} {
+      allow get: if isParent() || scopedRecord(resource.data);
+      allow list: if isParent() || scopedRecord(resource.data);
+
+      allow create: if isParent() || scopedRecord(request.resource.data);
 
       allow update: if isParent()
-        || (regionalRecord(resource.data) && regionalRecord(request.resource.data))
-        || (sectorRecord(resource.data) && sectorRecord(request.resource.data))
-        || (clientRecord(resource.data) && clientRecord(request.resource.data));
+        || (scopedRecord(resource.data) && scopedRecord(request.resource.data));
 
-      allow delete: if isParent()
-        || regionalRecord(resource.data)
-        || sectorRecord(resource.data)
-        || clientRecord(resource.data);
+      allow delete: if isParent() || scopedRecord(resource.data);
     }
 
+    // ---------------------------------------------------------------
     // Recycle Bin
+    // ---------------------------------------------------------------
     match /recycleBin/{recordId} {
-      allow get: if isParent() || regionalRecord(resource.data) || sectorRecord(resource.data) || clientRecord(resource.data);
-      allow list: if isParent() || regionalRecord(resource.data) || sectorRecord(resource.data) || clientRecord(resource.data);
-      allow create: if isParent() || regionalRecord(request.resource.data) || sectorRecord(request.resource.data) || clientRecord(request.resource.data);
-      allow update: if isParent() || regionalRecord(resource.data) || sectorRecord(resource.data) || clientRecord(resource.data);
-      allow delete: if isParent() || regionalRecord(resource.data) || sectorRecord(resource.data) || clientRecord(resource.data);
+      allow get: if isParent() || scopedRecord(resource.data);
+      allow list: if isParent() || scopedRecord(resource.data);
+      allow create: if isParent() || scopedRecord(request.resource.data);
+      allow update: if isParent() || scopedRecord(resource.data);
+      allow delete: if isParent() || scopedRecord(resource.data);
     }
 
+    // ---------------------------------------------------------------
     // Regions
+    // ---------------------------------------------------------------
     match /regionCatalog/{regionId} {
       allow get: if isParent()
-        || (isRegional() && (regionId == myRegionId() || resource.data.get('name', '') == myRegion()));
-      allow list: if isParent();
-      allow create: if isParent();
-      allow update: if isParent()
         || (isRegional()
-          && (regionId == myRegionId() || resource.data.get('name', '') == myRegion())
-          && request.resource.data.get('name', '') == myRegion());
-      allow delete: if isParent();
+            && (regionId == myRegionId()
+                || resource.data.get('name', '') == myRegion()));
+
+      allow list: if isParent();
+      allow create, update, delete: if isParent();
     }
 
+    // ---------------------------------------------------------------
     // Sectors
+    // ---------------------------------------------------------------
     match /sectorCatalog/{sectorId} {
       allow get: if isParent()
         || (isRegional() && resource.data.get('region', '') == myRegion());
-      allow list: if isParent()
-        || (isRegional() && resource.data.get('region', '') == myRegion());
+
+      allow list: if isParent();
 
       allow create: if isParent()
         || (isRegional() && request.resource.data.get('region', '') == myRegion());
 
       allow update: if isParent()
         || (isRegional()
-          && resource.data.get('region', '') == myRegion()
-          && request.resource.data.get('region', '') == myRegion());
+            && resource.data.get('region', '') == myRegion()
+            && request.resource.data.get('region', '') == myRegion());
 
       allow delete: if isParent();
     }
 
-    // Audit logs
+    // ---------------------------------------------------------------
+    // Audit trail
+    // Authorized users may append audit events; Parent/Admin can review.
+    // ---------------------------------------------------------------
     match /auditLogs/{logId} {
       allow get: if isParent()
-        || (isRegional() && (resource.data.get('regionId', '') == myRegionId() || resource.data.get('userEmail', '') == email()));
+        || (isRegional()
+            && (resource.data.get('regionId', '') == myRegionId()
+                || resource.data.get('userEmail', '') == email()))
+        || (isClient() && resource.data.get('userEmail', '') == email());
+
       allow list: if isParent();
-      allow create: if isAuthorized();
+      allow create: if authorized();
       allow update, delete: if false;
     }
 
-    // Transfer history
+    // ---------------------------------------------------------------
+    // Transfer history — Parent/Admin only
+    // ---------------------------------------------------------------
     match /transferHistory/{historyId} {
       allow get, list, create: if isParent();
       allow update, delete: if false;
     }
 
+    // ---------------------------------------------------------------
     // Default deny
+    // ---------------------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
     }
