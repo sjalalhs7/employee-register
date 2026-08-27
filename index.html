@@ -4150,5 +4150,464 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
+
+<style id="msmProfessionalFinalCSS">
+:root{
+  --msm-bg:#020817;--msm-panel:#07152f;--msm-panel2:#0b1e43;
+  --msm-blue:#1687ff;--msm-red:#e21f3f;--msm-gold:#ffd34e;
+  --msm-green:#18d88a;--msm-purple:#8a43ff;--msm-orange:#ff8a00;
+  --msm-text:#f7fbff;--msm-muted:#a9bddb;
+}
+#appRoot>.cover{display:none!important}
+#msmSectorManager,#msmRegionPanel{display:none!important}
+.msm-final-dashboard,.msm-final-company-head,.msm-final-topnav{display:none!important}
+
+#msmProfessionalHome{
+  display:block;width:100%;box-sizing:border-box;color:var(--msm-text);
+  background:
+    radial-gradient(circle at 15% 8%,rgba(0,118,255,.25),transparent 28%),
+    radial-gradient(circle at 86% 14%,rgba(226,31,63,.20),transparent 26%),
+    linear-gradient(135deg,#020817 0%,#061b42 48%,#210722 100%);
+  border:1px solid rgba(95,150,255,.65);border-radius:20px;overflow:hidden;
+  box-shadow:0 20px 70px rgba(0,0,0,.5),inset 0 0 80px rgba(0,0,0,.2);
+}
+.msm-util{
+  display:flex;justify-content:space-between;gap:12px;align-items:center;
+  padding:7px 18px;background:#031022;border-bottom:1px solid rgba(255,255,255,.08);
+  font-size:11px;color:#dbe9ff
+}
+.msm-util .online{color:#72f5b4}.msm-util .online:before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#3df39d;box-shadow:0 0 10px #3df39d;margin-right:6px}
+.msm-brand{
+  display:grid;grid-template-columns:100px 1fr auto;gap:18px;align-items:center;
+  padding:16px 22px 12px;border-bottom:1px solid rgba(94,145,255,.35);
+}
+.msm-brand img{width:86px;height:86px;object-fit:contain;background:#fff;border-radius:14px;padding:5px;box-shadow:0 0 25px rgba(0,135,255,.28)}
+.msm-company{font-weight:900;font-size:clamp(24px,4vw,42px);letter-spacing:1px;text-transform:uppercase;text-shadow:0 3px 12px rgba(0,0,0,.55)}
+.msm-tag{font-size:12px;letter-spacing:3px;color:#f5d777;margin-top:2px}
+.msm-contact{font-size:11px;line-height:1.75;color:#d6e6ff;text-align:right}
+.msm-nav{
+  display:flex;gap:8px;padding:9px 16px;overflow-x:auto;white-space:nowrap;
+  background:rgba(2,10,28,.86);scrollbar-width:none
+}
+.msm-nav::-webkit-scrollbar{display:none}
+.msm-nav button,.msm-quick button,.msm-hero button,.msm-region button,.msm-modal button{
+  border:1px solid rgba(94,151,255,.65);color:#fff;background:linear-gradient(180deg,#153a78,#071936);
+  border-radius:10px;padding:9px 13px;font-weight:800;font-size:11px;cursor:pointer;
+  min-height:40px;touch-action:manipulation
+}
+.msm-nav button:hover,.msm-quick button:hover,.msm-region button:hover{filter:brightness(1.18);transform:translateY(-1px)}
+.msm-nav .danger{border-color:rgba(255,90,110,.75)}
+.msm-main{padding:16px}
+.msm-hero{
+  min-height:235px;border-radius:22px;border:1px solid rgba(255,255,255,.2);
+  background:
+    linear-gradient(90deg,rgba(1,10,28,.94) 0%,rgba(3,18,49,.72) 42%,rgba(12,25,62,.34) 100%),
+    radial-gradient(circle at 75% 50%,rgba(30,140,255,.36),transparent 30%),
+    linear-gradient(135deg,#08214d,#112f62 45%,#4b0e31);
+  position:relative;overflow:hidden;display:flex;align-items:center;padding:28px 34px;
+  box-shadow:0 12px 35px rgba(0,0,0,.3)
+}
+.msm-hero:after{
+  content:"";position:absolute;right:-60px;top:-80px;width:430px;height:430px;border-radius:50%;
+  border:70px solid rgba(0,144,255,.09);box-shadow:0 0 0 30px rgba(226,31,63,.07),0 0 0 80px rgba(255,211,78,.035)
+}
+.msm-hero-content{position:relative;z-index:2;max-width:760px}
+.msm-kicker{font-weight:900;letter-spacing:3px;color:#f2d36b;font-size:12px}
+.msm-hero h1{font-size:clamp(30px,5vw,58px);line-height:1.02;margin:7px 0;color:#fff;text-transform:uppercase}
+.msm-hero h1 span{color:var(--msm-gold)}
+.msm-hero p{margin:8px 0 16px;color:#d9e8ff;max-width:700px;font-size:14px}
+.msm-live-badge{display:inline-flex;gap:8px;align-items:center;border:1px solid #e4c75c;border-radius:999px;padding:8px 14px;background:rgba(0,0,0,.25);font-size:11px;font-weight:900}
+.msm-live-badge i{width:8px;height:8px;border-radius:50%;background:#3df39d;box-shadow:0 0 10px #3df39d}
+.msm-stats{display:grid;grid-template-columns:repeat(5,1fr);gap:16px;margin:18px 0}
+.msm-diamond{
+  min-height:130px;position:relative;display:flex;align-items:center;justify-content:center;text-align:center;
+  background:linear-gradient(145deg,#0b2e69,#07152d);border:1px solid rgba(90,160,255,.8);
+  clip-path:polygon(50% 0,92% 23%,100% 50%,92% 77%,50% 100%,8% 77%,0 50%,8% 23%);
+  filter:drop-shadow(0 10px 18px rgba(0,0,0,.35));padding:14px
+}
+.msm-diamond:before{content:"";position:absolute;inset:12px;border:1px solid rgba(255,255,255,.16);clip-path:inherit}
+.msm-diamond .inner{position:relative;z-index:2}
+.msm-diamond .icon{font-size:28px}.msm-diamond .label{font-size:10px;font-weight:900;letter-spacing:1px}.msm-diamond .value{font-size:26px;font-weight:950;margin-top:3px}.msm-diamond .sub{font-size:9px;color:#b7c9e4}
+.msm-diamond:nth-child(2){background:linear-gradient(145deg,#0c6d59,#06362e);border-color:#36e7a6}
+.msm-diamond:nth-child(3){background:linear-gradient(145deg,#5a1bb2,#241052);border-color:#b887ff}
+.msm-diamond:nth-child(4){background:linear-gradient(145deg,#b75c08,#572505);border-color:#ffc05e}
+.msm-diamond:nth-child(5){background:linear-gradient(145deg,#9e1233,#430919);border-color:#ff6c86}
+.msm-access{text-align:center;margin:0 0 18px}
+.msm-access span{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border:1px solid rgba(110,185,255,.55);border-radius:999px;background:rgba(3,18,44,.8);font-size:11px;font-weight:800}
+.msm-access i{width:8px;height:8px;border-radius:50%;background:#39e999;box-shadow:0 0 12px #39e999}
+.msm-section{
+  border:1px solid rgba(96,151,255,.55);border-radius:18px;background:rgba(4,17,43,.78);
+  padding:16px;margin-top:16px
+}
+.msm-section-head{display:flex;justify-content:space-between;align-items:end;gap:10px;margin-bottom:12px}
+.msm-section h2{margin:0;font-size:22px;letter-spacing:1px}.msm-section small{color:#a9bddb}
+.msm-region-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.msm-region{
+  overflow:hidden;border-radius:16px;border:1px solid rgba(104,157,255,.65);
+  background:linear-gradient(160deg,rgba(10,39,86,.95),rgba(36,8,54,.95));padding:13px;text-align:center;
+  transition:.2s
+}
+.msm-region:nth-child(2){background:linear-gradient(160deg,#0c355d,#123e42)}
+.msm-region:nth-child(3){background:linear-gradient(160deg,#165c4e,#113936)}
+.msm-region:nth-child(4){background:linear-gradient(160deg,#5e3008,#3b1c0a)}
+.msm-region:nth-child(5){background:linear-gradient(160deg,#30216c,#1c123f)}
+.msm-region:nth-child(6){background:linear-gradient(160deg,#5c1234,#260c22)}
+.msm-region .art{height:108px;border-radius:12px;background:radial-gradient(circle at 50% 45%,rgba(80,170,255,.28),transparent 50%),linear-gradient(145deg,#153f78,#06152e);display:flex;align-items:center;justify-content:center;font-size:52px;margin-bottom:10px}
+.msm-region .name{font-size:14px;font-weight:950;letter-spacing:.8px}.msm-region .count{font-size:10px;color:#c4d4ea;margin:4px 0 9px}.msm-region button{width:100%;background:linear-gradient(180deg,#1467db,#0a2c69)}
+.msm-quick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:14px;padding:10px 12px;border-radius:15px;background:linear-gradient(90deg,#27091c,#071e47);border:1px solid rgba(255,73,99,.38)}
+.msm-quick strong{color:#fff;font-size:12px;margin-right:auto}.msm-quick button{min-height:36px;padding:7px 12px}
+.msm-lower{display:grid;grid-template-columns:1.1fr 1.1fr 1fr;gap:14px;margin-top:16px}
+.msm-card{border:1px solid rgba(96,151,255,.55);border-radius:17px;padding:16px;background:rgba(5,18,43,.86);min-height:190px}
+.msm-card h3{margin:0 0 10px;font-size:16px}.msm-card ul{padding-left:19px;margin:8px 0;line-height:1.8;color:#c7d8ef;font-size:12px}.msm-card p{font-size:12px;color:#c7d8ef;line-height:1.65}
+.msm-bars{display:flex;align-items:end;gap:12px;height:115px;padding-top:8px}.msm-bar{flex:1;text-align:center;font-size:10px;color:#cbdcf2}.msm-bar i{display:block;margin:auto;width:72%;height:var(--h);background:linear-gradient(180deg,#1b94ff,#0c3e9d);border-radius:8px 8px 2px 2px;box-shadow:0 0 18px rgba(20,135,255,.25)}
+.msm-activity{display:grid;gap:8px}.msm-activity div{padding:9px;border-radius:10px;background:rgba(17,45,89,.55);font-size:11px}.msm-check{color:#42efa2;font-weight:900;margin-right:7px}
+.msm-footer{display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap;padding:18px 20px;background:#020817;border-top:1px solid rgba(93,146,255,.35);font-size:11px;color:#a9bddb}
+.msm-footer strong{color:#ffd34e;font-size:14px}
+.msm-modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(5px);z-index:100000;display:none;align-items:center;justify-content:center;padding:14px}
+.msm-modal-backdrop.open{display:flex}
+.msm-modal{width:min(720px,100%);max-height:90vh;overflow:auto;border:1px solid rgba(110,168,255,.7);border-radius:18px;background:linear-gradient(145deg,#061a3b,#250a2e);box-shadow:0 30px 90px rgba(0,0,0,.65);padding:18px}
+.msm-modal h3{margin:0 0 4px;font-size:21px}.msm-modal .muted{color:#aec0dc;font-size:12px;margin-bottom:14px}
+.msm-modal-grid{display:grid;grid-template-columns:1fr auto;gap:9px}.msm-modal input,.msm-modal select{width:100%;box-sizing:border-box;min-height:44px;border-radius:10px;border:1px solid rgba(103,158,255,.55);background:#06162f;color:#fff;padding:10px 12px;font-size:14px}
+.msm-modal-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;flex-wrap:wrap}
+.msm-sector-list{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:12px}.msm-sector-item{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:10px;border-radius:11px;background:rgba(7,30,65,.9);border:1px solid rgba(100,154,255,.4);font-size:12px}
+.msm-sector-item button{min-height:34px;padding:6px 9px}
+.msm-manager-list{display:grid;gap:9px;margin-top:12px}.msm-manager-row{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;align-items:center;padding:9px;border-radius:12px;background:rgba(5,26,55,.82);border:1px solid rgba(100,154,255,.35)}
+.msm-toast{position:fixed;right:15px;bottom:15px;z-index:100001;display:none;max-width:min(430px,calc(100vw - 30px));padding:12px 15px;border-radius:12px;background:#071a38;border:1px solid #5d9cff;color:#fff;box-shadow:0 12px 40px rgba(0,0,0,.45);font-size:12px;font-weight:800}
+.msm-toast.show{display:block}
+@media(max-width:1000px){.msm-stats{grid-template-columns:repeat(3,1fr)}.msm-region-grid{grid-template-columns:repeat(3,1fr)}.msm-lower{grid-template-columns:1fr 1fr}.msm-card:last-child{grid-column:1/-1}}
+@media(max-width:680px){
+  .msm-util{font-size:9px;padding:6px 10px}.msm-brand{grid-template-columns:58px 1fr;gap:10px;padding:11px}.msm-brand img{width:54px;height:54px}.msm-company{font-size:20px}.msm-tag{font-size:8px;letter-spacing:1.5px}.msm-contact{grid-column:1/-1;text-align:left;font-size:9px}
+  .msm-main{padding:8px}.msm-hero{min-height:250px;padding:22px 18px;border-radius:16px}.msm-hero h1{font-size:30px}.msm-hero p{font-size:12px}
+  .msm-stats{grid-template-columns:repeat(2,1fr);gap:8px}.msm-diamond{min-height:105px}.msm-diamond .value{font-size:22px}
+  .msm-region-grid{grid-template-columns:repeat(2,1fr);gap:8px}.msm-region{padding:8px}.msm-region .art{height:80px;font-size:36px}.msm-region .name{font-size:11px}.msm-region button{font-size:9px;padding:7px}
+  .msm-section{padding:10px;border-radius:14px}.msm-section h2{font-size:17px}.msm-lower{grid-template-columns:1fr}.msm-card:last-child{grid-column:auto}
+  .msm-sector-list{grid-template-columns:1fr}.msm-manager-row{grid-template-columns:1fr}
+  .msm-quick{gap:6px}.msm-quick strong{width:100%;margin:0 0 2px}.msm-quick button{flex:1 1 30%;font-size:9px}
+}
+</style>
+
+<script id="msmProfessionalFinalJS">
+(function(){
+  'use strict';
+  const DEFAULT_REGIONS = ['North Region','South Region','East Region','West Region'];
+  const REGION_COL = (typeof MSM_REGION_COLLECTION !== 'undefined') ? MSM_REGION_COLLECTION : 'regionCatalog';
+  const SECTOR_COL = (typeof MSM_SECTOR_COLLECTION !== 'undefined') ? MSM_SECTOR_COLLECTION : 'sectorCatalog';
+  const RECYCLE_COL = (typeof MSM_RECYCLE_COLLECTION !== 'undefined') ? MSM_RECYCLE_COLLECTION : 'recycleBin';
+  let dashRegions = [];
+  let dashSectors = [];
+  let dashLoaded = false;
+
+  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+  function norm(v){return String(v||'').trim().replace(/\s+/g,' ');}
+  function slug(v){return norm(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'item';}
+  function parent(){return typeof isParent==='function' ? isParent() : currentAccess?.role==='parent';}
+  function toast(msg){const e=document.getElementById('msmDashToast');if(!e)return;e.textContent=msg;e.classList.add('show');clearTimeout(window.__msmToastT);window.__msmToastT=setTimeout(()=>e.classList.remove('show'),3200);}
+  window.msmCloseDashModal=function(){document.getElementById('msmDashModal')?.classList.remove('open');};
+  function openModal(html){const b=document.getElementById('msmDashModalBody');if(!b)return;b.innerHTML=html;document.getElementById('msmDashModal').classList.add('open');}
+  function action(a){
+    try{
+      if(a==='signout') return typeof doSignOut==='function' ? doSignOut() : auth?.signOut();
+      if(a==='full') return typeof msmOpenSector==='function' ? msmOpenSector('full') : typeof switchTab==='function' ? switchTab('register') : null;
+      if(a==='regions'){document.getElementById('msmDashRegions')?.scrollIntoView({behavior:'smooth'});return;}
+      if(a==='instructions') return typeof switchTab==='function' ? switchTab('instructions') : null;
+      if(a==='admin') return typeof switchTab==='function' ? switchTab('admin') : null;
+      if(a==='audit') return typeof switchTab==='function' ? switchTab('audit') : null;
+      if(a==='recycle') return typeof msmOpenRecycle==='function' ? msmOpenRecycle() : (typeof switchTab==='function'?switchTab('recycle'):toast('Recycle Bin is unavailable in this build.'));
+      if(a==='import') return typeof switchTab==='function' ? switchTab('form') : null;
+      if(a==='about'||a==='services'||a==='contact') return toast('This section is available through the existing company information below the dashboard.');
+      if(a==='install') return installPWA();
+      if(a==='add-region') return parent()?showAddRegion():toast('Parent access is required to add a region.');
+      if(a==='add-sector') return parent()?showAddSector():toast('Parent access is required to add a sector.');
+    }catch(e){console.error(e);toast('Action failed: '+(e.message||e));}
+  }
+  document.addEventListener('click',e=>{const b=e.target.closest('[data-dash]');if(b){e.preventDefault();action(b.dataset.dash);}});
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')window.msmCloseDashModal();});
+
+  async function loadCatalog(){
+    if(!db) return;
+    const regionMap=new Map();
+    DEFAULT_REGIONS.forEach(n=>regionMap.set(n.toLowerCase(),{name:n,sectors:[]}));
+    try{
+      const snap=await db.collection(REGION_COL).get();
+      snap.forEach(d=>{
+        const x=d.data()||{}, name=norm(x.name); if(!name)return;
+        const key=name.toLowerCase(), old=regionMap.get(key)||{name,sectors:[]};
+        old.name=name;
+        if(Array.isArray(x.sectors)) old.sectors=[...new Set([...old.sectors,...x.sectors.map(norm).filter(Boolean)])];
+        regionMap.set(key,old);
+      });
+    }catch(e){console.warn('Region read failed',e);}
+    try{
+      let snap;
+      if(parent()) snap=await db.collection(SECTOR_COL).get();
+      else if(currentAccess?.role==='regional' && currentAccess?.region) snap=await db.collection(SECTOR_COL).where('region','==',currentAccess.region).get();
+      else snap=null;
+      if(snap) snap.forEach(d=>{
+        const x=d.data()||{}, name=norm(x.name); if(!name)return;
+        const region=norm(x.region);
+        dashSectors.push({name,region});
+        if(region){
+          const key=region.toLowerCase(), r=regionMap.get(key)||{name:region,sectors:[]};
+          if(!r.sectors.some(s=>s.toLowerCase()===name.toLowerCase()))r.sectors.push(name);
+          regionMap.set(key,r);
+        }
+      });
+    }catch(e){console.warn('Sector read failed',e);}
+    dashRegions=[...regionMap.values()].sort((a,b)=>a.name.localeCompare(b.name));
+    dashSectors=[...new Map(dashSectors.map(x=>[x.name.toLowerCase(),x])).values()];
+    dashLoaded=true;
+    renderDashboard();
+  }
+
+  async function saveRegion(name){
+    if(!parent())throw new Error('Parent access is required.');
+    name=norm(name);if(!name)throw new Error('Enter a region name.');
+    if(dashRegions.some(r=>r.name.toLowerCase()===name.toLowerCase()))throw new Error('That region already exists.');
+    await db.collection(REGION_COL).doc(slug(name)).set({name,sectors:[],createdBy:(currentUser?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    await loadCatalog();toast(name+' added successfully.');
+  }
+
+  async function saveSector(name,region){
+    if(!parent())throw new Error('Parent access is required.');
+    name=norm(name);region=norm(region);
+    if(!name)throw new Error('Enter a sector name.');
+    if(dashSectors.some(s=>s.name.toLowerCase()===name.toLowerCase()))throw new Error('That sector already exists.');
+    await db.collection(SECTOR_COL).doc(slug(name)).set({name,region,createdBy:(currentUser?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp(),updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+    if(region){
+      const r=dashRegions.find(x=>x.name.toLowerCase()===region.toLowerCase());
+      const sectors=r?[...new Set([...(r.sectors||[]),name])]:[name];
+      await db.collection(REGION_COL).doc(slug(region)).set({name:region,sectors,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }
+    await loadCatalog();toast(name+' Sector added'+(region?' to '+region:'')+'.');
+  }
+
+  async function moveSector(name,targetRegion){
+    if(!parent())throw new Error('Parent access is required.');
+    name=norm(name);targetRegion=norm(targetRegion);if(!name||!targetRegion)throw new Error('Select both sector and target region.');
+    const existing=dashSectors.find(s=>s.name.toLowerCase()===name.toLowerCase());
+    const oldRegion=norm(existing?.region);
+    await db.collection(SECTOR_COL).doc(slug(name)).set({name,region:targetRegion,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    if(oldRegion && oldRegion.toLowerCase()!==targetRegion.toLowerCase()){
+      const old=dashRegions.find(r=>r.name.toLowerCase()===oldRegion.toLowerCase());
+      if(old)await db.collection(REGION_COL).doc(slug(old.name)).set({sectors:(old.sectors||[]).filter(s=>s.toLowerCase()!==name.toLowerCase()),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    }
+    const target=dashRegions.find(r=>r.name.toLowerCase()===targetRegion.toLowerCase());
+    await db.collection(REGION_COL).doc(slug(targetRegion)).set({name:targetRegion,sectors:[...new Set([...(target?.sectors||[]),name])],updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    await loadCatalog();toast(name+' moved to '+targetRegion+'.');
+  }
+
+  function showAddRegion(){
+    openModal(`<h3>＋ Add Region</h3><div class="muted">Create a new region. Existing records are untouched.</div>
+      <div class="msm-modal-grid"><input id="msmModalRegionName" placeholder="e.g. Central Region" autocomplete="off"><button type="button" id="msmSaveRegion">Add Region</button></div>`);
+    document.getElementById('msmModalRegionName')?.focus();
+    document.getElementById('msmSaveRegion')?.addEventListener('click',async()=>{try{await saveRegion(document.getElementById('msmModalRegionName').value);window.msmCloseDashModal();}catch(e){toast(e.message||e);}});
+  }
+
+  function showAddSector(){
+    const opts=dashRegions.map(r=>`<option value="${esc(r.name)}">${esc(r.name)}</option>`).join('');
+    openModal(`<h3>＋ Add Sector</h3><div class="muted">Create a sector and optionally assign it immediately to a region.</div>
+      <div class="msm-modal-grid"><input id="msmModalSectorName" placeholder="e.g. Islamabad Sector" autocomplete="off"><select id="msmModalSectorRegion"><option value="">No Region / Unassigned</option>${opts}</select></div>
+      <div class="msm-modal-actions"><button type="button" id="msmSaveSector">Add Sector</button></div>`);
+    document.getElementById('msmModalSectorName')?.focus();
+    document.getElementById('msmSaveSector')?.addEventListener('click',async()=>{try{await saveSector(document.getElementById('msmModalSectorName').value,document.getElementById('msmModalSectorRegion').value);window.msmCloseDashModal();}catch(e){toast(e.message||e);}});
+  }
+
+  function showRegion(region){
+    const r=dashRegions.find(x=>x.name.toLowerCase()===region.toLowerCase())||{name:region,sectors:[]};
+    const sectors=[...(r.sectors||[])].sort((a,b)=>a.localeCompare(b));
+    openModal(`<h3>🧭 ${esc(r.name)}</h3><div class="muted">${sectors.length} sector${sectors.length===1?'':'s'} assigned. Tap a sector to open its database view.</div>
+      <div class="msm-sector-list">${sectors.length?sectors.map(s=>`<div class="msm-sector-item"><span>${esc(s)}</span><button type="button" data-open-sector="${esc(s)}">Open</button></div>`).join(''):'<div class="muted">No sectors assigned yet.</div>'}</div>
+      ${parent()?`<div class="msm-modal-actions"><button type="button" id="msmAddHere">＋ Add Sector Here</button></div>`:''}`);
+    document.querySelectorAll('[data-open-sector]').forEach(b=>b.addEventListener('click',()=>{const s=b.dataset.openSector;window.msmCloseDashModal();if(typeof msmOpenSector==='function')msmOpenSector(typeof msmSectorKeyFromName==='function'?msmSectorKeyFromName(s):slug(s));}));
+    document.getElementById('msmAddHere')?.addEventListener('click',()=>{
+      const opts=dashRegions.map(x=>`<option value="${esc(x.name)}" ${x.name===r.name?'selected':''}>${esc(x.name)}</option>`).join('');
+      openModal(`<h3>＋ Add Sector to ${esc(r.name)}</h3><div class="muted">The new sector will be stored in Firestore and assigned to this region.</div><div class="msm-modal-grid"><input id="msmModalSectorName" placeholder="Sector name"><select id="msmModalSectorRegion">${opts}</select></div><div class="msm-modal-actions"><button type="button" id="msmSaveSector">Add Sector</button></div>`);
+      document.getElementById('msmSaveSector')?.addEventListener('click',async()=>{try{await saveSector(document.getElementById('msmModalSectorName').value,document.getElementById('msmModalSectorRegion').value);window.msmCloseDashModal();}catch(e){toast(e.message||e);}});
+    });
+  }
+
+  async function showManage(){
+    if(!parent())return toast('Parent access is required.');
+    const sectorOpts=dashSectors.map(s=>`<option value="${esc(s.name)}">${esc(s.name)}</option>`).join('');
+    openModal(`<h3>⚙ Region / Sector Manager</h3><div class="muted">Simple touch-friendly management. Add regions, add sectors and move sectors without deleting employee records.</div>
+      <div class="msm-modal-grid"><input id="msmMgrRegion" placeholder="New Region"><button id="msmMgrAddRegion">＋ Add Region</button></div>
+      <div class="msm-modal-grid" style="margin-top:10px"><input id="msmMgrSector" placeholder="New Sector"><select id="msmMgrSectorRegion"><option value="">Unassigned</option>${dashRegions.map(r=>`<option value="${esc(r.name)}">${esc(r.name)}</option>`).join('')}</select></div>
+      <div class="msm-modal-actions"><button id="msmMgrAddSector">＋ Add Sector</button></div>
+      <div class="msm-manager-list">${dashRegions.map(r=>`<div class="msm-manager-row"><strong>${esc(r.name)}</strong><select data-move-select="${esc(r.name)}"><option value="">Select sector to move</option>${sectorOpts}</select><button data-move="${esc(r.name)}">Assign / Move</button></div>`).join('')}</div>`);
+    document.getElementById('msmMgrAddRegion')?.addEventListener('click',async()=>{try{await saveRegion(document.getElementById('msmMgrRegion').value);showManage();}catch(e){toast(e.message||e);}});
+    document.getElementById('msmMgrAddSector')?.addEventListener('click',async()=>{try{await saveSector(document.getElementById('msmMgrSector').value,document.getElementById('msmMgrSectorRegion').value);showManage();}catch(e){toast(e.message||e);}});
+    document.querySelectorAll('[data-move]').forEach(b=>b.addEventListener('click',async()=>{try{const region=b.dataset.move;const s=document.querySelector(`[data-move-select="${CSS.escape(region)}"]`)?.value;if(!s)return toast('Select a sector first.');await moveSector(s,region);showManage();}catch(e){toast(e.message||e);}}));
+  }
+
+  function renderDashboard(){
+    const home=document.getElementById('msmProfessionalHome');if(!home||!currentAccess)return;
+    document.getElementById('msmDashAccess').textContent=parent()?'PARENT MASTER ACCESS':'AUTHORIZED '+String(currentAccess.role||'SECTOR').toUpperCase()+' ACCESS';
+    document.getElementById('msmDashRole').textContent=parent()?'Parent Master Access — Full Control Over All Regions, Sectors & Records':`Authorized ${String(currentAccess.role||'Sector')} Access`;
+    document.getElementById('msmStatRecords').textContent=typeof records!=='undefined'?Number(records.length||0).toLocaleString():'0';
+    document.getElementById('msmStatRegions').textContent=dashRegions.length;
+    document.getElementById('msmStatSectors').textContent=dashSectors.length;
+    const cards=document.getElementById('msmRegionCards');
+    cards.innerHTML=dashRegions.map((r,i)=>{
+      const icons=['🏔️','🕌','🏛️','🏰','🗄️'];const count=(r.sectors||[]).length;
+      return `<div class="msm-region" data-region-open="${esc(r.name)}"><div class="art">${icons[i%icons.length]}</div><div class="name">${esc(r.name).toUpperCase()}</div><div class="count">${count} Sector${count===1?'':'s'} Assigned</div><button type="button">Open Region</button></div>`;
+    }).join('')+`<div class="msm-region"><div class="art">🗃️</div><div class="name">FULL DATABASE</div><div class="count">All Regions &amp; Sectors</div><button type="button" data-dash="full">Open Database</button></div>`;
+    cards.querySelectorAll('[data-region-open]').forEach(el=>el.addEventListener('click',()=>showRegion(el.dataset.regionOpen)));
+    document.getElementById('msmStatUsers').textContent=parent()?'—':'1';
+    document.getElementById('msmStatRecycle').textContent='0';
+    document.getElementById('msmOverviewText').textContent=`${dashSectors.length} configured sectors across ${dashRegions.length} regions. Counts above are live values from the current Firebase session.`;
+    document.getElementById('msmActivityList').innerHTML=`<div>🟢 <b>System ready</b><br><span style="color:#9fb5d3">Region/Sector controls are touch-safe.</span></div>
+      <div>☁️ <b>Firebase connected</b><br><span style="color:#9fb5d3">Cloud data remains in Firestore.</span></div>
+      <div>🔐 <b>Role-based access active</b><br><span style="color:#9fb5d3">${esc(currentUser?.email||'Authorized user')}</span></div>`;
+    const manage=document.querySelector('[data-dash="add-region"]'); if(manage)manage.style.display=parent()?'':'none';
+    const addSector=document.querySelector('[data-dash="add-sector"]');if(addSector)addSector.style.display=parent()?'':'none';
+  }
+
+  // Expose safe replacements for the old problematic manager functions.
+  window.msmAddRegion=async function(){return showAddRegion();};
+  window.msmAddSector=async function(){return showAddSector();};
+  window.msmAssignSectorToRegion=async function(encodedRegion){
+    const region=decodeURIComponent(encodedRegion||'');return showRegion(region);
+  };
+  window.msmRenderSectorManager=function(){};
+  window.msmLoadRegionCatalog=loadCatalog;
+  window.msmLoadSectorCatalog=loadCatalog;
+
+  function tick(){const e=document.getElementById('msmDashClock');if(e)e.textContent=new Date().toLocaleString('en-PK',{dateStyle:'medium',timeStyle:'medium'});}
+  setInterval(tick,1000);tick();
+
+  let deferredPrompt=null;
+  window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;});
+  async function installPWA(){
+    if(deferredPrompt){deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;return;}
+    toast('For Android: browser menu → Add to Home screen / Install app. The site must be served over HTTPS.');
+  }
+  window.msmProfessionalRefresh=async function(){try{await loadCatalog();}catch(e){console.warn(e);}};
+  function boot(){
+    const portal=document.getElementById('sectorPortal');if(!portal)return;
+    if(!document.getElementById('msmProfessionalHome'))portal.insertAdjacentHTML('afterbegin',`
+<div id="msmProfessionalHome">
+  <div class="msm-util">
+    <span>🇵🇰 Serving Pakistan with Dedication &amp; Professionalism</span>
+    <span><span class="online">System Online</span> · <span id="msmDashClock">--</span></span>
+  </div>
+  <div class="msm-brand">
+    <img id="msmDashLogo" src="msm-security-guards-logo.png" alt="MSM Security Guards">
+    <div>
+      <div class="msm-company">MSM SECURITY GUARDS PVT LTD</div>
+      <div class="msm-tag">PROFESSIONAL · RELIABLE · SECURE</div>
+    </div>
+    <div class="msm-contact">📍 House No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore<br>☎ 042-37169344 &nbsp; 📱 0346-7780660 &nbsp; ✉ msmsecurity11@gmail.com</div>
+  </div>
+  <div class="msm-nav">
+    <button data-dash="home">🏠 Home</button>
+    <button data-dash="regions">🧭 Regions / Sectors</button>
+    <button data-dash="full">▦ Full Database</button>
+    <button data-dash="about">❓ About</button>
+    <button data-dash="services">▤ Services</button>
+    <button data-dash="contact">✉ Contact</button>
+    <button data-dash="instructions">ⓘ Instructions</button>
+    <button data-dash="admin">⚙ Admin</button>
+    <button data-dash="audit">◉ Audit Logs</button>
+    <button data-dash="recycle">♻ Recycle Bin</button>
+    <button data-dash="install">⬇ Install App</button>
+    <button data-dash="signout" class="danger">↪ Sign Out</button>
+  </div>
+  <div class="msm-main">
+    <section class="msm-hero">
+      <div class="msm-hero-content">
+        <div class="msm-kicker">“YOUR SAFETY... OUR PRIORITY”</div>
+        <h1>WELCOME TO<br><span>MSM LONGROLL DATABASE</span></h1>
+        <p>Professional employee enrollment, long-roll management and secure role-based access for Parent, Regional and Sector users.</p>
+        <div class="msm-live-badge"><i></i><span id="msmDashAccess">Authorized Master Access</span></div>
+      </div>
+    </section>
+
+    <div class="msm-stats">
+      <div class="msm-diamond"><div class="inner"><div class="icon">👥</div><div class="label">ALL RECORDS</div><div class="value" id="msmStatRecords">0</div><div class="sub">Total Guards</div></div></div>
+      <div class="msm-diamond"><div class="inner"><div class="icon">🏢</div><div class="label">TOTAL REGIONS</div><div class="value" id="msmStatRegions">4</div><div class="sub">Active Regions</div></div></div>
+      <div class="msm-diamond"><div class="inner"><div class="icon">🛡️</div><div class="label">TOTAL SECTORS</div><div class="value" id="msmStatSectors">0</div><div class="sub">All Sectors</div></div></div>
+      <div class="msm-diamond"><div class="inner"><div class="icon">🪪</div><div class="label">ACTIVE USERS</div><div class="value" id="msmStatUsers">—</div><div class="sub">Authorized Users</div></div></div>
+      <div class="msm-diamond"><div class="inner"><div class="icon">🗑️</div><div class="label">RECYCLE BIN</div><div class="value" id="msmStatRecycle">0</div><div class="sub">Deleted Records</div></div></div>
+    </div>
+
+    <div class="msm-access"><span><i></i><span id="msmDashRole">Parent Master Access — Full Control Over All Regions, Sectors &amp; Records</span></span></div>
+
+    <section class="msm-section" id="msmDashRegions">
+      <div class="msm-section-head"><div><h2>🧭 REGIONS &amp; SECTORS</h2><small>Select a Region to view and manage its Sectors</small></div></div>
+      <div class="msm-region-grid" id="msmRegionCards"></div>
+      <div class="msm-quick">
+        <strong>⚡ QUICK ACCESS</strong>
+        <button data-dash="full">▦ Full Database</button>
+        <button data-dash="add-region">＋ Add Region</button>
+        <button data-dash="add-sector">＋ Add Sector</button>
+        <button data-dash="import">⇩ Import / Export</button>
+        <button data-dash="recycle">♻ Recycle Bin</button>
+        <button data-dash="audit">◉ Audit Logs</button>
+        <button data-dash="admin">👤 Manage Users</button>
+      </div>
+    </section>
+
+    <div class="msm-lower">
+      <div class="msm-card">
+        <h3>📊 Database Overview</h3>
+        <div class="msm-bars">
+          <div class="msm-bar"><i id="barNorth" style="--h:45px"></i>North</div>
+          <div class="msm-bar"><i id="barSouth" style="--h:35px"></i>South</div>
+          <div class="msm-bar"><i id="barEast" style="--h:55px"></i>East</div>
+          <div class="msm-bar"><i id="barWest" style="--h:40px"></i>West</div>
+          <div class="msm-bar"><i id="barOther" style="--h:25px"></i>Other</div>
+        </div>
+        <p id="msmOverviewText">Live distribution will appear here from the database.</p>
+      </div>
+      <div class="msm-card">
+        <h3>◉ Latest Activities</h3>
+        <div class="msm-activity" id="msmActivityList">
+          <div>Loading live activity…</div>
+        </div>
+      </div>
+      <div class="msm-card">
+        <h3>🛡️ System Features</h3>
+        <ul>
+          <li><span class="msm-check">✓</span>Role-based Parent / Regional / Sector access</li>
+          <li><span class="msm-check">✓</span>Cloud Firestore long-roll database</li>
+          <li><span class="msm-check">✓</span>Fast search &amp; Excel import/export</li>
+          <li><span class="msm-check">✓</span>Recycle Bin &amp; Audit Trail</li>
+          <li><span class="msm-check">✓</span>Touch-safe mobile management</li>
+          <li><span class="msm-check">✓</span>Installable PWA app</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="msm-footer">
+    <span>© 2026 MSM Security Guards Pvt Ltd · All Rights Reserved</span>
+    <strong>MSM SECURITY GUARDS PVT LTD — LONGROLL DATABASE</strong>
+    <span>Designed By: Syed Jalal Hussain Shah</span>
+  </div>
+</div>
+
+<div class="msm-modal-backdrop" id="msmDashModal">
+  <div class="msm-modal" role="dialog" aria-modal="true">
+    <div id="msmDashModalBody"></div>
+    <div class="msm-modal-actions"><button type="button" onclick="msmCloseDashModal()">Close</button></div>
+  </div>
+</div>
+<div class="msm-toast" id="msmDashToast"></div>
+`);
+    // Fix any old broken logo data URIs from earlier builds.
+    document.querySelectorAll('img[src^="data:image/png;base64,/9j/"]').forEach(img=>img.src='msm-security-guards-logo.png');
+    document.getElementById('msmDashLogo')?.addEventListener('error',()=>{document.getElementById('msmDashLogo').style.display='none';});
+    renderDashboard();
+    if(db && currentAccess && !dashLoaded)loadCatalog().catch(e=>console.warn('MSM dashboard catalog',e));
+  }
+  const observer=new MutationObserver(()=>{if(currentAccess&&document.getElementById('sectorPortal'))boot();});
+  observer.observe(document.documentElement,{childList:true,subtree:true});
+  window.addEventListener('load',()=>setTimeout(boot,400));
+  setInterval(()=>{if(currentAccess&&document.getElementById('sectorPortal'))boot();},5000);
+})();
+</script>
+
+<script id="msmPWARegistration">
+if ('serviceWorker' in navigator) window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+</script>
 </body>
 </html>
