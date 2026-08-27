@@ -4067,5 +4067,88 @@ if ('serviceWorker' in navigator) {
   document.addEventListener('click',e=>{const b=e.target.closest('[data-assign-region]');if(b&&typeof window.msmAssignSectorToRegion==='function'){e.preventDefault();window.msmAssignSectorToRegion(b.dataset.assignRegion);}});
 })();
 </script>
+
+<!-- FINAL REAL-WEB HOMEPAGE PATCH: visual layout only; keeps existing auth/database/forms -->
+<style id="msmFinalRealWebPatch">
+#sectorPortal .msm-master-top,#sectorPortal .msm-darood-wrap,#sectorPortal .msm-master-datetime,#sectorPortal .msm-master-logo-wrap{display:none!important}
+#sectorPortal .msm-master-frame{max-width:1540px!important;width:100%!important;margin:0 auto!important;padding:10px 14px 34px!important;background:radial-gradient(circle at 50% 8%,rgba(22,92,185,.24),transparent 28%),linear-gradient(135deg,#020a1c 0%,#071b43 48%,#250526 100%)!important;color:#fff!important;min-height:100vh!important;border:1px solid rgba(72,137,255,.55)!important;border-radius:18px!important;box-shadow:0 0 35px rgba(0,70,255,.18),inset 0 0 80px rgba(0,0,0,.28)!important}
+#sectorPortal .msm-master-frame:before{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,transparent 0 44%,rgba(255,0,72,.12) 44.2% 44.6%,transparent 44.8% 100%),linear-gradient(145deg,transparent 0 72%,rgba(0,110,255,.13) 72.2% 72.7%,transparent 72.9%);z-index:0}
+#sectorPortal .msm-master-frame>*{position:relative;z-index:2}
+#msmTopMenu{margin:6px 0 8px!important;padding:8px!important;display:flex!important;gap:7px!important;justify-content:flex-start!important;overflow-x:auto!important;flex-wrap:nowrap!important;border:1px solid rgba(89,144,255,.45)!important;border-radius:14px!important;background:rgba(2,11,31,.78)!important;scrollbar-width:none}
+#msmTopMenu::-webkit-scrollbar{display:none}
+#msmTopMenu button{flex:0 0 auto!important;min-height:38px!important;border:1px solid rgba(88,142,255,.62)!important;border-radius:10px!important;background:linear-gradient(180deg,#12356e,#07162e)!important;color:#fff!important;font-size:10px!important;font-weight:900!important;padding:9px 13px!important;box-shadow:inset 0 0 10px rgba(50,110,255,.12),0 4px 12px rgba(0,0,0,.25)!important}
+#msmTopMenu button:first-child{background:linear-gradient(180deg,#e3263f,#761226)!important}
+#msmCompanyStrip{display:none!important}
+#msmFinalCompanyHead{display:grid!important;grid-template-columns:92px 1fr auto;align-items:center;gap:16px;padding:14px 18px!important;margin:0 0 8px!important;border:1px solid rgba(90,151,255,.58)!important;border-radius:16px!important;background:linear-gradient(105deg,rgba(8,34,85,.95),rgba(18,8,52,.94) 65%,rgba(85,7,42,.88))!important;box-shadow:0 10px 30px rgba(0,0,0,.32),inset 0 0 28px rgba(41,111,255,.14)!important}
+#msmFinalCompanyHead .brand-logo{width:82px!important;height:82px!important;object-fit:contain!important;background:#fff!important;border-radius:18px!important;padding:4px!important;border:2px solid #f0c84b!important;box-shadow:0 0 18px rgba(255,196,53,.35)!important}
+#msmFinalCompanyHead h1{margin:0!important;color:#fff!important;font-size:34px!important;line-height:1.05!important;font-weight:1000!important;letter-spacing:.5px!important;text-shadow:0 2px 12px rgba(0,0,0,.6)!important}
+#msmFinalCompanyHead .tag{margin-top:5px!important;color:#f2cf61!important;font-size:11px!important;font-weight:900!important;letter-spacing:3px!important}
+#msmFinalCompanyHead .contact{margin-top:8px!important;display:flex!important;gap:8px 18px!important;flex-wrap:wrap!important;color:#fff!important;font-size:11px!important;font-weight:700!important}
+#msmFinalCompanyHead .contact span{white-space:nowrap}
+#msmFinalDashboard{display:block!important;margin:8px 0 16px!important}
+#msmFinalDashboard .msm-final-hero{display:block!important}
+#msmFinalDashboard .msm-hero-card{position:relative!important;min-height:305px!important;border:1px solid rgba(87,151,255,.72)!important;border-radius:22px!important;overflow:hidden!important;background:radial-gradient(circle at 72% 42%,rgba(38,118,255,.5),transparent 30%),linear-gradient(110deg,#061a46 0%,#0a3171 48%,#06203e 100%)!important;box-shadow:0 15px 40px rgba(0,0,0,.4),0 0 25px rgba(0,86,255,.22)!important;padding:48px 46px!important}
+#msmFinalDashboard .msm-hero-card:before{content:"🇵🇰";position:absolute;right:7%;top:16%;font-size:130px;opacity:.13;filter:drop-shadow(0 0 25px #38a0ff)}
+#msmFinalDashboard .msm-hero-card:after{content:"";position:absolute;inset:auto -5% -38% 35%;height:70%;background:linear-gradient(145deg,transparent 0 48%,rgba(255,255,255,.14) 49% 50%,transparent 51%);transform:rotate(-8deg);pointer-events:none}
+#msmFinalDashboard .msm-hero-kicker{position:relative;z-index:2;text-align:center;color:#fff;font-size:22px;font-weight:1000;text-shadow:0 3px 12px #000;margin-bottom:70px}
+#msmFinalDashboard .msm-hero-title{position:relative;z-index:2;color:#fff;font-size:42px!important;line-height:1.02!important;font-weight:1000!important;text-shadow:0 3px 16px #000!important}
+#msmFinalDashboard .msm-hero-title span{color:#ffcf42!important;font-size:50px!important;text-shadow:0 3px 15px rgba(0,0,0,.9)!important}
+#msmFinalDashboard .msm-hero-sub{position:relative;z-index:2;margin-top:10px;color:#fff;font-size:17px!important;font-weight:1000!important;letter-spacing:1px}
+#msmFinalDashboard .msm-hero-badges{position:absolute!important;right:22px;bottom:16px;z-index:3;display:flex;gap:7px;flex-wrap:wrap;justify-content:flex-end}
+#msmFinalDashboard .msm-hero-badges span{border:1px solid rgba(255,255,255,.4);border-radius:999px;padding:6px 9px;background:rgba(0,0,0,.3);font-size:9px;font-weight:900}
+#msmFinalDashboard .msm-hero-side{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:16px!important;margin-top:16px!important}
+#msmFinalDashboard .msm-hero-side .msm-stat{display:none!important}
+#msmFinalDashboard .msm-stat-grid{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:16px!important;margin:16px 0!important}
+#msmFinalDashboard .msm-stat{min-height:145px!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;border:1px solid rgba(108,163,255,.8)!important;border-radius:18px!important;background:radial-gradient(circle at 50% 0,rgba(37,132,255,.3),transparent 55%),linear-gradient(145deg,#092457,#06132c)!important;box-shadow:0 0 24px rgba(0,90,255,.2),inset 0 0 18px rgba(255,255,255,.04)!important}
+#msmFinalDashboard .msm-stat:nth-child(2){background:radial-gradient(circle at 50% 0,rgba(0,220,150,.32),transparent 55%),linear-gradient(145deg,#073f45,#052b31)!important}
+#msmFinalDashboard .msm-stat:nth-child(3){background:radial-gradient(circle at 50% 0,rgba(164,65,255,.4),transparent 55%),linear-gradient(145deg,#32105b,#16052b)!important}
+#msmFinalDashboard .msm-stat:nth-child(4){background:radial-gradient(circle at 50% 0,rgba(255,157,25,.4),transparent 55%),linear-gradient(145deg,#5b2a05,#2c1202)!important}
+#msmFinalDashboard .msm-stat:nth-child(5){background:radial-gradient(circle at 50% 0,rgba(255,35,82,.4),transparent 55%),linear-gradient(145deg,#5c0828,#2b0618)!important}
+#msmFinalDashboard .msm-stat .icon{font-size:32px!important}.msm-stat .label{font-weight:1000!important;font-size:12px!important;letter-spacing:1px!important}.msm-stat .value{font-size:29px!important;font-weight:1000!important;margin-top:5px!important}.msm-stat .sub{font-size:9px!important;opacity:.8!important}
+#msmFinalDashboard .msm-final-access{margin:4px auto 18px!important;width:max-content;max-width:100%;padding:9px 22px!important;border:1px solid rgba(110,170,255,.65)!important;border-radius:999px!important;background:rgba(3,14,36,.8)!important;font-size:11px!important;font-weight:900!important;box-shadow:0 0 20px rgba(0,100,255,.12)!important}
+#msmFinalDashboard .msm-final-access .dot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#20e68c;box-shadow:0 0 10px #20e68c;margin-right:8px}
+#msmFinalDashboard .msm-final-regions{margin-top:12px!important;padding:18px!important;border:1px solid rgba(74,145,255,.7)!important;border-radius:20px!important;background:linear-gradient(145deg,rgba(4,25,67,.92),rgba(13,11,51,.92))!important}
+#msmFinalDashboard .msm-final-regions-head{display:flex!important;align-items:center!important;justify-content:space-between!important;margin-bottom:12px!important}.msm-final-regions-head h2{margin:0!important;font-size:24px!important;color:#fff!important}.msm-final-regions-head small{color:#c6d6f1!important}
+#msmFinalDashboard .msm-region-cards{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:12px!important}
+#msmFinalDashboard .msm-region-tile{min-height:230px!important;border:1px solid rgba(91,150,255,.7)!important;border-radius:16px!important;overflow:hidden!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-end!important;padding:14px!important;background:linear-gradient(180deg,rgba(22,83,160,.62),rgba(5,23,56,.98))!important;box-shadow:0 10px 22px rgba(0,0,0,.3)!important;cursor:pointer!important;transition:.2s!important}
+#msmFinalDashboard .msm-region-tile:hover{transform:translateY(-4px);box-shadow:0 0 25px rgba(47,128,255,.25)!important}
+#msmFinalDashboard .msm-region-tile:nth-child(2){background:linear-gradient(180deg,rgba(30,126,102,.72),rgba(4,47,50,.98))!important}.msm-region-tile:nth-child(3){background:linear-gradient(180deg,rgba(170,87,10,.8),rgba(68,27,2,.98))!important}.msm-region-tile:nth-child(4){background:linear-gradient(180deg,rgba(53,91,183,.8),rgba(7,29,74,.98))!important}.msm-region-tile:nth-child(5){background:linear-gradient(180deg,rgba(36,77,155,.85),rgba(8,21,57,.98))!important}
+#msmFinalDashboard .msm-region-tile .compass{font-size:48px!important;margin-bottom:auto;margin-top:10px;filter:drop-shadow(0 0 12px rgba(255,255,255,.25))}.msm-region-tile .rname{font-weight:1000!important;font-size:15px!important;text-align:center}.msm-region-tile .rcount{font-size:10px!important;margin:4px 0 10px!important;opacity:.9}.msm-region-tile button{width:100%!important;min-height:38px!important;border:1px solid rgba(255,255,255,.4)!important;border-radius:9px!important;background:linear-gradient(180deg,#0f61de,#07358a)!important;color:#fff!important;font-weight:1000!important;cursor:pointer!important}
+#msmFinalDashboard .msm-final-quick{display:flex!important;align-items:center!important;gap:8px!important;flex-wrap:wrap!important;margin:10px 0!important;padding:10px 14px!important;border:1px solid rgba(91,145,255,.55)!important;border-radius:13px!important;background:linear-gradient(90deg,#6e0a26,#091d4d)!important}.msm-final-quick strong{font-size:15px!important;margin-right:8px!important}.msm-final-quick button{min-height:40px!important;border:1px solid rgba(102,159,255,.7)!important;border-radius:9px!important;background:#08275d!important;color:#fff!important;font-weight:900!important;padding:8px 12px!important;cursor:pointer!important}
+#msmFinalDashboard .msm-final-tools{display:grid!important;grid-template-columns:1.2fr 1fr 1fr!important;gap:14px!important;margin-top:14px!important}.msm-tool-card{border:1px solid rgba(81,146,255,.55)!important;border-radius:16px!important;padding:16px!important;background:linear-gradient(145deg,rgba(6,32,77,.95),rgba(14,8,45,.95))!important}.msm-tool-card h3{margin:0 0 10px!important;font-size:16px!important}.msm-tool-card p,.msm-tool-card li{font-size:11px!important;color:#d0dcf0!important;line-height:1.6!important}.msm-tool-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important}.msm-tool-actions button{min-height:42px!important;border:1px solid rgba(102,159,255,.65)!important;border-radius:9px!important;background:#09285f!important;color:#fff!important;font-weight:900!important;cursor:pointer!important}
+/* Keep functional manager/records below the premium dashboard, but style it consistently. */
+#msmSectorManager{margin-top:16px!important;background:linear-gradient(145deg,rgba(5,25,58,.98),rgba(34,7,43,.98))!important;border:1px solid rgba(100,160,255,.55)!important;border-radius:18px!important;color:#fff!important}
+#msmSectorManager .helper-note{background:#f4eedf!important;color:#4d4b42!important;border-radius:8px!important;padding:11px!important}.region-manager-card{background:rgba(3,19,43,.9)!important;color:#fff!important}.region-manager-card strong{color:#fff!important}.region-manager-card small{color:#b8c9e8!important}
+/* Hide the legacy dashboard-like region panel; the new homepage owns the visual region cards. */
+#msmRegionPanel{display:none!important}
+@media(max-width:900px){#msmFinalCompanyHead{grid-template-columns:72px 1fr!important}.msm-final-company-head .brand-logo{width:68px!important;height:68px!important}#msmFinalCompanyHead h1{font-size:24px!important}.msm-hero-title{font-size:32px!important}.msm-hero-title span{font-size:38px!important}.msm-hero-kicker{font-size:17px!important;margin-bottom:55px!important}.msm-stat-grid{grid-template-columns:repeat(2,1fr)!important}.msm-region-cards{grid-template-columns:repeat(2,1fr)!important}.msm-final-tools{grid-template-columns:1fr!important}}
+@media(max-width:520px){#sectorPortal .msm-master-frame{padding:7px!important;border-radius:10px!important}#msmFinalCompanyHead{grid-template-columns:58px 1fr!important;gap:9px!important;padding:10px!important}#msmFinalCompanyHead .brand-logo{width:54px!important;height:54px!important}#msmFinalCompanyHead h1{font-size:17px!important}.msm-final-company-head .tag{font-size:6px!important;letter-spacing:1.5px!important}.msm-final-company-head .contact{font-size:7px!important;gap:3px 7px!important}.msm-hero-card{min-height:240px!important;padding:25px 18px!important}.msm-hero-kicker{font-size:13px!important;margin-bottom:38px!important}.msm-hero-title{font-size:25px!important}.msm-hero-title span{font-size:29px!important}.msm-hero-sub{font-size:10px!important}.msm-hero-badges{left:12px!important;right:12px!important;bottom:10px!important;justify-content:center!important}.msm-hero-badges span{font-size:7px!important}.msm-stat-grid{gap:8px!important}.msm-stat{min-height:112px!important}.msm-stat .icon{font-size:24px!important}.msm-stat .label{font-size:9px!important}.msm-stat .value{font-size:23px!important}.msm-stat .sub{font-size:7px!important}.msm-final-access{font-size:8px!important;padding:8px 12px!important}.msm-final-regions{padding:10px!important}.msm-final-regions-head h2{font-size:16px!important}.msm-region-cards{gap:7px!important}.msm-region-tile{min-height:150px!important;padding:8px!important}.msm-region-tile .compass{font-size:32px!important}.msm-region-tile .rname{font-size:9px!important}.msm-region-tile .rcount{font-size:7px!important}.msm-region-tile button{min-height:30px!important;font-size:8px!important}.msm-final-quick strong{width:100%;font-size:11px!important}.msm-final-quick button{font-size:8px!important;min-height:32px!important;padding:6px 8px!important}.msm-final-tools{display:none!important}}
+</style>
+<script id="msmFinalRealWebPatchScript">
+(function(){
+  function fix(){
+    const frame=document.querySelector('#sectorPortal .msm-master-frame');
+    const dash=document.getElementById('msmFinalDashboard');
+    if(!frame||!dash)return;
+    const logo=document.querySelector('#msmLoginLogo')?.src || document.querySelector('#sectorPortal .msm-master-logo-wrap img')?.src;
+    const img=dash.previousElementSibling?.querySelector?.('.brand-logo');
+    if(img && logo && (!img.src || img.src==='')) img.src=logo;
+    /* Put the real dashboard immediately after the navigation/header, before manager/records. */
+    const manager=document.getElementById('msmSectorManager');
+    const region=document.getElementById('msmRegionPanel');
+    if(manager) manager.style.display='block';
+    if(region) region.style.display='none';
+    const head=document.getElementById('msmFinalCompanyHead');
+    const menu=document.getElementById('msmTopMenu');
+    if(head && menu && dash.previousElementSibling!==menu) menu.after(dash);
+    else if(head && !menu && dash.previousElementSibling!==head) head.after(dash);
+    /* Fix mobile selects/buttons even when an old overlay or animation exists. */
+    frame.querySelectorAll('select,input,button').forEach(el=>{el.style.pointerEvents='auto';el.style.touchAction='manipulation';});
+  }
+  window.addEventListener('load',()=>setTimeout(fix,700));
+  setInterval(fix,2500);
+})();
+</script>
+
 </body>
 </html>
