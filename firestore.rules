@@ -5,11 +5,10 @@ service cloud.firestore {
 
     // ================================================================
     // MSM SECURITY GUARDS — PRODUCTION ACCESS MODEL
-    // authorizedUsers/{lowercase-email} is the source of truth.
-    // Supported roles in the existing web app:
-    //   parent / admin = full control
-    //   client         = restricted to clientproject (+ optional sector)
-    //   regional       = restricted to region / regionId
+    // IMPORTANT:
+    // - Parent/Admin status is read from custom auth claims.
+    // - authorizedUsers/{email} remains the application user profile.
+    // - Client/Regional scope is read from authorizedUsers.
     // ================================================================
 
     function signedIn() {
@@ -20,21 +19,30 @@ service cloud.firestore {
       return request.auth.token.email.lower();
     }
 
-    function userDoc() {
-      return get(/databases/$(database)/documents/authorizedUsers/$(email()));
+    function userPath() {
+      return /databases/$(database)/documents/authorizedUsers/$(email());
     }
 
     function authorized() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/authorizedUsers/$(email()));
+      return signedIn() && exists(userPath());
+    }
+
+    function userDoc() {
+      return get(userPath());
     }
 
     function role() {
-      return authorized() ? userDoc().data.get('role', '').lower() : '';
+      return authorized()
+        ? userDoc().data.get('role', '').lower()
+        : '';
     }
 
+    // Parent/Admin MUST be a Firebase custom claim.
+    // Set { parent: true } (or { admin: true }) on the user's auth token.
     function isParent() {
-      return authorized() && (role() == 'parent' || role() == 'admin');
+      return signedIn()
+        && (request.auth.token.parent == true
+            || request.auth.token.admin == true);
     }
 
     function isClient() {
@@ -65,15 +73,22 @@ service cloud.firestore {
       return isClient()
         && myClient() != ''
         && data.get('clientproject', '') == myClient()
-        && (mySector() == ''
-            || data.get('sector', '') == mySector()
-            || (data.get('sector', '') == '' && data.get('clientproject', '') == myClient()));
+        && (
+          mySector() == ''
+          || data.get('sector', '') == mySector()
+          || (
+            data.get('sector', '') == ''
+            && data.get('clientproject', '') == myClient()
+          )
+        );
     }
 
     function regionalRecord(data) {
       return isRegional()
-        && ((myRegionId() != '' && data.get('regionId', '') == myRegionId())
-            || (myRegion() != '' && data.get('region', '') == myRegion()));
+        && (
+          (myRegionId() != '' && data.get('regionId', '') == myRegionId())
+          || (myRegion() != '' && data.get('region', '') == myRegion())
+        );
     }
 
     function scopedRecord(data) {
@@ -84,15 +99,17 @@ service cloud.firestore {
     // Authorized users
     // ---------------------------------------------------------------
     match /authorizedUsers/{userEmail} {
-      allow get: if isParent() || (signedIn() && email() == userEmail);
+      // A user can read only their own profile.
+      // Parent/Admin can read all profiles.
+      allow get: if isParent()
+        || (signedIn() && email() == userEmail.lower());
+
       allow list: if isParent();
       allow create, update, delete: if isParent();
     }
 
     // ---------------------------------------------------------------
     // Company settings
-    // Existing app reads companySettings/main for every authorized user,
-    // while only Parent/Admin may change it.
     // ---------------------------------------------------------------
     match /companySettings/{settingsId} {
       allow get: if authorized();
@@ -102,8 +119,6 @@ service cloud.firestore {
 
     // ---------------------------------------------------------------
     // Long Roll employee records
-    // Queries from client users must include their clientproject/sector
-    // constraint so Firestore can prove the whole query is permitted.
     // ---------------------------------------------------------------
     match /records/{recordId} {
       allow get: if isParent() || scopedRecord(resource.data);
@@ -112,7 +127,10 @@ service cloud.firestore {
       allow create: if isParent() || scopedRecord(request.resource.data);
 
       allow update: if isParent()
-        || (scopedRecord(resource.data) && scopedRecord(request.resource.data));
+        || (
+          scopedRecord(resource.data)
+          && scopedRecord(request.resource.data)
+        );
 
       allow delete: if isParent() || scopedRecord(resource.data);
     }
@@ -130,12 +148,18 @@ service cloud.firestore {
 
     // ---------------------------------------------------------------
     // Regions
+    // Regional users may read their own region.
+    // Parent/Admin has full management.
     // ---------------------------------------------------------------
     match /regionCatalog/{regionId} {
       allow get: if isParent()
-        || (isRegional()
-            && (regionId == myRegionId()
-                || resource.data.get('name', '') == myRegion()));
+        || (
+          isRegional()
+          && (
+            regionId == myRegionId()
+            || resource.data.get('name', '') == myRegion()
+          )
+        );
 
       allow list: if isParent();
       allow create, update, delete: if isParent();
@@ -146,31 +170,45 @@ service cloud.firestore {
     // ---------------------------------------------------------------
     match /sectorCatalog/{sectorId} {
       allow get: if isParent()
-        || (isRegional() && resource.data.get('region', '') == myRegion());
+        || (
+          isRegional()
+          && resource.data.get('region', '') == myRegion()
+        );
 
       allow list: if isParent();
 
       allow create: if isParent()
-        || (isRegional() && request.resource.data.get('region', '') == myRegion());
+        || (
+          isRegional()
+          && request.resource.data.get('region', '') == myRegion()
+        );
 
       allow update: if isParent()
-        || (isRegional()
-            && resource.data.get('region', '') == myRegion()
-            && request.resource.data.get('region', '') == myRegion());
+        || (
+          isRegional()
+          && resource.data.get('region', '') == myRegion()
+          && request.resource.data.get('region', '') == myRegion()
+        );
 
       allow delete: if isParent();
     }
 
     // ---------------------------------------------------------------
     // Audit trail
-    // Authorized users may append audit events; Parent/Admin can review.
     // ---------------------------------------------------------------
     match /auditLogs/{logId} {
       allow get: if isParent()
-        || (isRegional()
-            && (resource.data.get('regionId', '') == myRegionId()
-                || resource.data.get('userEmail', '') == email()))
-        || (isClient() && resource.data.get('userEmail', '') == email());
+        || (
+          isRegional()
+          && (
+            resource.data.get('regionId', '') == myRegionId()
+            || resource.data.get('userEmail', '') == email()
+          )
+        )
+        || (
+          isClient()
+          && resource.data.get('userEmail', '') == email()
+        );
 
       allow list: if isParent();
       allow create: if authorized();
