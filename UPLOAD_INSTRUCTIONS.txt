@@ -1,0 +1,19 @@
+MSM FINAL STABLE PACKAGE — 2026-08-27
+
+1. Replace the old GitHub Pages index.html with the included index.html.
+2. Upload the included firestore.rules to Firebase project:
+   msm-security-guards-database
+3. Firebase Console -> Firestore Database -> Rules -> replace rules -> Publish.
+4. Do NOT use msm-security-guards-data-2131b for this website.
+5. After GitHub Pages deploys, open the site in Chrome Incognito or hard-refresh once.
+6. First test: Login.
+7. Second test: Add Region.
+8. Third test: Add Sector and choose a Region.
+9. Fourth test: Open Region and confirm the Sector appears.
+10. Fifth test: New Long Roll record -> Save -> confirm it appears.
+
+IMPORTANT:
+- Old employee data does not need migration.
+- The dashboard should start at 0 records.
+- Do not delete the old Firebase project yet.
+- Do not keep changing Firestore rules unless a specific Firebase error is shown.

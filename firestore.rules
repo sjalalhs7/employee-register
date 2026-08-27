@@ -3,14 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // ================================================================
-    // MSM SECURITY GUARDS — PRODUCTION ACCESS MODEL
-    // IMPORTANT:
-    // - Parent/Admin status is read from custom auth claims.
-    // - authorizedUsers/{email} remains the application user profile.
-    // - Client/Regional scope is read from authorizedUsers.
-    // ================================================================
-
     function signedIn() {
       return request.auth != null && request.auth.token.email != null;
     }
@@ -19,30 +11,21 @@ service cloud.firestore {
       return request.auth.token.email.lower();
     }
 
-    function userPath() {
-      return /databases/$(database)/documents/authorizedUsers/$(email());
+    function userDoc() {
+      return get(/databases/$(database)/documents/authorizedUsers/$(email()));
     }
 
     function authorized() {
-      return signedIn() && exists(userPath());
-    }
-
-    function userDoc() {
-      return get(userPath());
+      return signedIn()
+        && exists(/databases/$(database)/documents/authorizedUsers/$(email()));
     }
 
     function role() {
-      return authorized()
-        ? userDoc().data.get('role', '').lower()
-        : '';
+      return authorized() ? userDoc().data.get('role', '').lower() : '';
     }
 
-    // Parent/Admin MUST be a Firebase custom claim.
-    // Set { parent: true } (or { admin: true }) on the user's auth token.
     function isParent() {
-      return signedIn()
-        && (request.auth.token.parent == true
-            || request.auth.token.admin == true);
+      return authorized() && (role() == 'parent' || role() == 'admin');
     }
 
     function isClient() {
@@ -73,71 +56,42 @@ service cloud.firestore {
       return isClient()
         && myClient() != ''
         && data.get('clientproject', '') == myClient()
-        && (
-          mySector() == ''
-          || data.get('sector', '') == mySector()
-          || (
-            data.get('sector', '') == ''
-            && data.get('clientproject', '') == myClient()
-          )
-        );
+        && (mySector() == ''
+            || data.get('sector', '') == mySector()
+            || (data.get('sector', '') == '' && data.get('clientproject', '') == myClient()));
     }
 
     function regionalRecord(data) {
       return isRegional()
-        && (
-          (myRegionId() != '' && data.get('regionId', '') == myRegionId())
-          || (myRegion() != '' && data.get('region', '') == myRegion())
-        );
+        && ((myRegionId() != '' && data.get('regionId', '') == myRegionId())
+            || (myRegion() != '' && data.get('region', '') == myRegion()));
     }
 
     function scopedRecord(data) {
       return clientRecord(data) || regionalRecord(data);
     }
 
-    // ---------------------------------------------------------------
-    // Authorized users
-    // ---------------------------------------------------------------
     match /authorizedUsers/{userEmail} {
-      // A user can read only their own profile.
-      // Parent/Admin can read all profiles.
-      allow get: if isParent()
-        || (signedIn() && email() == userEmail.lower());
-
+      allow get: if isParent() || (signedIn() && email() == userEmail);
       allow list: if isParent();
       allow create, update, delete: if isParent();
     }
 
-    // ---------------------------------------------------------------
-    // Company settings
-    // ---------------------------------------------------------------
     match /companySettings/{settingsId} {
       allow get: if authorized();
       allow list: if isParent();
       allow create, update, delete: if isParent();
     }
 
-    // ---------------------------------------------------------------
-    // Long Roll employee records
-    // ---------------------------------------------------------------
     match /records/{recordId} {
       allow get: if isParent() || scopedRecord(resource.data);
       allow list: if isParent() || scopedRecord(resource.data);
-
       allow create: if isParent() || scopedRecord(request.resource.data);
-
       allow update: if isParent()
-        || (
-          scopedRecord(resource.data)
-          && scopedRecord(request.resource.data)
-        );
-
+        || (scopedRecord(resource.data) && scopedRecord(request.resource.data));
       allow delete: if isParent() || scopedRecord(resource.data);
     }
 
-    // ---------------------------------------------------------------
-    // Recycle Bin
-    // ---------------------------------------------------------------
     match /recycleBin/{recordId} {
       allow get: if isParent() || scopedRecord(resource.data);
       allow list: if isParent() || scopedRecord(resource.data);
@@ -146,86 +100,44 @@ service cloud.firestore {
       allow delete: if isParent() || scopedRecord(resource.data);
     }
 
-    // ---------------------------------------------------------------
-    // Regions
-    // Regional users may read their own region.
-    // Parent/Admin has full management.
-    // ---------------------------------------------------------------
     match /regionCatalog/{regionId} {
       allow get: if isParent()
-        || (
-          isRegional()
-          && (
-            regionId == myRegionId()
-            || resource.data.get('name', '') == myRegion()
-          )
-        );
-
+        || (isRegional()
+            && (regionId == myRegionId()
+                || resource.data.get('name', '') == myRegion()));
       allow list: if isParent();
       allow create, update, delete: if isParent();
     }
 
-    // ---------------------------------------------------------------
-    // Sectors
-    // ---------------------------------------------------------------
     match /sectorCatalog/{sectorId} {
       allow get: if isParent()
-        || (
-          isRegional()
-          && resource.data.get('region', '') == myRegion()
-        );
-
+        || (isRegional() && resource.data.get('region', '') == myRegion());
       allow list: if isParent();
-
       allow create: if isParent()
-        || (
-          isRegional()
-          && request.resource.data.get('region', '') == myRegion()
-        );
-
+        || (isRegional() && request.resource.data.get('region', '') == myRegion());
       allow update: if isParent()
-        || (
-          isRegional()
-          && resource.data.get('region', '') == myRegion()
-          && request.resource.data.get('region', '') == myRegion()
-        );
-
+        || (isRegional()
+            && resource.data.get('region', '') == myRegion()
+            && request.resource.data.get('region', '') == myRegion());
       allow delete: if isParent();
     }
 
-    // ---------------------------------------------------------------
-    // Audit trail
-    // ---------------------------------------------------------------
     match /auditLogs/{logId} {
       allow get: if isParent()
-        || (
-          isRegional()
-          && (
-            resource.data.get('regionId', '') == myRegionId()
-            || resource.data.get('userEmail', '') == email()
-          )
-        )
-        || (
-          isClient()
-          && resource.data.get('userEmail', '') == email()
-        );
-
+        || (isRegional()
+            && (resource.data.get('regionId', '') == myRegionId()
+                || resource.data.get('userEmail', '') == email()))
+        || (isClient() && resource.data.get('userEmail', '') == email());
       allow list: if isParent();
       allow create: if authorized();
       allow update, delete: if false;
     }
 
-    // ---------------------------------------------------------------
-    // Transfer history — Parent/Admin only
-    // ---------------------------------------------------------------
     match /transferHistory/{historyId} {
       allow get, list, create: if isParent();
       allow update, delete: if false;
     }
 
-    // ---------------------------------------------------------------
-    // Default deny
-    // ---------------------------------------------------------------
     match /{document=**} {
       allow read, write: if false;
     }
