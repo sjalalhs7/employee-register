@@ -996,6 +996,7 @@ body{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif!important;b
 <div id="notAuthorizedEmail" style="font-size:13px; color:#5B5A50; margin-bottom:6px;"></div>
 <div style="font-size:13px; color:#5B5A50; margin-bottom:22px;">This Gmail address hasn't been added by your Parent/Admin account yet. Ask them to add it from the Admin: Access tab.</div>
 <button class="btn" onclick="doSignOut()">Sign out</button>
+<button class="btn" onclick="window.msmShowLogin('Please sign in again.')" style="margin-left:6px;">Back to Login</button>
 </div>
 <!-- ============ MAIN APP (shown only once signed in + authorized) ============ -->
 <div id="appRoot" style="display:none;">
@@ -1624,9 +1625,30 @@ function initFirebase(){
       startApp();
       writeAuditLog('SIGN_IN', '', {email, method:'Google Sign-In'});
     }catch(err){
-      console.error(err);
-      document.getElementById('notAuthorizedEmail').textContent = email + ' — error checking access: ' + err.message;
-      showOnly('notAuthorizedGate');
+      console.error('MSM access check failed:', err);
+
+      // IMPORTANT: A Firestore/network failure is NOT the same as
+      // "Not authorized". Never trap the user on the unauthorized screen.
+      const msg = String(err?.message || err || '');
+      const loginError = document.getElementById('msmLoginError');
+
+      if (loginError) {
+        loginError.textContent =
+          'Connection problem while checking your MSM access. ' +
+          'Please check your internet/Firebase connection and sign in again.';
+        loginError.style.display = 'block';
+      }
+
+      // Clear the cached Firebase session so the real Login screen is shown.
+      try {
+        await auth.signOut();
+      } catch (_) {}
+
+      currentUser = null;
+      currentAccess = null;
+      const seo = document.getElementById('publicSeoInfo');
+      if (seo) seo.style.display = 'none';
+      showOnly('loginGate');
     }
   });
 }
@@ -1644,6 +1666,16 @@ function showLoginError(message){
   el.textContent=message;
   el.style.display='block';
 }
+// Keep Login available after any auth/access-check failure.
+window.msmShowLogin = function(message=''){
+  const el = document.getElementById('msmLoginError');
+  if (el) {
+    el.textContent = message;
+    el.style.display = message ? 'block' : 'none';
+  }
+  showOnly('loginGate');
+};
+
 function doGoogleSignIn(){
   const provider = new firebase.auth.GoogleAuthProvider();
   document.getElementById('msmLoginError').style.display='none';
