@@ -6,40 +6,74 @@ service cloud.firestore {
     function signedIn() {
       return request.auth != null && request.auth.token.email != null;
     }
-    function email() { return request.auth.token.email.lower(); }
+
+    function email() {
+      return request.auth.token.email.lower();
+    }
+
     function userDoc() {
       return get(/databases/$(database)/documents/authorizedUsers/$(email()));
     }
+
     function authorized() {
       return signedIn() && exists(/databases/$(database)/documents/authorizedUsers/$(email()));
     }
-    function role() { return authorized() ? userDoc().data.get('role', '').lower() : ''; }
-    function isParent() { return authorized() && (role() == 'parent' || role() == 'admin'); }
-    function isClient() { return authorized() && role() == 'client'; }
-    function isRegional() { return authorized() && role() == 'regional'; }
-    function myClient() { return authorized() ? userDoc().data.get('clientproject', '') : ''; }
-    function mySector() { return authorized() ? userDoc().data.get('sector', '') : ''; }
-    function myRegion() { return authorized() ? userDoc().data.get('region', '') : ''; }
-    function myRegionId() { return authorized() ? userDoc().data.get('regionId', '') : ''; }
+
+    function role() {
+      return authorized() ? userDoc().data.get('role', '').lower() : '';
+    }
+
+    function isParent() {
+      return authorized() && (role() == 'parent' || role() == 'admin');
+    }
+
+    function isClient() {
+      return authorized() && role() == 'client';
+    }
+
+    function isRegional() {
+      return authorized() && role() == 'regional';
+    }
+
+    function myClient() {
+      return authorized() ? userDoc().data.get('clientproject', '') : '';
+    }
+
+    function mySector() {
+      return authorized() ? userDoc().data.get('sector', '') : '';
+    }
+
+    function myRegion() {
+      return authorized() ? userDoc().data.get('region', '') : '';
+    }
+
+    function myRegionId() {
+      return authorized() ? userDoc().data.get('regionId', '') : '';
+    }
 
     function clientRecord(data) {
-      return isClient() && myClient() != ''
+      return isClient()
+        && myClient() != ''
         && data.get('clientproject', '') == myClient()
         && (mySector() == ''
-            || data.get('sector', '') == mySector()
-            || (data.get('sector', '') == '' && data.get('clientproject', '') == myClient()));
+            || data.get('sector', '') == mySector());
     }
+
     function regionalRecord(data) {
       return isRegional()
         && ((myRegionId() != '' && data.get('regionId', '') == myRegionId())
             || (myRegion() != '' && data.get('region', '') == myRegion()));
     }
-    function scopedRecord(data) { return clientRecord(data) || regionalRecord(data); }
+
+    function scopedRecord(data) {
+      return clientRecord(data) || regionalRecord(data);
+    }
 
     match /authorizedUsers/{userEmail} {
       allow get: if isParent() || (signedIn() && email() == userEmail);
       allow list: if isParent();
-      allow create, update, delete: if isParent();
+      allow create, update: if isParent();
+      allow delete: if isParent() && !(resource.data.get('role', '').lower() in ['parent', 'admin']);
     }
 
     match /companySettings/{settingsId} {
@@ -65,21 +99,21 @@ service cloud.firestore {
       allow delete: if isParent() || scopedRecord(resource.data);
     }
 
-    // Regions: Parent has full control; Regional Office may update only its own region
-    // (locations/sectors) but cannot rename or delete the region.
     match /regionCatalog/{regionId} {
       allow get: if isParent()
-        || (isRegional() && (regionId == myRegionId() || resource.data.get('name', '') == myRegion()));
+        || (isRegional()
+            && (regionId == myRegionId()
+                || resource.data.get('name', '') == myRegion()));
       allow list: if isParent();
       allow create, delete: if isParent();
+      // Regional Office may update its own Region document (sector membership and
+      // locations). It cannot touch any other Region document.
       allow update: if isParent()
         || (isRegional()
             && resource.data.get('name', '') == myRegion()
-            && request.resource.data.get('name', '') == myRegion());
+            && request.resource.data.get('name', '') == resource.data.get('name', ''));
     }
 
-    // Sectors: Parent has full control; Regional Office can read/list only its own
-    // region and can create/update sectors only inside that assigned region.
     match /sectorCatalog/{sectorId} {
       allow get: if isParent()
         || (isRegional() && resource.data.get('region', '') == myRegion());
@@ -90,8 +124,7 @@ service cloud.firestore {
       allow update: if isParent()
         || (isRegional()
             && resource.data.get('region', '') == myRegion()
-            && (request.resource.data.get('region', '') == myRegion()
-                || request.resource.data.get('region', '') == ''));
+            && request.resource.data.get('region', '') == myRegion());
       allow delete: if isParent();
     }
 
@@ -111,6 +144,8 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    match /{document=**} { allow read, write: if false; }
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }

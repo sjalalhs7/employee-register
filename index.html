@@ -3981,5 +3981,213 @@ if ('serviceWorker' in navigator) {
   setTimeout(()=>{ if(window.db && currentAccess){ window.msmEnsureUI?.(); loadSectorCatalogForAllScopedUsers(); } },700);
 })();
 </script>
+<script>
+(function(){
+'use strict';
+
+/* ===== MSM FINAL UI/UX + STABILITY PATCH v1.0 ===== */
+const REGION_VISUALS = {
+  'North Region': 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Hunza%20,Pakistan.jpg',
+  'South Region': 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Faisal%20Mosque%2C%20Islamabad%2C%20Pakistan.jpg',
+  'East Region': 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Badshahi%20Mosque%20%28Lahore%29.jpg',
+  'West Region': 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Lahore%20Fort%20photo.jpg'
+};
+
+function esc(v){ return typeof escapeHtml==='function' ? escapeHtml(v) : String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function roleLabel(){ return isParent()?'PARENT MASTER':(isRegional()?'REGIONAL OFFICE':'CLIENT / SECTOR'); }
+
+function installFinalCSS(){
+  if(document.getElementById('msmFinalCss')) return;
+  const s=document.createElement('style'); s.id='msmFinalCss';
+  s.textContent=`
+  /* ===== FINAL NAV ===== */
+  #msmFinalTopNav{display:flex!important;align-items:center!important;gap:7px!important;position:relative!important;z-index:100!important;min-height:58px!important;padding:8px 10px!important;border-radius:16px!important;background:linear-gradient(90deg,#061326,#17123b 52%,#3a0d2d)!important;border:1px solid rgba(255,213,102,.55)!important;box-shadow:0 10px 28px rgba(0,0,0,.38),0 0 30px rgba(54,91,255,.12)!important;flex-wrap:wrap!important}
+  #msmFinalTopNav .nav-brand{width:50px!important;height:42px!important;min-width:50px!important;margin:0 4px 0 0!important;display:flex!important;align-items:center!important;justify-content:center!important}
+  #msmFinalTopNav .nav-brand span{display:none!important}
+  #msmFinalTopNav .nav-brand img{width:38px!important;height:38px!important;object-fit:contain!important;background:#fff!important;border-radius:10px!important;padding:2px!important;box-shadow:0 0 18px rgba(255,205,74,.32)!important}
+  #msmFinalTopNav button{border:1px solid rgba(255,218,122,.42)!important;background:linear-gradient(180deg,rgba(22,49,94,.95),rgba(25,16,59,.95))!important;color:#fff!important;border-radius:9px!important;padding:9px 11px!important;font-size:10px!important;font-weight:900!important;cursor:pointer!important;white-space:nowrap!important;transition:.18s ease!important}
+  #msmFinalTopNav button:hover,#msmFinalTopNav button:focus-visible{transform:translateY(-1px)!important;border-color:#ffe18a!important;box-shadow:0 0 16px rgba(255,210,90,.18)!important;outline:none!important}
+  #msmFinalTopNav .account{margin-left:auto!important;max-width:280px!important;overflow:hidden!important;text-overflow:ellipsis!important;white-space:nowrap!important;color:#ffe5a4!important;font-size:10px!important;font-weight:800!important}
+
+  /* ===== DASHBOARD ===== */
+  #msmFinalDashboard{margin:18px 0 12px;padding:14px;border-radius:22px;background:linear-gradient(135deg,rgba(6,18,39,.98),rgba(26,10,48,.97) 48%,rgba(44,8,37,.96));border:1px solid rgba(255,214,103,.42);box-shadow:0 18px 55px rgba(0,0,0,.35),inset 0 0 45px rgba(54,105,255,.08);overflow:hidden}
+  .msm-dash-hero{position:relative;min-height:190px;border-radius:18px;padding:24px;display:flex;align-items:center;justify-content:space-between;gap:18px;overflow:hidden;background:radial-gradient(circle at 78% 35%,rgba(44,126,255,.45),transparent 28%),radial-gradient(circle at 16% 70%,rgba(244,47,111,.32),transparent 30%),linear-gradient(120deg,#06101f,#111e4e 54%,#320c38);border:1px solid rgba(93,157,255,.5)}
+  .msm-dash-hero:after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(120deg,transparent 0 26px,rgba(255,255,255,.035) 27px 28px);pointer-events:none}
+  .msm-dash-copy{position:relative;z-index:2;max-width:760px}.msm-dash-kicker{font-size:12px;letter-spacing:2px;font-weight:900;color:#9fd4ff;text-transform:uppercase}.msm-dash-title{margin:5px 0 4px;font:900 clamp(28px,4vw,52px)/1.05 Georgia,serif;color:#ffd86d;text-shadow:0 0 22px rgba(255,210,83,.18)}.msm-dash-sub{font-size:14px;color:#fff;opacity:.94}.msm-dash-tag{margin-top:13px;display:inline-flex;padding:7px 12px;border:1px solid rgba(255,220,125,.5);border-radius:999px;background:rgba(0,0,0,.25);color:#ffe9b0;font-weight:800}
+  .msm-dash-shield{position:relative;z-index:2;width:132px;height:132px;border-radius:24px;display:flex;align-items:center;justify-content:center;background:linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.03));border:1px solid rgba(255,220,130,.45);box-shadow:0 0 35px rgba(61,121,255,.25),inset 0 0 24px rgba(255,255,255,.06)}.msm-dash-shield img{width:105px;height:105px;object-fit:contain;filter:drop-shadow(0 8px 15px rgba(0,0,0,.45))}
+  .msm-metrics{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-top:12px}.msm-metric{position:relative;padding:13px 11px;border-radius:16px;min-height:90px;color:#fff;overflow:hidden;border:1px solid rgba(255,255,255,.2);box-shadow:0 9px 24px rgba(0,0,0,.2)}.msm-metric:nth-child(1){background:linear-gradient(135deg,#063c9c,#0d74ff)}.msm-metric:nth-child(2){background:linear-gradient(135deg,#075c4e,#10b77d)}.msm-metric:nth-child(3){background:linear-gradient(135deg,#4d1492,#9d35ff)}.msm-metric:nth-child(4){background:linear-gradient(135deg,#8c3c05,#ff9b18)}.msm-metric:nth-child(5){background:linear-gradient(135deg,#7c1024,#ed3350)}.msm-metric small{display:block;font-weight:900;letter-spacing:.7px;opacity:.92}.msm-metric strong{display:block;font-size:27px;line-height:1;margin-top:7px}.msm-metric span{font-size:9px;opacity:.8}.msm-metric:after{content:"";position:absolute;right:-24px;bottom:-28px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,.12);filter:blur(2px)}
+  .msm-region-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:15px;color:#fff}.msm-region-heading h3{margin:0;color:#ffe09a;font-size:18px;letter-spacing:1px}.msm-region-heading span{font-size:11px;color:#d9e5ff}.msm-visual-regions{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:10px}.msm-visual-region{position:relative;min-height:142px;border-radius:16px;overflow:hidden;border:1px solid rgba(255,255,255,.22);cursor:pointer;touch-action:manipulation;z-index:5;background-size:cover;background-position:center;box-shadow:0 10px 26px rgba(0,0,0,.3);transition:.18s ease}.msm-visual-region:hover,.msm-visual-region:focus-visible{transform:translateY(-3px) scale(1.01);border-color:#ffe27f;box-shadow:0 16px 32px rgba(0,0,0,.38),0 0 25px rgba(83,142,255,.18);outline:none}.msm-visual-region:before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.04),rgba(0,0,0,.78));pointer-events:none}.msm-visual-region .rtext{position:absolute;left:12px;right:12px;bottom:10px;z-index:2;color:#fff}.msm-visual-region strong{display:block;font-size:17px;text-shadow:0 2px 8px #000}.msm-visual-region small{display:block;margin-top:4px;color:#ffe6a0}.msm-visual-region.full{background:radial-gradient(circle at 50% 40%,#3d7cff,#1a174f 40%,#0a1226)!important}
+
+  /* ===== FORM ===== */
+  #appRoot .tabbar{position:sticky;top:0;z-index:90;backdrop-filter:blur(12px);background:linear-gradient(90deg,rgba(255,251,241,.97),rgba(249,238,215,.96),rgba(255,248,234,.97));border-bottom:1px solid #b9954b}
+  #appRoot .sheet{background:#fffdf7!important;border-radius:18px!important;border:1px solid #d9c9a7!important;box-shadow:0 14px 40px rgba(27,42,58,.12)!important}
+  #appRoot .form-section-title{background:linear-gradient(90deg,#f5f0e4,#fffdf7,#f2ecdf)!important;border-left:5px solid #a8802f!important;border-radius:6px!important;padding:8px 10px!important;color:#1e2730!important}
+  #appRoot .field label{color:#38434d!important;font-weight:850!important}.field input,.field select,.field textarea{border-color:#d6c8aa!important;background:#faf6eb!important;color:#222!important}.field input:focus,.field select:focus,.field textarea:focus{border-color:#a8802f!important;box-shadow:0 0 0 3px rgba(168,128,47,.13)!important;outline:none!important}
+  #appRoot .btn-brass{background:linear-gradient(135deg,#9c7020,#d4a84b)!important;color:#fff!important}
+
+  /* ===== FILE UI ===== */
+  #f_photoFile,#f_policeverifFile{width:100%;padding:9px;background:#f5f0e4;border:1px solid #d6c8aa;border-radius:8px}
+  #photoPreview,#policeVerifPreview{background:#fff;object-fit:cover;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+
+  /* ===== RESPONSIVE ===== */
+  @media(max-width:900px){.msm-metrics{grid-template-columns:repeat(3,1fr)}.msm-visual-regions{grid-template-columns:repeat(2,1fr)}.msm-dash-shield{width:105px;height:105px}.msm-dash-shield img{width:84px;height:84px}}
+  @media(max-width:650px){#msmFinalTopNav{justify-content:center!important}.msmFinalTopNav .account{width:100%;max-width:none;text-align:center;order:10;margin:0!important}.msm-dash-hero{min-height:205px;padding:17px}.msm-dash-title{font-size:29px}.msm-dash-shield{display:none}.msm-metrics{grid-template-columns:repeat(2,1fr)}.msm-visual-regions{grid-template-columns:1fr 1fr}.msm-visual-region{min-height:125px}.msm-region-heading{align-items:flex-start;flex-direction:column}}
+  @media(max-width:430px){.msm-metrics{grid-template-columns:1fr}.msm-visual-regions{grid-template-columns:1fr}.msm-visual-region{min-height:145px}#msmFinalTopNav button{font-size:9px!important;padding:7px 8px!important}}
+  `;
+  document.head.appendChild(s);
+}
+
+function renderFinalDashboard(){
+  const portal=document.getElementById('sectorPortal'); if(!portal||!currentAccess) return;
+  const frame=portal.querySelector('.msm-master-frame'); if(!frame) return;
+  let box=document.getElementById('msmFinalDashboard');
+  if(!box){ box=document.createElement('section'); box.id='msmFinalDashboard'; const anchor=document.getElementById('msmRegionPanel'); anchor?frame.insertBefore(box,anchor):frame.appendChild(box); }
+  const regions=window.msmRegionCatalog||[];
+  const sectors=[...new Set((window.msmSectorCatalog||[]).map(x=>String(x).trim()).filter(Boolean))];
+  const activeUsers=isParent() ? Math.max(0,document.querySelectorAll('#adminUsersTbody tr').length - (document.querySelector('#adminUsersTbody td[colspan]')?1:0)) : '—';
+  const recycle=Array.isArray(window.msmRecycleRows)?window.msmRecycleRows.length:'—';
+  const role=roleLabel();
+  const hero=`<div class="msm-dash-hero"><div class="msm-dash-copy"><div class="msm-dash-kicker">${esc(role)} · SECURE OPERATIONS</div><div class="msm-dash-title">MSM LONGROLL DATABASE</div><div class="msm-dash-sub">“Your Safety... Our Priority” · Employee Enrollment · Long Roll · Regions · Sectors · Audit</div><div class="msm-dash-tag">● System Online · ${esc(currentUser?.email||'Authorized Account')}</div></div><div class="msm-dash-shield"><img src="msm-logo.png" alt="MSM Security Guards shield logo"></div></div>`;
+  const metric=(label,value,sub)=>`<div class="msm-metric"><small>${esc(label)}</small><strong>${esc(value)}</strong><span>${esc(sub)}</span></div>`;
+  let cards=`<button type="button" class="msm-visual-region full" onclick="msmOpenSector('full')" aria-label="Open full database"><div class="rtext"><strong>FULL DATABASE</strong><small>All regions · all sectors</small></div></button>`;
+  regions.filter(r=>/^North Region$|^South Region$|^East Region$|^West Region$/i.test(r.name)).forEach(r=>{
+    const count=typeof msmSectorsForRegion==='function'?msmSectorsForRegion(r).length:(r.sectors||[]).length;
+    const key=msmRegionKeyFromName(r.name);
+    const bg=REGION_VISUALS[r.name]||'';
+    cards+=`<button type="button" class="msm-visual-region" style="background-image:url('${bg}')" onclick="msmOpenRegion('${esc(key)}')" aria-label="Open ${esc(r.name)}"><div class="rtext"><strong>${esc(r.name)}</strong><small>${count} sector${count===1?'':'s'} assigned · Click to open</small></div></button>`;
+  });
+  box.innerHTML=hero+`<div class="msm-metrics">${metric('ALL RECORDS',records?.length||0,'Long Roll employees')}${metric('TOTAL REGIONS',regions.length,'Active regions')}${metric('TOTAL SECTORS',sectors.length,'Catalog sectors')}${metric('ACTIVE USERS',activeUsers,'Authorized accounts')}${metric('RECYCLE BIN',recycle,'Deleted / recoverable')}</div><div class="msm-region-heading"><div><h3>REGIONS &amp; SECTORS</h3><span>Select a region to reveal its sectors. Parent can manage all regions; Regional Office is scoped to its own region.</span></div><button type="button" class="btn btn-sm" onclick="msmScrollRegions()">View All →</button></div><div class="msm-visual-regions">${cards}</div>`;
+}
+
+function patchTopNav(){
+  const portal=document.getElementById('sectorPortal'); if(!portal||!currentAccess) return;
+  const frame=portal.querySelector('.msm-master-frame'); if(!frame) return;
+  let nav=document.getElementById('msmFinalTopNav');
+  if(!nav){nav=document.createElement('nav');nav.id='msmFinalTopNav';nav.className='msm-final-topnav';frame.insertBefore(nav,frame.firstElementChild);}
+  const email=currentUser?.email||'';
+  const buttons=[
+    ['HOME','msmScrollHome()'],
+    ['REGIONS / SECTORS','msmScrollRegions()'],
+    ['DATABASE','msmOpenSector(\'full\')'],
+    ['ABOUT','msmInfo(\'about\')'],
+    ['SERVICES','msmInfo(\'services\')'],
+    ['CONTACT','msmInfo(\'contact\')'],
+    ['INSTRUCTIONS','msmShowTab(\'instructions\')'],
+  ];
+  if(isParent()) buttons.push(['ADMIN','msmShowTab(\'admin\')']);
+  buttons.push(['AUDIT','msmShowTab(\'audit\')'],['RECYCLE','msmOpenRecycle()'],['INSTALL APP','msmInstallApp()'],['SIGN OUT','doSignOut()']);
+  nav.innerHTML=`<div class="nav-brand"><img src="msm-logo.png" alt="MSM shield logo"></div>`+buttons.map(([t,c])=>`<button type="button" onclick="${c}">${t}</button>`).join('')+`<span class="account">${esc(email)} · ${roleLabel()}</span>`;
+}
+
+function patchLogin(){
+  const page=document.getElementById('msmLoginPage'); if(!page) return;
+  const old=document.getElementById('msmPublicNav'); if(old) old.remove();
+  let head=document.getElementById('msmFinalLoginHeader');
+  if(!head){head=document.createElement('div');head.id='msmFinalLoginHeader';head.innerHTML=`<img src="msm-security-guards-logo.png" alt="MSM Security Guards Pvt Ltd official company logo"><div><strong>MSM LONGROLL DATABASE</strong><span>Employee Enrollment &amp; Long Roll Management System</span></div>`;page.insertBefore(head,page.firstElementChild);}
+}
+
+function patchContactModal(){
+  const old=window.msmInfo;
+  window.msmInfo=function(type){
+    const data={
+      about:{title:'About MSM Longroll / تعارف',body:'MSM SECURITY GUARDS PVT LTD — MSM Longroll Database. Controlled employee enrollment, long-roll, region/sector management, audit and authorized access.\n\nMSM سیکیورٹی گارڈز پرائیویٹ لمیٹڈ — ملازمین کی Enrollment، Long Roll، Regions/Sectors، Audit اور Authorized Access کے لیے محفوظ نظام۔'},
+      services:{title:'Services / خدمات',body:'Employee Enrollment • Long Roll Register • Region/Sector Management • Excel Import/Export • Print Enrollment Form • Police Verification • Audit Trail • Recycle Bin • PWA Install.\n\nملازم اندراج • لانگ رول • ریجن/سیکٹر مینجمنٹ • ایکسل امپورٹ/ایکسپورٹ • پرنٹ فارم • پولیس ویریفکیشن • آڈٹ ٹریل • ری سائیکل بن • ایپ انسٹال۔'},
+      contact:{title:'Company Contact / کمپنی رابطہ',body:'MSM SECURITY GUARDS PVT LTD\nHouse No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore\nTel: 042-37169344\nCell: 0346-7780660\nEmail: msmsecurity11@gmail.com\n\nDatabase access is restricted to authorized accounts.\nڈیٹا بیس صرف مجاز اکاؤنٹس کے لیے ہے۔'}
+    }[type];
+    if(!data){return typeof old==='function'?old(type):null;}
+    const existing=document.getElementById('msmInfoModal'); if(existing)existing.remove();
+    const modal=document.createElement('div');modal.id='msmInfoModal';modal.className='msm-info-modal';
+    modal.innerHTML=`<div class="msm-info-card"><button class="msm-info-close" type="button" onclick="this.closest('#msmInfoModal').remove()">✕</button><h2>${esc(data.title)}</h2><p>${esc(data.body).replace(/\n/g,'<br>')}</p><button class="btn btn-primary" type="button" onclick="this.closest('#msmInfoModal').remove()">Close / بند کریں</button></div>`;
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});document.body.appendChild(modal);
+  };
+}
+
+/* Fix: uploaded photo/certificate data must be stored in Firebase Storage, not Firestore base64 fields. */
+window.uploadEnrollmentFiles=async function(data){
+  const hasPhoto=data.photoData&&String(data.photoData).startsWith('data:');
+  const hasDoc=data.policeVerifDoc&&String(data.policeVerifDoc).startsWith('data:');
+  if(!hasPhoto&&!hasDoc) return data;
+  if(!storage) throw new Error('Firebase Storage is not initialized.');
+  const uid=(currentUser?.uid||'anonymous').replace(/[^a-zA-Z0-9_-]/g,'_');
+  const base=`enrollment/${uid}/${editingId||('new-'+Date.now())}`;
+  const uploadDataUrl=async(dataUrl,filename)=>{
+    const comma=dataUrl.indexOf(','); if(comma<0)throw new Error('Invalid uploaded file.');
+    const mime=(dataUrl.match(/^data:([^;]+);/)||[])[1]||'application/octet-stream';
+    const raw=atob(dataUrl.slice(comma+1)); const bytes=new Uint8Array(raw.length); for(let i=0;i<raw.length;i++)bytes[i]=raw.charCodeAt(i);
+    const ref=storage.ref(`${base}/${filename}`); await ref.put(bytes,{contentType:mime}); return ref.getDownloadURL();
+  };
+  if(hasPhoto){data.photoData=await uploadDataUrl(data.photoData,'employee-photo.jpg');}
+  if(hasDoc){const mime=(String(data.policeVerifDoc).match(/^data:([^;]+);/)||[])[1]||'application/octet-stream';const ext=mime==='application/pdf'?'pdf':(mime==='image/png'?'png':'jpg');data.policeVerifDoc=await uploadDataUrl(data.policeVerifDoc,`police-verification.${ext}`);}
+  return data;
+};
+
+/* Fix: client-sector users must query only their own sector so Firestore rules can prove the query is safe. */
+window.msmSubscribeRecordsStable=function(){
+  if(recordsUnsub){try{recordsUnsub();}catch(e){}recordsUnsub=null;}
+  const applyRows=(rows)=>{const map=new Map();rows.forEach(r=>map.set(r.id,r));records=[...map.values()].sort((a,b)=>(Number(a.sno)||0)-(Number(b.sno)||0));updateStamp();updateSectorPortal();renderTable();renderFinalDashboard();};
+  if(isParent()){recordsUnsub=db.collection(RECORDS_COLLECTION).onSnapshot(s=>applyRows(s.docs.map(d=>({id:d.id,...d.data()}))),e=>showToast('Could not load the register: '+e.message));return;}
+  if(isRegional()){const region=myRegion();if(!region){applyRows([]);return;}recordsUnsub=db.collection(RECORDS_COLLECTION).where('region','==',region).onSnapshot(s=>applyRows(s.docs.map(d=>({id:d.id,...d.data()}))),e=>showToast('Could not load regional records: '+e.message));return;}
+  const sector=mySector()||myClientProject(); if(!sector){recordsUnsub=()=>{};applyRows([]);return;}
+  recordsUnsub=db.collection(RECORDS_COLLECTION).where('sector','==',sector).onSnapshot(s=>applyRows(s.docs.map(d=>({id:d.id,...d.data()}))),e=>showToast('Could not load sector records: '+e.message));
+};
+
+/* Keep all assignment fields synchronized with the actual role/scope. */
+const originalPopulate=window.msmPopulateEnrollmentAssignment;
+window.msmPopulateEnrollmentAssignment=function(preserve){
+  if(typeof originalPopulate==='function') originalPopulate(preserve);
+  if(isRegional()){
+    const r=document.getElementById('f_region');if(r){r.value=myRegion();r.disabled=true;}
+    const s=document.getElementById('f_sector');if(s){const sectors=myRegionSectors();s.disabled=false;s.innerHTML='<option value="">Select Sector</option>'+sectors.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');if(sectors.length===1)s.value=sectors[0];}
+  }
+};
+
+/* Parent and Regional Office can both save a properly assigned record. */
+const oldSave=window.saveEntry;
+window.saveEntry=async function(){
+  const name=document.getElementById('f_name')?.value.trim(); if(!name){showToast('Employee Name is required.');document.getElementById('f_name')?.focus();return;}
+  let data=readForm();
+  if(isParent()){
+    const region=document.getElementById('f_region')?.value.trim();const sector=document.getElementById('f_sector')?.value.trim();const project=document.getElementById('f_clientproject')?.value.trim()||document.getElementById('clientName')?.value.trim();
+    if(!project||!region||!sector){showToast('Select Client / Project, Region and Sector before saving.');return;}
+    data.clientproject=project;data.region=region;data.regionId=msmRegionKeyFromName(region);data.sector=sector;
+  } else if(isRegional()){
+    const region=myRegion();const sector=document.getElementById('f_sector')?.value.trim()||document.getElementById('f_regionalSector')?.value.trim();
+    if(!region||!sector){showToast('Select the Regional Sector before saving.');return;}
+    if(!myRegionSectors().some(x=>x.toLowerCase()===sector.toLowerCase())){showToast('That sector is not assigned to your Region.');return;}
+    data.region=region;data.regionId=msmRegionKeyFromName(region);data.sector=sector;data.clientproject=sector;
+  } else {
+    const sector=mySector()||myClientProject(); if(!sector){showToast('This account has no authorized sector.');return;} data.sector=sector;data.clientproject=myClientProject()||sector;const rr=msmRegionForSector(sector);data.region=rr?.name||'';data.regionId=rr?msmRegionKeyFromName(rr.name):'';
+  }
+  try{data=await window.uploadEnrollmentFiles(data);}catch(e){console.error(e);showToast('File upload failed: '+e.message);return;}
+  data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+  try{
+    if(editingId){await db.collection(RECORDS_COLLECTION).doc(editingId).update(data);await writeAuditLog('UPDATE_RECORD',editingId,{name:data.name||'',region:data.region||'',sector:data.sector||'',clientproject:data.clientproject||''});showToast('Record updated in Long Roll.');}
+    else{const nextSno=records.length?Math.max(...records.map(r=>Number(r.sno)||0))+1:1;const ref=await db.collection(RECORDS_COLLECTION).add({sno:nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),...data});await writeAuditLog('CREATE_RECORD',ref.id,{sno:nextSno,name:data.name||'',region:data.region||'',sector:data.sector||'',clientproject:data.clientproject||''});showToast('Saved to Long Roll successfully.');}
+    persistMeta();resetForm();switchTab('register');
+  }catch(e){console.error(e);showToast('Could not save: '+e.message);}
+};
+
+/* PDF-safe preview helper: existing UI already stores the PDF as a data URL; keep it visible as an attachment. */
+function refreshFinal(){
+  installFinalCSS(); patchLogin(); patchContactModal(); patchTopNav(); renderFinalDashboard();
+  const p=document.getElementById('sectorPortal');if(p)p.style.display=currentAccess?'block':'none';
+}
+
+const oldStart=window.startApp;
+window.startApp=function(){
+  if(typeof oldStart==='function') oldStart();
+  setTimeout(()=>{refreshFinal();if(typeof window.msmSubscribeRecordsStable==='function')window.msmSubscribeRecordsStable();},450);
+};
+
+/* Re-render after catalog/record changes without breaking existing app functions. */
+['msmRenderRegionPanel','msmRenderSectorManager','msmRenderTopMenu'].forEach(fn=>{
+  const old=window[fn]; if(typeof old!=='function')return;
+  window[fn]=function(){const r=old.apply(this,arguments);setTimeout(refreshFinal,0);return r;};
+});
+
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',refreshFinal);else refreshFinal();
+})();
+
+</script>
 </body>
 </html>

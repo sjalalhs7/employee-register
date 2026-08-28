@@ -11,7 +11,12 @@ service firebase.storage {
       );
     }
     match /enrollment/{uid}/{recordId}/{fileName} {
-      allow read, write: if authorized() && request.auth.uid == uid;
+      allow read: if authorized();
+      allow write: if authorized()
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|application/pdf');
+      allow delete: if authorized() && request.auth.uid == uid;
     }
     match /{allPaths=**} { allow read, write: if false; }
   }
