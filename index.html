@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MSM SECURITY GUARDS PVT LTD — Long Roll Database | Stable Regional Manager</title>
+<title>MSM SECURITY GUARDS PVT LTD — Long Roll Database | FINAL STABLE BUILD</title>
 <meta name="description" content="MSM Longroll Database by Syed Jalal Hussain Shah — secure MSM Security Guards employee enrollment and long roll management for authorized Parent, sector and client users.">
 <meta name="author" content="Syed Jalal Hussain Shah">
 <meta name="keywords" content="MSM Longroll, MSM Longroll Database, MSM SECURITY GUARDS PVT LTD, MSM Security Guards, employee long roll, security guards database, Syed Jalal Hussain Shah">
@@ -802,47 +802,36 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 #msmRegionPanel button,#msmSectorManager button,#msmRegionPanel select,#msmSectorManager select,#msmRegionPanel input,#msmSectorManager input{pointer-events:auto !important;position:relative;z-index:5;}
 .msm-region-card,.msm-sector-chip,.sector-manager,.region-manager-card{touch-action:manipulation;}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after{scroll-behavior:auto !important;animation:none !important;transition:none !important;}}
-
-<style id="msm-final-rainbow">
-  :root{
-    --final-r1:#6d28d9;
-    --final-r2:#db2777;
-    --final-r3:#2563eb;
-    --final-r4:#059669;
-    --final-r5:#f59e0b;
-  }
-  .assignment-field{position:relative}
-  .assignment-help{display:block;margin-top:5px;font-size:10px;color:#7b8190;line-height:1.35}
-  #view-form .sheet,
-  #view-register .sheet{
-    border-image:linear-gradient(90deg,var(--final-r3),var(--final-r1),var(--final-r2),var(--final-r5),var(--final-r4)) 1;
-  }
-  .msm-rainbow-bar{
-    height:4px;border-radius:999px;margin:8px 0 16px;
-    background:linear-gradient(90deg,var(--final-r3),var(--final-r1),var(--final-r2),var(--final-r5),var(--final-r4));
-    box-shadow:0 0 18px rgba(109,40,217,.28);
-  }
-  .msm-region-card{
-    background:
-      linear-gradient(135deg,rgba(37,99,235,.18),rgba(109,40,217,.18),rgba(219,39,119,.12)),
-      rgba(255,255,255,.05) !important;
-  }
-  .msm-region-card:nth-child(3n){background:linear-gradient(135deg,rgba(5,150,105,.18),rgba(37,99,235,.16)),rgba(255,255,255,.05) !important}
-  .msm-region-card:nth-child(4n){background:linear-gradient(135deg,rgba(245,158,11,.18),rgba(219,39,119,.16)),rgba(255,255,255,.05) !important}
-  .btn.btn-primary{
-    background:linear-gradient(135deg,#2563eb,#6d28d9,#db2777) !important;
-    border-color:rgba(255,255,255,.35) !important;
-  }
-  .final-assignment-note{
-    margin:0 0 12px;padding:11px 13px;border-radius:12px;color:#eef2ff;
-    background:linear-gradient(100deg,rgba(37,99,235,.18),rgba(109,40,217,.18),rgba(219,39,119,.16),rgba(5,150,105,.14));
-    border:1px solid rgba(255,255,255,.16);
-  }
-  @media(max-width:650px){
-    .assignment-help{font-size:9px}
-  }
 </style>
+<style id="msm-final-stable-overrides">
+/* MSM FINAL STABLE BUILD — controlled visual layer */
+:root{
+  --msm-blue:#0b3d91;--msm-cyan:#18b6e8;--msm-purple:#7a2cff;--msm-pink:#d62cff;
+  --msm-gold:#f3c85b;--msm-red:#e43b55;--msm-green:#20c978;--msm-orange:#ff8a1f;
+}
+body{background:radial-gradient(circle at 15% 5%,rgba(29,77,145,.22),transparent 30%),radial-gradient(circle at 85% 20%,rgba(125,42,255,.18),transparent 28%),#07111f!important;}
+#appRoot{background:linear-gradient(135deg,rgba(7,19,36,.96),rgba(30,9,44,.92))!important;}
+.msm-region-panel{background:linear-gradient(135deg,rgba(7,27,55,.98),rgba(56,10,70,.96))!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:20px!important;box-shadow:0 18px 45px rgba(0,0,0,.3)!important;overflow:hidden;}
+.msm-region-grid{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:12px!important;}
+.msm-region-card{position:relative!important;min-height:142px!important;overflow:hidden!important;border-radius:18px!important;border:1px solid rgba(255,255,255,.25)!important;color:#fff!important;background:linear-gradient(145deg,#173d77,#452070)!important;box-shadow:0 10px 25px rgba(0,0,0,.28)!important;transition:transform .18s ease,box-shadow .18s ease,filter .18s ease!important;}
+.msm-region-card::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.12),transparent 42%,rgba(0,0,0,.55));pointer-events:none;}
+.msm-region-card::after{position:absolute;right:-12px;bottom:-18px;font-size:76px;opacity:.23;filter:drop-shadow(0 4px 8px rgba(0,0,0,.3));pointer-events:none;}
+.msm-region-card:nth-child(1){background:linear-gradient(145deg,#0b5dbb,#5020a8)!important}.msm-region-card:nth-child(1)::after{content:"🗄️"}
+.msm-region-card:nth-child(2){background:linear-gradient(145deg,#7a28c7,#be2b78)!important}.msm-region-card:nth-child(2)::after{content:"🏔️"}
+.msm-region-card:nth-child(3){background:linear-gradient(145deg,#087c9a,#1551c4)!important}.msm-region-card:nth-child(3)::after{content:"🕌"}
+.msm-region-card:nth-child(4){background:linear-gradient(145deg,#d36a09,#9d2d0f)!important}.msm-region-card:nth-child(4)::after{content:"🏰"}
+.msm-region-card:nth-child(5){background:linear-gradient(145deg,#153b9d,#4b2cba)!important}.msm-region-card:nth-child(5)::after{content:"🌊"}
+.msm-region-card:hover{transform:translateY(-4px) scale(1.01)!important;box-shadow:0 18px 35px rgba(0,0,0,.4),0 0 20px rgba(92,151,255,.2)!important;filter:brightness(1.08)!important;}
+.msm-region-card strong,.msm-region-card span{position:relative;z-index:2;text-shadow:0 2px 5px rgba(0,0,0,.55)}
+.assignment-field select{border:1px solid rgba(104,164,255,.65)!important;background:linear-gradient(135deg,#102b4f,#2c164d)!important;color:#fff!important;font-weight:700!important;}
+.assignment-field label::after{content:" • assignment";color:#9ddcff;font-size:9px;font-weight:600;opacity:.8}
+.msm-assignment-note{margin:10px 0;padding:10px 12px;border-radius:12px;background:linear-gradient(90deg,rgba(0,166,255,.13),rgba(205,42,255,.14));border:1px solid rgba(255,255,255,.14);color:#eaf3ff;font-size:12px;}
+@media(max-width:900px){.msm-region-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:560px){.msm-region-grid{grid-template-columns:1fr 1fr!important;gap:8px!important}.msm-region-card{min-height:118px!important}.msm-region-card::after{font-size:55px}.assignment-field{min-width:100%!important}}
+/* Make navigation/action buttons feel clickable and consistent on touch devices. */
+button,.btn,.tab-btn,.msm-region-card,.msm-sector-chip{touch-action:manipulation;-webkit-tap-highlight-color:transparent;}
 
+.msm-company-contact-strip{display:flex;justify-content:center;gap:14px;flex-wrap:wrap;margin:12px auto 0;padding:8px 12px;max-width:1100px;border:1px solid rgba(243,200,91,.38);border-radius:12px;background:linear-gradient(90deg,rgba(5,24,46,.78),rgba(75,16,70,.7));color:#f5ead0;font-size:11px;line-height:1.4}.msm-company-contact-strip span{white-space:nowrap}.msm-company-contact-strip span:first-child{white-space:normal;text-align:center}@media(max-width:560px){.msm-company-contact-strip{gap:6px;font-size:9px}.msm-company-contact-strip span{white-space:normal}}
 </style>
 </head>
 <body>
@@ -945,12 +934,13 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
     </div>
     <div class="msm-master-logo-wrap">
       <div class="msm-logo-frame">
-        <img src="msm-logo.png" alt="MSM Security Guards company shield logo">
+        <img src="msm-security-guards-logo.png" alt="MSM SECURITY GUARDS PVT LTD">
       </div>
     </div>
     <div class="msm-designer">DESIGNED BY: SYED JALAL HUSSAIN SHAH · HRMS MSM SECURITY GUARDS PVT LTD</div>
     <div class="sector-title" id="sectorPortalTitle">MSM SECURITY GUARDS PVT LTD</div>
     <div class="sector-subtitle" id="sectorPortalSubtitle">WELCOME TO THE MSM LONGROLL DATABASE</div>
+    <div class="msm-company-contact-strip"><span>📍 House No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore</span><span>☎ 042-37169344</span><span>📱 0346-7780660</span><span>✉ msmsecurity11@gmail.com</span></div>
     <div class="sector-badge-row">
       <div class="sector-badge">
         <span class="dot"></span>
@@ -975,7 +965,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 <div class="cover">
   <div class="cover-inner">
     <div class="cover-title">
-      <div class="brand-row"><img class="cover-logo" src="msm-logo.png" alt="MSM Security Guards company shield logo"><span class="designer-title">Designed by : Syed Jalal Hussain Shah / MSM G-8 Head Office HR Head Clerk</span><input id="companyName" class="company-name-input display" value="MSM SECURITY GUARDS PVT LTD" /></div>
+      <div class="brand-row"><img class="cover-logo" src="msm-security-guards-logo.png" alt="MSM SECURITY GUARDS PVT LTD Logo"><span class="designer-title">Designed by : Syed Jalal Hussain Shah / MSM G-8 Head Office HR Head Clerk</span><input id="companyName" class="company-name-input display" value="MSM SECURITY GUARDS PVT LTD" /></div>
       <div class="cover-tagline">Employee Enrollment &amp; Long Roll Register</div>
     </div>
     <div class="cover-meta">
@@ -1125,14 +1115,6 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 
         <div class="form-section-title"><span class="idx">07</span>Office Use / Long Roll Details</div>
         <div class="grid">
-          <div class="field assignment-field"><label>Region <span class="req">*</span></label>
-            <select id="f_region" required><option value="">Loading Regions…</option></select>
-            <small class="assignment-help">Parent selects the Region. Regional/Client access is locked to its authorized scope.</small>
-          </div>
-          <div class="field assignment-field"><label>Sector <span class="req">*</span></label>
-            <select id="f_sector" required><option value="">Select Region first</option></select>
-            <small class="assignment-help">Every Long Roll employee must belong to a Sector.</small>
-          </div>
           <div class="field"><label>MSM No. (Employee No.)</label><input id="f_msmno"></div>
           <div class="field"><label>Discharge Date (MSM)</label><input id="f_dischargemsm" type="date"></div>
           <div class="field"><label>Cash / Reliever</label><input id="f_cashreliever"></div>
@@ -1142,6 +1124,8 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
           </div>
           <div class="field"><label>Supervisor</label><input id="f_supervisor"></div>
           <div class="field"><label>Client / Project</label><input id="f_clientproject" placeholder="defaults to the Client field above"></div>
+          <div class="field assignment-field"><label>Region</label><select id="f_region"><option value="">Select Region</option></select></div>
+          <div class="field assignment-field"><label>Sector</label><select id="f_sector"><option value="">Select Sector</option></select></div>
           <div class="field"><label>Photo Attached</label>
             <select id="f_photo"><option value=""></option><option>Yes</option><option>No</option></select>
           </div>
@@ -1780,6 +1764,7 @@ function startApp(){
   subscribeRecords();
   if(isParent()){ subscribeAdminUsers(); subscribeAuditLogs(); subscribeTransferHistory(); }
   resetForm();
+  setTimeout(()=>msmPopulateEnrollmentAssignment(false),50);
   switchTab('form');
   if(typeof msmEnsureUI==='function') msmEnsureUI();
 }
@@ -2167,6 +2152,65 @@ window.addEventListener('resize',()=>{
 });
 
 /* ===================== Form <-> record mapping ===================== */
+/* ===================== Final assignment binding ===================== */
+function msmPopulateEnrollmentAssignment(preserve=true){
+  const regionSel=document.getElementById('f_region');
+  const sectorSel=document.getElementById('f_sector');
+  if(!regionSel || !sectorSel) return;
+  const oldRegion=preserve?regionSel.value:'';
+  const oldSector=preserve?sectorSel.value:'';
+  let regions=(window.msmRegionCatalog||[]).slice();
+  const regional=isRegional();
+  const client=!isParent() && !regional;
+  if(regional && myRegion()) regions=[{name:myRegion(),sectors:msmSectorsForRegion(msmRegionByKey(msmRegionKeyFromName(myRegion()))||{sectors:[]})}];
+  if(client){
+    const ownSector=normalizeSectorName(mySector()||myClientProject());
+    const rr=ownSector?msmRegionForSector(ownSector):null;
+    if(rr) regions=[rr];
+  }
+  regionSel.innerHTML='<option value="">Select Region</option>'+regions.map(r=>`<option value="${escapeHtml(r.name)}">${escapeHtml(r.name)}</option>`).join('');
+  const targetRegion=oldRegion || (regional?myRegion():(client?(regions[0]?.name||''):''));
+  if(targetRegion) regionSel.value=targetRegion;
+  const region=regions.find(r=>String(r.name).toLowerCase()===String(regionSel.value).toLowerCase());
+  let sectors=region?msmSectorsForRegion(region):[];
+  if(client){const own=normalizeSectorName(mySector()||myClientProject()); if(own) sectors=[own];}
+  sectorSel.innerHTML='<option value="">Select Sector</option>'+sectors.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  const targetSector=oldSector || (client?(sectors[0]||''):(regional && sectors.length===1?sectors[0]:''));
+  if(targetSector) sectorSel.value=targetSector;
+  if(regional){regionSel.value=myRegion();regionSel.disabled=true;}
+  else if(client){regionSel.disabled=true;sectorSel.disabled=true;}
+  else {regionSel.disabled=false;sectorSel.disabled=false;}
+}
+function msmRefreshEnrollmentSectors(){
+  const regionSel=document.getElementById('f_region'),sectorSel=document.getElementById('f_sector');
+  if(!regionSel||!sectorSel) return;
+  const region=msmRegionByKey(msmRegionKeyFromName(regionSel.value));
+  const old=sectorSel.value;
+  const sectors=region?msmSectorsForRegion(region):[];
+  sectorSel.innerHTML='<option value="">Select Sector</option>'+sectors.map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('');
+  if(sectors.some(s=>s.toLowerCase()===old.toLowerCase())) sectorSel.value=old;
+}
+function msmApplyAssignmentToRecord(data){
+  if(isRegional()){
+    data.region=myRegion();
+    data.regionId=msmRegionKeyFromName(myRegion());
+    data.sector=normalizeSectorName(document.getElementById('f_sector')?.value||mySector()||myClientProject());
+  }else if(!isParent()){
+    const sector=normalizeSectorName(mySector()||myClientProject());
+    const rr=msmRegionForSector(sector);
+    data.sector=sector;
+    data.region=rr?.name||'';
+    data.regionId=rr?msmRegionKeyFromName(rr.name):'';
+  }else{
+    const region=normalizeSectorName(document.getElementById('f_region')?.value);
+    const sector=normalizeSectorName(document.getElementById('f_sector')?.value);
+    data.region=region;
+    data.regionId=region?msmRegionKeyFromName(region):'';
+    data.sector=sector;
+  }
+  return data;
+}
+
 function readForm(){
   const g = id => document.getElementById(id).value.trim();
   const clientTop = document.getElementById('clientName').value.trim();
@@ -2180,6 +2224,9 @@ function readForm(){
     newold: g('f_newold'),
     supervisor: g('f_supervisor'),
     clientproject: g('f_clientproject') || clientTop,
+    region: g('f_region'),
+    regionId: g('f_region') ? msmRegionKeyFromName(g('f_region')) : '',
+    sector: g('f_sector'),
     location: g('f_deployloc'),
     name: g('f_name'),
     father: g('f_father'),
@@ -2231,7 +2278,7 @@ function fillForm(rec){
   s('f_bank', rec.bank); s('f_branchname', rec.branchname); s('f_branchcode', rec.branchcode);
   s('f_msmno', rec.msmno); s('f_dischargemsm', rec.dischargemsm); s('f_cashreliever', rec.cashreliever);
   s('f_uniformdate', rec.uniformdate); s('f_newold', rec.newold); s('f_supervisor', rec.supervisor);
-  s('f_clientproject', rec.clientproject); s('f_photo', rec.photo); s('f_specialbranch', rec.specialbranch);
+  s('f_clientproject', rec.clientproject); s('f_region', rec.region || ''); s('f_sector', rec.sector || ''); s('f_photo', rec.photo); s('f_specialbranch', rec.specialbranch);
   s('f_remarks', rec.remarks);
 
   uploadState.photoData = rec.photoData || '';
@@ -2252,6 +2299,7 @@ function resetForm(){
   updatePhotoPreviewUI('photoData', 'photoPreview', 'photoPreviewEmpty', 'photoClearBtn');
   updatePhotoPreviewUI('policeVerifDoc', 'policeVerifPreview', 'policeVerifPreviewEmpty', 'policeVerifClearBtn');
   cancelEdit();
+  setTimeout(()=>msmPopulateEnrollmentAssignment(false),0);
 }
 
 function cancelEdit(){
@@ -2363,7 +2411,7 @@ function renderAuditLogs(){
 
 /* ===================== File storage safety ===================== */
 async function uploadEnrollmentFiles(data){
-  if(!storage) return data;
+  if(!storage){ if(data.photo || data.policeverif) throw new Error('Firebase Storage is not initialized; files were not saved.'); return data; }
   const uid=(currentUser?.uid||'anonymous').replace(/[^a-zA-Z0-9_-]/g,'_');
   const base=`enrollment/${uid}/${editingId||('new-'+Date.now())}`;
   const uploadDataUrl=async(dataUrl,filename,contentType)=>{
@@ -2391,6 +2439,8 @@ async function saveEntry(){
     return;
   }
   let data = readForm();
+  msmApplyAssignmentToRecord(data);
+  if(isParent() && (!data.clientproject || !data.region || !data.sector)){ showToast('Client / Project, Region and Sector are required for a new Long Roll assignment.'); return; }
   try{ data = await uploadEnrollmentFiles(data); }catch(fileErr){ console.error(fileErr); showToast('File upload failed: '+fileErr.message); return; }
   data.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
   if(!isParent()) { data.clientproject = myClientProject(); data.sector = mySector() || msmCanonicalSector(myClientProject()); } // client role can never save into another tenant
@@ -3154,6 +3204,11 @@ window.addEventListener('afterprint', ()=>{
   document.getElementById('printFormTemplate').style.display='';
 });
 
+
+window.addEventListener('change',e=>{
+  if(e.target?.id==='f_region') msmRefreshEnrollmentSectors();
+});
+
 /* ===================== Toast ===================== */
 let toastTimer;
 function showToast(msg){
@@ -3175,7 +3230,7 @@ function showToast(msg){
 const MSM_RECYCLE_COLLECTION = 'recycleBin';
 const MSM_SECTOR_COLLECTION = 'sectorCatalog';
 const MSM_REGION_COLLECTION = 'regionCatalog';
-const MSM_DEFAULT_SECTORS = [];
+const MSM_DEFAULT_SECTORS = ['Islamabad','Rawalpindi','KPK','Chakwal'];
 const MSM_DEFAULT_REGIONS = ['North Region','South Region','East Region','West Region'];
 window.msmActiveSector = 'full';
 window.msmActiveRegion = 'all';
@@ -3304,7 +3359,7 @@ async function msmLoadRegionCatalog(){
   try{
     let docs=[];
     if(isRegional()){
-      const rid=String(myRegionId()||'').trim() || msmRegionKeyFromName(myRegion());
+      const rid=msmRegionKeyFromName(myRegion());
       if(rid){
         const one=await db.collection(MSM_REGION_COLLECTION).doc(rid).get();
         if(one.exists) docs=[{id:one.id,...(one.data()||{})}];
@@ -3321,13 +3376,25 @@ async function msmLoadRegionCatalog(){
       const map=new Map(normalized.map(x=>[x.name.toLowerCase(),x]));
       for(const name of MSM_DEFAULT_REGIONS)if(!map.has(name.toLowerCase()))map.set(name.toLowerCase(),{name,sectors:[],locations:[]});
       if(isParent()){
+        const north=map.get('north region');
+        if(north && !north.locations.length){
+          north.locations=['Regional Head Office (North Region) — Office No 5, 1st Floor, 20-B Block, Kashif Blair Plaza, G-8, Islamabad — 051-2340294'];
+          await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(north.name)).set({name:north.name,locations:north.locations,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+        }
+        const assigned=new Set([...map.values()].flatMap(r=>r.sectors||[]).map(x=>x.toLowerCase()));
+        const missing=MSM_DEFAULT_SECTORS.filter(s=>!assigned.has(s.toLowerCase()));
+        if(north && missing.length){
+          north.sectors=[...new Set([...(north.sectors||[]),...missing])];
+          await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(north.name)).set({name:north.name,sectors:north.sectors,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+          for(const sector of missing)await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(sector)).set({name:sector,region:north.name,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+        }
       }
       window.msmRegionCatalog=[...map.values()].sort((a,b)=>a.name.localeCompare(b.name));
     }
   }catch(e){
     console.warn('Region catalog unavailable:',e.message);
     window.msmRegionCatalog=isRegional() && myRegion()? [{name:myRegion(),sectors:[],locations:[]}]:MSM_DEFAULT_REGIONS.map(name=>({name,sectors:[],locations:[]}));
-  }finally{window.msmRegionLoading=false;window.msmRegionUnsub=true;msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();}
+  }finally{window.msmRegionLoading=false;window.msmRegionUnsub=true;msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();if(typeof msmPopulateEnrollmentAssignment==='function')msmPopulateEnrollmentAssignment(true);}
 }
 
 async function msmLoadSectorCatalog(){
@@ -3347,7 +3414,7 @@ async function msmLoadSectorCatalog(){
   }catch(e){
     console.warn('Sector catalog unavailable:',e.message);
     window.msmSectorCatalog=isRegional()?[]:[...MSM_DEFAULT_SECTORS];
-  }finally{window.msmSectorLoading=false;window.msmSectorUnsub=true;msmPopulateSectorFilter();msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();}
+  }finally{window.msmSectorLoading=false;window.msmSectorUnsub=true;msmPopulateSectorFilter();msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();if(typeof msmPopulateEnrollmentAssignment==='function')msmPopulateEnrollmentAssignment(true);}
 }
 
 async function msmAddRegion(){
@@ -3892,11 +3959,11 @@ if ('serviceWorker' in navigator) {
           records=rows.sort((a,b)=>(Number(a.sno)||0)-(Number(b.sno)||0));
           updateStamp();updateSectorPortal();renderTable();
         };
-        sectors.forEach(sec=>{
-          const u1=db.collection(RECORDS_COLLECTION).where('sector','==',sec).onSnapshot(s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));merge();},e=>console.warn('Regional sector query:',sec,e.message));
-          const u2=db.collection(RECORDS_COLLECTION).where('clientproject','==',sec).onSnapshot(s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));merge();},e=>console.warn('Regional legacy client query:',sec,e.message));
-          unsubs.push(u1,u2);
-        });
+        const u=db.collection(RECORDS_COLLECTION).where('region','==',myRegion()).onSnapshot(s=>{
+          s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));
+          merge();
+        },e=>console.warn('Regional region-scoped query:',e.message));
+        unsubs.push(u);
         recordsUnsub=()=>unsubs.forEach(u=>{try{u();}catch(_e){}});
       }).catch(e=>showToast('Could not load regional records: '+e.message));
     };
@@ -3914,429 +3981,5 @@ if ('serviceWorker' in navigator) {
   setTimeout(()=>{ if(window.db && currentAccess){ window.msmEnsureUI?.(); loadSectorCatalogForAllScopedUsers(); } },700);
 })();
 </script>
-
-<script id="msm-final-production-layer">
-(function(){
-  'use strict';
-
-  const FINAL_MAX_FILE_BYTES = 10 * 1024 * 1024;
-  const FINAL_RECORDS = 'records';
-  const FINAL_AUTH = 'authorizedUsers';
-  const FINAL_REGION = 'regionCatalog';
-  const FINAL_SECTOR = 'sectorCatalog';
-
-  function finalRole(){
-    return String(currentAccess?.role || '').trim().toLowerCase();
-  }
-  function finalParent(){ return finalRole()==='parent' || finalRole()==='admin'; }
-  function finalRegional(){ return finalRole()==='regional'; }
-  function finalClient(){ return finalRole()==='client'; }
-  function finalNorm(v){ return String(v ?? '').trim().replace(/\s+/g,' '); }
-
-  function finalRegionId(name){
-    return msmRegionKeyFromName(name || '');
-  }
-
-  function finalCatalogRegions(){
-    return (window.msmRegionCatalog || []).filter(r => finalNorm(r.name));
-  }
-
-  function finalCatalogSectors(regionName){
-    const r = msmRegionByKey(msmRegionKeyFromName(regionName || ''));
-    return r ? msmSectorsForRegion(r) : [];
-  }
-
-  function finalFindRegionForSector(sector){
-    const target=finalNorm(sector).toLowerCase();
-    const r=(window.msmRegionCatalog||[]).find(x=>
-      (x.sectors||[]).some(s=>finalNorm(s).toLowerCase()===target)
-    );
-    return r ? finalNorm(r.name) : '';
-  }
-
-  function finalSetSelect(el, options, selected, placeholder){
-    if(!el) return;
-    const wanted=finalNorm(selected);
-    el.innerHTML=`<option value="">${escapeHtml(placeholder)}</option>`+
-      options.map(v=>`<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join('');
-    if(options.some(v=>v===wanted)) el.value=wanted;
-  }
-
-  function finalPopulateAssignmentFields(){
-    const regionEl=document.getElementById('f_region');
-    const sectorEl=document.getElementById('f_sector');
-    const clientEl=document.getElementById('f_clientproject');
-    if(!regionEl || !sectorEl || !currentAccess) return;
-
-    const regions=finalCatalogRegions().map(r=>r.name);
-    const assignedRegion=finalNorm(currentAccess.region || '');
-    const assignedSector=finalNorm(currentAccess.sector || '');
-
-    if(finalParent()){
-      finalSetSelect(regionEl, regions, regionEl.value || window.msmActiveRegionName || '', 'Select Region');
-      regionEl.disabled=false;
-      regionEl.onchange=function(){
-        const sectors=finalCatalogSectors(regionEl.value);
-        finalSetSelect(sectorEl,sectors,'','Select Sector');
-        if(sectorEl.value) sectorEl.dispatchEvent(new Event('change'));
-      };
-      const currentSector=finalNorm(sectorEl.value || window.msmActiveSectorName || '');
-      const sectors=finalCatalogSectors(regionEl.value);
-      finalSetSelect(sectorEl,sectors,currentSector,'Select Sector');
-      sectorEl.disabled=false;
-      clientEl && (clientEl.readOnly=false);
-    } else if(finalRegional()){
-      finalSetSelect(regionEl, assignedRegion ? [assignedRegion] : [], assignedRegion, 'Assigned Region');
-      regionEl.disabled=true;
-      const sectors=finalCatalogSectors(assignedRegion);
-      finalSetSelect(sectorEl,sectors,sectorEl.value || assignedSector,'Select Sector');
-      sectorEl.disabled=false;
-      if(clientEl){
-        clientEl.value=sectorEl.value || assignedSector || '';
-        clientEl.readOnly=true;
-      }
-    } else if(finalClient()){
-      const clientRegion=finalNorm(currentAccess.region || '') || finalFindRegionForSector(assignedSector);
-      finalSetSelect(regionEl,clientRegion ? [clientRegion] : [],clientRegion,'Authorized Region');
-      regionEl.disabled=true;
-      finalSetSelect(sectorEl,assignedSector ? [assignedSector] : [],assignedSector,'Authorized Sector');
-      sectorEl.disabled=true;
-      if(clientEl){
-        clientEl.value=finalNorm(currentAccess.clientproject || '');
-        clientEl.readOnly=true;
-      }
-    }
-
-    const regionHelp=regionEl.closest('.field')?.querySelector('.assignment-help');
-    if(regionHelp){
-      regionHelp.textContent=finalParent()
-        ? 'Parent controls Region assignment.'
-        : 'This field is locked to the authorized account scope.';
-    }
-  }
-
-  function finalAddAssignmentNote(){
-    const section=[...document.querySelectorAll('.form-section-title')]
-      .find(x=>String(x.textContent||'').includes('Office Use / Long Roll Details'));
-    if(!section || section.parentNode.querySelector('.final-assignment-note')) return;
-    const note=document.createElement('div');
-    note.className='final-assignment-note';
-    note.innerHTML='<strong>FINAL DATA FLOW:</strong> Region → Sector → Client / Project → Deployment Location → Employee Long Roll';
-    section.parentNode.insertBefore(note,section.nextElementSibling);
-    const bar=document.createElement('div');
-    bar.className='msm-rainbow-bar';
-    section.parentNode.insertBefore(bar,note.nextSibling);
-  }
-
-  // Correct the form-to-database mapping. The old version accidentally saved the
-  // Photo/Verification status fields instead of the actual uploaded files.
-  window.readForm = function(){
-    const g=id=>document.getElementById(id)?.value?.trim?.() || '';
-    const clientTop=g('clientName');
-    return {
-      msmno:g('f_msmno'), doe:g('f_joining'), dischargemsm:g('f_dischargemsm'),
-      cashreliever:g('f_cashreliever'), uniformdate:g('f_uniformdate'), newold:g('f_newold'),
-      supervisor:g('f_supervisor'), clientproject:g('f_clientproject') || clientTop,
-      location:g('f_deployloc'), name:g('f_name'), father:g('f_father'), cnic:g('f_cnic'),
-      cnicexpiry:g('f_cnic_expiry'), armycivil:g('f_armycivil'), dob:g('f_dob'),
-      permaddr:g('f_permaddr'), armyno:g('f_armyno'), photo:g('f_photo'),
-      policeverif:g('f_policeverif'), specialbranch:g('f_specialbranch'),
-      apsaa:g('f_apsaa'), cell:g('f_cell'), education:g('f_education'),
-      nokname:g('f_nokname'), nokcontact:g('f_nokcontact'), iban:g('f_iban'),
-      bank:g('f_bank'), actitle:g('f_actitle'), remarks:g('f_remarks'),
-      co:g('f_co'), mother:g('f_mother'), domicile:g('f_domicile'),
-      blood:g('f_blood'), height:g('f_height'), marital:g('f_marital'),
-      children:g('f_children'), cnicissue:g('f_cnic_issue'), unitrank:g('f_unitrank'),
-      enrolldate:g('f_enrolldate'), dischargedate_army:g('f_dischargedate_army'),
-      homecell:g('f_homecell'), policestation:g('f_policestation'),
-      curraddr:g('f_curraddr'), joining:g('f_joining'), deployloc:g('f_deployloc'),
-      acno:g('f_acno'), branchname:g('f_branchname'), branchcode:g('f_branchcode'),
-      photoAttached:g('f_photo'), photoSettings:uploadState.photoSettings || {scale:1,x:0,y:0},
-      region:g('f_region'), regionId:finalRegionId(g('f_region')),
-      sector:g('f_sector'),
-      photoUrl: '', policeVerificationUrl: ''
-    };
-  };
-
-  // Ensure editing an existing employee restores the actual stored file URLs.
-  const originalFillForm=window.fillForm;
-  window.fillForm=function(rec){
-    if(typeof originalFillForm==='function') originalFillForm(rec);
-    uploadState.photoData=rec?.photoUrl || rec?.photoData || '';
-    uploadState.policeVerifDoc=rec?.policeVerificationUrl || rec?.policeVerifDoc || '';
-    uploadState.photoSettings=rec?.photoSettings || {scale:1,x:0,y:0};
-    updatePhotoPreviewUI('photoData','photoPreview','photoPreviewEmpty','photoClearBtn');
-    updatePhotoPreviewUI('policeVerifDoc','policeVerifPreview','policeVerifPreviewEmpty','policeVerifClearBtn');
-    setTimeout(finalPopulateAssignmentFields,50);
-  };
-
-  function finalDataUrlBytes(dataUrl){
-    const comma=String(dataUrl).indexOf(',');
-    if(comma<0) return 0;
-    const raw=String(dataUrl).slice(comma+1);
-    return Math.floor(raw.length*3/4);
-  }
-
-  async function finalUploadDataUrl(dataUrl, ref, defaultMime){
-    if(!dataUrl || !String(dataUrl).startsWith('data:')) return dataUrl || '';
-    const comma=dataUrl.indexOf(',');
-    if(comma<0) throw new Error('Invalid uploaded file data.');
-    const meta=dataUrl.slice(5,comma);
-    const mime=(meta.split(';')[0] || defaultMime || 'application/octet-stream').toLowerCase();
-    const bytesSize=finalDataUrlBytes(dataUrl);
-    if(bytesSize>FINAL_MAX_FILE_BYTES) throw new Error('File is larger than 10 MB.');
-    const raw=atob(dataUrl.slice(comma+1));
-    const bytes=new Uint8Array(raw.length);
-    for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
-    await ref.put(bytes,{contentType:mime,customMetadata:{uploadedBy:(currentUser?.email||'').toLowerCase()}});
-    return await ref.getDownloadURL();
-  }
-
-  async function finalSaveEntry(){
-    if(!currentUser || !currentAccess || !db || !storage) return showToast('Please sign in again.');
-    const name=finalNorm(document.getElementById('f_name')?.value);
-    if(!name){ showToast('Employee Name is required.'); document.getElementById('f_name')?.focus(); return; }
-
-    finalPopulateAssignmentFields();
-    const region=finalNorm(document.getElementById('f_region')?.value);
-    const sector=finalNorm(document.getElementById('f_sector')?.value);
-    const clientproject=finalNorm(document.getElementById('f_clientproject')?.value);
-
-    if(!region) return showToast('Select a Region before saving the Long Roll employee.');
-    if(!sector) return showToast('Select a Sector before saving the Long Roll employee.');
-
-    if(finalRegional() && region.toLowerCase()!==finalNorm(currentAccess.region).toLowerCase())
-      return showToast('Regional Office can save only inside its assigned Region.');
-    if(finalRegional() && sector && !finalCatalogSectors(region).some(s=>s.toLowerCase()===sector.toLowerCase()))
-      return showToast('The selected Sector is not assigned to this Region.');
-    if(finalClient() && clientproject.toLowerCase()!==finalNorm(currentAccess.clientproject).toLowerCase())
-      return showToast('Client / Project is locked to your authorized account.');
-
-    const existingId=editingId || '';
-    const ref=existingId ? db.collection(FINAL_RECORDS).doc(existingId) : db.collection(FINAL_RECORDS).doc();
-    let data=window.readForm();
-    data.region=region;
-    data.regionId=finalRegionId(region);
-    data.sector=sector;
-    data.clientproject=finalClient() ? finalNorm(currentAccess.clientproject) : clientproject;
-
-    if(finalRegional()) data.clientproject=sector;
-    if(finalClient() && !data.clientproject) return showToast('Authorized Client / Project is missing.');
-
-    const previous=existingId ? (records.find(r=>r.id===existingId)||{}) : {};
-    const previousPhoto=previous.photoUrl || '';
-    const previousPolice=previous.policeVerificationUrl || '';
-
-    try{
-      // Create the Firestore record first so Storage Rules can authorize the file path
-      // against the record's scope. Firestore explicitly supports generating a doc ref
-      // before writing it.
-      if(!existingId){
-        const nextSno=records.length ? Math.max(...records.map(r=>Number(r.sno)||0))+1 : 1;
-        await ref.set({...data,sno:nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),createdBy:(currentUser.email||'').toLowerCase()});
-      }
-
-      const photoInput=uploadState.photoData || '';
-      const policeInput=uploadState.policeVerifDoc || '';
-
-      if(photoInput && photoInput.startsWith('data:')){
-        const mime=(photoInput.slice(5,photoInput.indexOf(';'))||'image/jpeg').toLowerCase();
-        const ext=mime==='image/png'?'png':mime==='image/webp'?'webp':'jpg';
-        data.photoUrl=await finalUploadDataUrl(photoInput,storage.ref(`enrollment/${ref.id}/employee-photo.${ext}`),'image/jpeg');
-      } else {
-        data.photoUrl=photoInput || previousPhoto || '';
-      }
-
-      if(policeInput && policeInput.startsWith('data:')){
-        const mime=(policeInput.slice(5,policeInput.indexOf(';'))||'application/pdf').toLowerCase();
-        const ext=mime==='application/pdf'?'pdf':mime==='image/png'?'png':'jpg';
-        data.policeVerificationUrl=await finalUploadDataUrl(policeInput,storage.ref(`enrollment/${ref.id}/police-verification.${ext}`),'application/pdf');
-      } else {
-        data.policeVerificationUrl=policeInput || previousPolice || '';
-      }
-
-      data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
-      data.updatedBy=(currentUser.email||'').toLowerCase();
-      data.photoData=data.photoUrl || '';
-      data.policeVerifDoc=data.policeVerificationUrl || '';
-
-      if(existingId){
-        await ref.update(data);
-        await writeAuditLog('UPDATE_RECORD',ref.id,{
-          name:data.name||'',cnic:data.cnic||'',clientproject:data.clientproject||'',
-          sector:data.sector||'',region:data.region||'',regionId:data.regionId||''
-        });
-      }else{
-        await ref.update(data);
-        await writeAuditLog('CREATE_RECORD',ref.id,{
-          name:data.name||'',cnic:data.cnic||'',clientproject:data.clientproject||'',
-          sector:data.sector||'',region:data.region||'',regionId:data.regionId||''
-        });
-      }
-
-      showToast(existingId ? 'Employee updated in the Long Roll.' : 'Employee saved to the Long Roll.');
-      persistMeta();
-      resetForm();
-      switchTab('register');
-    }catch(err){
-      console.error('Final save failed:',err);
-      if(!existingId){
-        try{ await ref.delete(); }catch(_e){}
-      }
-      showToast('Could not save the employee: '+(err?.message||err));
-    }
-  }
-  window.saveEntry=finalSaveEntry;
-
-  // Replace record subscription with queries that actually match the Firestore rules.
-  // Rules are not filters; every scoped query must guarantee its result set is allowed.
-  window.subscribeRecords=function(){
-    if(recordsUnsub){try{recordsUnsub();}catch(_e){} recordsUnsub=null;}
-    const apply=rows=>{
-      const m=new Map();
-      rows.forEach(r=>m.set(r.id,r));
-      records=[...m.values()].sort((a,b)=>(Number(a.sno)||0)-(Number(b.sno)||0));
-      updateStamp(); updateSectorPortal(); renderTable();
-    };
-
-    if(finalParent()){
-      recordsUnsub=db.collection(FINAL_RECORDS).onSnapshot(
-        s=>apply(s.docs.map(d=>({id:d.id,...d.data()}))),
-        e=>{console.error(e);showToast('Could not load the register: '+e.message);}
-      );
-      return;
-    }
-
-    if(finalRegional()){
-      const region=finalNorm(currentAccess.region||'');
-      const regionId=finalNorm(currentAccess.regionId||'') || finalRegionId(region);
-      if(!region && !regionId){apply([]);return;}
-      const bucket=new Map();
-      const merge=()=>apply([...bucket.values()]);
-      const unsubs=[];
-      if(region){
-        const u=db.collection(FINAL_RECORDS).where('region','==',region).onSnapshot(
-          s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));merge();},
-          e=>console.warn('Regional region query:',e.message)
-        );
-        unsubs.push(u);
-      }
-      if(regionId){
-        const u=db.collection(FINAL_RECORDS).where('regionId','==',regionId).onSnapshot(
-          s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));merge();},
-          e=>console.warn('Regional regionId query:',e.message)
-        );
-        unsubs.push(u);
-      }
-      recordsUnsub=()=>unsubs.forEach(u=>{try{u();}catch(_e){}});
-      return;
-    }
-
-    const client=finalNorm(currentAccess.clientproject||'');
-    const sector=finalNorm(currentAccess.sector||'');
-    if(!client){apply([]);return;}
-    const unsubs=[];
-    const bucket=new Map();
-    const merge=()=>apply([...bucket.values()]);
-    if(sector){
-      const q=db.collection(FINAL_RECORDS)
-        .where('clientproject','==',client)
-        .where('sector','in',[sector,'']);
-      unsubs.push(q.onSnapshot(
-        s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));merge();},
-        e=>{console.error(e);showToast('Could not load client/sector records: '+e.message);}
-      ));
-    }else{
-      unsubs.push(db.collection(FINAL_RECORDS).where('clientproject','==',client).onSnapshot(
-        s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));merge();},
-        e=>{console.error(e);showToast('Could not load client records: '+e.message);}
-      ));
-    }
-    recordsUnsub=()=>unsubs.forEach(u=>{try{u();}catch(_e){}});
-  };
-
-  // Recycle Bin queries must follow the same scope constraints.
-  const originalLoadRecycle=window.msmLoadRecycle;
-  window.msmLoadRecycle=function(){
-    if(!currentAccess){return;}
-    msmEnsureUI();
-    if(window.msmRecycleUnsub){try{window.msmRecycleUnsub();}catch(_e){}}
-    const apply=rows=>{window.msmRecycleRows=rows;msmRenderRecycle();};
-
-    if(finalParent()){
-      window.msmRecycleUnsub=db.collection('recycleBin').orderBy('deletedAt','desc').limit(1000).onSnapshot(
-        s=>apply(s.docs.map(d=>({id:d.id,...d.data()}))),
-        e=>{const t=document.getElementById('msmRecycleTbody');if(t)t.innerHTML=`<tr><td colspan="9">Could not load Recycle Bin: ${escapeHtml(e.message||'Unknown error')}</td></tr>`;}
-      );
-      return;
-    }
-    if(finalRegional()){
-      const region=finalNorm(currentAccess.region||'');
-      if(!region){apply([]);return;}
-      window.msmRecycleUnsub=db.collection('recycleBin').where('region','==',region).onSnapshot(
-        s=>apply(s.docs.map(d=>({id:d.id,...d.data()}))),
-        e=>{const t=document.getElementById('msmRecycleTbody');if(t)t.innerHTML=`<tr><td colspan="9">Could not load Regional Recycle Bin: ${escapeHtml(e.message||'Unknown error')}</td></tr>`;}
-      );
-      return;
-    }
-    const client=finalNorm(currentAccess.clientproject||''), sector=finalNorm(currentAccess.sector||'');
-    if(!client){apply([]);return;}
-    const q=sector
-      ? db.collection('recycleBin').where('clientproject','==',client).where('sector','in',[sector,''])
-      : db.collection('recycleBin').where('clientproject','==',client);
-    window.msmRecycleUnsub=q.onSnapshot(
-      s=>apply(s.docs.map(d=>({id:d.id,...d.data()}))),
-      e=>{const t=document.getElementById('msmRecycleTbody');if(t)t.innerHTML=`<tr><td colspan="9">Could not load Client Recycle Bin: ${escapeHtml(e.message||'Unknown error')}</td></tr>`;}
-    );
-  };
-
-  // Parent-created client access also stores its region when the sector can be resolved.
-  const oldAddAccess=window.addAuthorizedUser;
-  window.addAuthorizedUser=function(){
-    if(!finalParent()) return showToast('Only Parent can manage authorized users.');
-    const email=finalNorm(document.getElementById('adm_email')?.value).toLowerCase();
-    const role=String(document.getElementById('adm_role')?.value||'client').toLowerCase();
-    const clientproject=finalNorm(document.getElementById('adm_clientproject')?.value);
-    const sector=finalNorm(document.getElementById('adm_sector')?.value);
-    const selectedRegion=finalNorm(document.getElementById('adm_region')?.value);
-    if(!email || !email.includes('@')) return showToast('Enter a valid email address.');
-    let region=selectedRegion;
-    if(role==='regional' && !region) return showToast('Select the Regional Office Region.');
-    if(role==='client' && !clientproject) return showToast('Enter the Client / Project.');
-    if(role==='client' && sector && !region) region=finalFindRegionForSector(sector);
-
-    const payload=role==='regional'
-      ? {role:'regional',region,regionId:finalRegionId(region)}
-      : {role:'client',clientproject,sector,region,regionId:region?finalRegionId(region):''};
-
-    db.collection(FINAL_AUTH).doc(email).set(payload).then(
-      ()=>writeAuditLog('ADD_ACCESS',email,{targetEmail:email,role,...payload})
-    ).then(()=>{
-      showToast(`Access added for ${email}.`);
-      ['adm_email','adm_clientproject','adm_sector','adm_region'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});
-    }).catch(e=>showToast('Could not add access: '+e.message));
-  };
-
-  // Keep the final assignment UI synchronized after the existing catalog loaders/renders.
-  const oldEnsure=window.msmEnsureUI;
-  window.msmEnsureUI=function(){
-    if(typeof oldEnsure==='function') oldEnsure();
-    finalAddAssignmentNote();
-    setTimeout(finalPopulateAssignmentFields,100);
-    setTimeout(finalPopulateAssignmentFields,700);
-  };
-
-  function finalBoot(){
-    finalAddAssignmentNote();
-    finalPopulateAssignmentFields();
-    setTimeout(finalPopulateAssignmentFields,500);
-    setTimeout(finalPopulateAssignmentFields,1500);
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',finalBoot);
-  else finalBoot();
-
-})();
-</script>
-
 </body>
 </html>

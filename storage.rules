@@ -2,107 +2,17 @@ rules_version = '2';
 
 service firebase.storage {
   match /b/{bucket}/o {
-
     function signedIn() {
       return request.auth != null && request.auth.token.email != null;
     }
-
-    function email() {
-      return request.auth.token.email.lower();
-    }
-
-    function userDoc() {
-      return firestore.get(/databases/(default)/documents/authorizedUsers/$(email()));
-    }
-
     function authorized() {
-      return signedIn()
-        && firestore.exists(/databases/(default)/documents/authorizedUsers/$(email()));
+      return signedIn() && firestore.exists(
+        /databases/(default)/documents/authorizedUsers/$(request.auth.token.email.lower())
+      );
     }
-
-    function role() {
-      return authorized() ? userDoc().data.get('role', '').lower() : '';
+    match /enrollment/{uid}/{recordId}/{fileName} {
+      allow read, write: if authorized() && request.auth.uid == uid;
     }
-
-    function isParent() {
-      return authorized() && (role() == 'parent' || role() == 'admin');
-    }
-
-    function isClient() {
-      return authorized() && role() == 'client';
-    }
-
-    function isRegional() {
-      return authorized() && role() == 'regional';
-    }
-
-    function myClient() {
-      return authorized() ? userDoc().data.get('clientproject', '') : '';
-    }
-
-    function mySector() {
-      return authorized() ? userDoc().data.get('sector', '') : '';
-    }
-
-    function myRegion() {
-      return authorized() ? userDoc().data.get('region', '') : '';
-    }
-
-    function myRegionId() {
-      return authorized() ? userDoc().data.get('regionId', '') : '';
-    }
-
-    function recordDoc(recordId) {
-      return firestore.get(/databases/(default)/documents/records/$(recordId));
-    }
-
-    function recordScoped(recordId) {
-      return firestore.exists(/databases/(default)/documents/records/$(recordId))
-        && (
-          isParent()
-          || (
-            isClient()
-            && recordDoc(recordId).data.get('clientproject', '') == myClient()
-            && (
-              mySector() == ''
-              || recordDoc(recordId).data.get('sector', '') == mySector()
-              || recordDoc(recordId).data.get('sector', '') == ''
-            )
-          )
-          || (
-            isRegional()
-            && (
-              (myRegionId() != '' && recordDoc(recordId).data.get('regionId', '') == myRegionId())
-              || (myRegion() != '' && recordDoc(recordId).data.get('region', '') == myRegion())
-            )
-          )
-        );
-    }
-
-    match /enrollment/{recordId}/{fileName} {
-      allow read: if signedIn() && recordScoped(recordId);
-
-      allow create: if signedIn()
-        && recordScoped(recordId)
-        && request.resource.size <= 10 * 1024 * 1024
-        && (
-          request.resource.contentType.matches('image/.*')
-          || request.resource.contentType == 'application/pdf'
-        );
-
-      allow update: if signedIn()
-        && recordScoped(recordId)
-        && request.resource.size <= 10 * 1024 * 1024
-        && (
-          request.resource.contentType.matches('image/.*')
-          || request.resource.contentType == 'application/pdf'
-        );
-
-      allow delete: if signedIn() && recordScoped(recordId);
-    }
-
-    match /{allPaths=**} {
-      allow read, write: if false;
-    }
+    match /{allPaths=**} { allow read, write: if false; }
   }
 }
