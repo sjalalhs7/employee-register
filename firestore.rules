@@ -2,74 +2,21 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function signedIn() {
-      return request.auth != null && request.auth.token.email != null;
-    }
-
-    function email() {
-      return request.auth.token.email.lower();
-    }
-
-    function userDoc() {
-      return get(/databases/$(database)/documents/authorizedUsers/$(email()));
-    }
-
-    function authorized() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/authorizedUsers/$(email()));
-    }
-
-    function role() {
-      return authorized() ? userDoc().data.get('role', '').lower() : '';
-    }
-
-    function isParent() {
-      return authorized() && (role() == 'parent' || role() == 'admin');
-    }
-
-    function isClient() {
-      return authorized() && role() == 'client';
-    }
-
-    function isRegional() {
-      return authorized() && role() == 'regional';
-    }
-
-    function myClient() {
-      return authorized() ? userDoc().data.get('clientproject', '') : '';
-    }
-
-    function mySector() {
-      return authorized() ? userDoc().data.get('sector', '') : '';
-    }
-
-    function myRegion() {
-      return authorized() ? userDoc().data.get('region', '') : '';
-    }
-
-    function myRegionId() {
-      return authorized() ? userDoc().data.get('regionId', '') : '';
-    }
-
-    function clientRecord(data) {
-      return isClient()
-        && myClient() != ''
-        && data.get('clientproject', '') == myClient()
-        && (mySector() == ''
-            || data.get('sector', '') == mySector()
-            || (data.get('sector', '') == '' && data.get('clientproject', '') == myClient()));
-    }
-
-    function regionalRecord(data) {
-      return isRegional()
-        && ((myRegionId() != '' && data.get('regionId', '') == myRegionId())
-            || (myRegion() != '' && data.get('region', '') == myRegion()));
-    }
-
-    function scopedRecord(data) {
-      return clientRecord(data) || regionalRecord(data);
-    }
+    function signedIn() { return request.auth != null && request.auth.token.email != null; }
+    function email() { return request.auth.token.email.lower(); }
+    function userDoc() { return get(/databases/$(database)/documents/authorizedUsers/$(email())); }
+    function authorized() { return signedIn() && exists(/databases/$(database)/documents/authorizedUsers/$(email())); }
+    function role() { return authorized() ? userDoc().data.get('role','').lower() : ''; }
+    function isParent() { return authorized() && (role() == 'parent' || role() == 'admin'); }
+    function isClient() { return authorized() && role() == 'client'; }
+    function isRegional() { return authorized() && role() == 'regional'; }
+    function myClient() { return authorized() ? userDoc().data.get('clientproject','') : ''; }
+    function mySector() { return authorized() ? userDoc().data.get('sector','') : ''; }
+    function myRegion() { return authorized() ? userDoc().data.get('region','') : ''; }
+    function myRegionId() { return authorized() ? userDoc().data.get('regionId','') : ''; }
+    function clientRecord(data) { return isClient() && myClient() != '' && data.get('clientproject','') == myClient() && (mySector() == '' || data.get('sector','') == mySector() || (data.get('sector','') == '' && data.get('clientproject','') == myClient())); }
+    function regionalRecord(data) { return isRegional() && ((myRegionId() != '' && data.get('regionId','') == myRegionId()) || (myRegion() != '' && data.get('region','') == myRegion())); }
+    function scopedRecord(data) { return clientRecord(data) || regionalRecord(data); }
 
     match /authorizedUsers/{userEmail} {
       allow get: if isParent() || (signedIn() && email() == userEmail);
@@ -84,50 +31,36 @@ service cloud.firestore {
     }
 
     match /records/{recordId} {
-      allow get: if isParent() || scopedRecord(resource.data);
-      allow list: if isParent() || scopedRecord(resource.data);
+      allow get, list: if isParent() || scopedRecord(resource.data);
       allow create: if isParent() || scopedRecord(request.resource.data);
-      allow update: if isParent()
-        || (scopedRecord(resource.data) && scopedRecord(request.resource.data));
+      allow update: if isParent() || (scopedRecord(resource.data) && scopedRecord(request.resource.data));
       allow delete: if isParent() || scopedRecord(resource.data);
     }
 
     match /recycleBin/{recordId} {
-      allow get: if isParent() || scopedRecord(resource.data);
-      allow list: if isParent() || scopedRecord(resource.data);
+      allow get, list: if isParent() || scopedRecord(resource.data);
       allow create: if isParent() || scopedRecord(request.resource.data);
       allow update: if isParent() || scopedRecord(resource.data);
       allow delete: if isParent() || scopedRecord(resource.data);
     }
 
     match /regionCatalog/{regionId} {
-      allow get: if isParent()
-        || (isRegional()
-            && (regionId == myRegionId()
-                || resource.data.get('name', '') == myRegion()));
+      allow get: if isParent() || (isRegional() && (regionId == myRegionId() || resource.data.get('name','') == myRegion()));
       allow list: if isParent();
-      allow create, update, delete: if isParent();
+      allow create, delete: if isParent();
+      allow update: if isParent() || (isRegional() && (regionId == myRegionId() || resource.data.get('name','') == myRegion()) && request.resource.data.get('name','') == resource.data.get('name',''));
     }
 
     match /sectorCatalog/{sectorId} {
-      allow get: if isParent()
-        || (isRegional() && resource.data.get('region', '') == myRegion());
-      allow list: if isParent();
-      allow create: if isParent()
-        || (isRegional() && request.resource.data.get('region', '') == myRegion());
-      allow update: if isParent()
-        || (isRegional()
-            && resource.data.get('region', '') == myRegion()
-            && request.resource.data.get('region', '') == myRegion());
+      allow get: if isParent() || (isRegional() && resource.data.get('region','') == myRegion());
+      allow list: if isParent() || (isRegional() && resource.data.get('region','') == myRegion());
+      allow create: if isParent() || (isRegional() && request.resource.data.get('region','') == myRegion());
+      allow update: if isParent() || (isRegional() && resource.data.get('region','') == myRegion() && request.resource.data.get('region','') == myRegion());
       allow delete: if isParent();
     }
 
     match /auditLogs/{logId} {
-      allow get: if isParent()
-        || (isRegional()
-            && (resource.data.get('regionId', '') == myRegionId()
-                || resource.data.get('userEmail', '') == email()))
-        || (isClient() && resource.data.get('userEmail', '') == email());
+      allow get: if isParent() || (isRegional() && (resource.data.get('regionId','') == myRegionId() || resource.data.get('userEmail','') == email())) || (isClient() && resource.data.get('userEmail','') == email());
       allow list: if isParent();
       allow create: if authorized();
       allow update, delete: if false;
@@ -138,8 +71,6 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /{document=**} { allow read, write: if false; }
   }
 }
