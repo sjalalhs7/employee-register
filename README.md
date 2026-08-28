@@ -1,30 +1,82 @@
-# MSM Security Guards — Professional Final Build
+# MSM Long Roll — FINAL Production Package
 
-This package keeps the existing Firebase/Auth/Long Roll application and adds a clean professional homepage modeled on the supplied company reference.
+## Firebase project
+`msm-security-guards-database`
 
-## Included
-- index.html — production website entry point
-- msm-security-guards-logo.png — corrected real PNG logo
-- manifest.webmanifest — installable PWA metadata
-- sw.js — basic offline shell/PWA service worker
-- firestore.rules — companion Firestore rules
+## What is final in this package
+- Login + Firebase Authentication flow
+- Parent / Regional / Client RBAC
+- Explicit Region → Sector → Client/Project assignment on every Long Roll record
+- Enrollment form retained as a required part of the application
+- Employee photo upload and Police Verification certificate upload
+- Firebase Storage paths tied to the employee record ID
+- Parent Region/Sector management
+- Regional Office Sector/Location management inside assigned Region
+- Scoped Long Roll queries that match Firestore Security Rules
+- Scoped Recycle Bin queries
+- Audit trail
+- PWA cache version bumped to force the new application shell
 
-## Important
-The homepage uses LIVE Firebase session/record/catalog data where available. It does not hard-code fake values such as 9,000+ guards.
+## Do NOT upload the old package over this one
+Deploy the contents of this `FINAL_WEB` folder as the website root.
 
-## Region/Sector model
-- regionCatalog/{regionId}: { name, sectors[] }
-- sectorCatalog/{sectorId}: { name, region }
-- Parent can add regions, add sectors, and move sectors.
-- Employee records are not deleted when a sector is moved.
+## Firebase Rules
+Publish BOTH:
+1. `firestore.rules` in Firestore → Rules
+2. `storage.rules` in Storage → Rules
 
-## Deployment
-1. Upload all package files together to the same web root.
-2. Publish firestore.rules to the SAME Firebase project used by the web app.
-3. Ensure the deployed domain is in Firebase Authentication → Authorized domains.
-4. Test Google login with an authorized user.
-5. Test Parent → Add Region → Add Sector → Move Sector → Open Sector.
-6. Test an existing client/sector login before importing new records.
+Also deploy `firestore.indexes.json` if using Firebase CLI.
 
-## Note
-The PWA is an installable web app, not a signed Google Play APK. A native APK can be produced later from this web app if required.
+## CLI
+```bash
+firebase use msm-security-guards-database
+firebase deploy --only firestore:rules,firestore:indexes,storage
+```
+
+## GitHub Pages
+Upload the contents of `FINAL_WEB` to the repository root that serves:
+`https://sjalalhs7.github.io/employee-register/`
+
+After publishing:
+1. Sign out.
+2. Clear the site's service-worker/cache if an old screen remains.
+3. Sign in again.
+4. Test Parent → Add Region → Add Sector → Region click → Sector click → New Entry → Save Long Roll.
+
+## First Parent
+The Firestore document must exist as:
+`authorizedUsers/{lowercase-email}`
+with:
+`role: "parent"`
+
+## Production test order
+Parent:
+- Login
+- Add Region
+- Add Sector
+- Assign/Move Sector
+- Add Regional Office location
+- Create employee with Region + Sector + Client/Project
+- Upload photo
+- Upload police certificate
+- Edit
+- Recycle
+- Recover
+
+Regional:
+- Login
+- See only assigned Region
+- Add Sector only inside assigned Region
+- Add Location
+- Create/edit only records in assigned Region
+
+Client:
+- Login
+- See only assigned Client/Project + Sector
+- Create/edit only its own scope
+
+Security:
+- Try another Region as Regional
+- Try another Client as Client
+- Try another employee file URL
+- Confirm all unauthorized actions fail
