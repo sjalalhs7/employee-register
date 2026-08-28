@@ -1,45 +1,53 @@
-MSM LONGROLL DATABASE — FINAL STABLE PACKAGE
-Version: 2026-08-28
+MSM LONGROLL DATABASE — FINAL STABLE V2.1
+========================================
 
-UPLOAD PACKAGE
-1. Upload ALL files in this folder to the same GitHub Pages directory:
-   - index.html
-   - msm-logo.png
-   - msm-security-guards-logo.png
-   - manifest.webmanifest
-   - sw.js
-   - icon-192.png
-   - icon-512.png
-   - icon-512-maskable.png
-2. In Firebase Firestore Rules, replace the existing rules with firestore.rules and Publish.
-3. In Firebase Storage Rules, replace the existing rules with storage.rules and Publish.
-4. Keep the Firebase project used by this package: msm-security-guards-database.
+Purpose
+-------
+Production-oriented MSM Security Guards Pvt Ltd Long Roll / Employee Enrollment UI.
 
-IMPORTANT DESIGN SEPARATION
-- Login/public page uses the full company logo containing company name, address and phone/email details.
-- Authenticated dashboard navigation uses ONLY the official shield logo.
-- The central dashboard may display the full company logo separately.
+V2.1 changes
+-------------
+1. Header navigation uses shield-only MSM logo.
+2. Date/time area now displays the full official company identity logo (company name + address + phone + Gmail) in a wide, readable frame.
+3. Region/Sector click handling hardened for desktop and touch/mobile.
+4. Parent can open all Regions and Sectors.
+5. Regional Office can open only its assigned Region and assigned Sectors.
+6. Client/Sector users can open only their authorized sector.
+7. Dashboard hero now has a local, stable cinematic Pakistan/security visual asset.
+8. North/South/East/West/Full Database cards use local visual assets so they do not depend on hotlinked images.
+9. Added Quick Access controls and lower dashboard widgets.
+10. Enrollment/Long Roll form remains directly below the dashboard.
+11. Existing Firebase Storage upload logic and scoped record subscriptions retained.
 
-CORE WORKFLOW
-Login → Authorization → Dashboard → Region → Sector → Enrollment → Save to Long Roll → Register → Print/Export.
-Parent: full access; Regional Office: assigned Region; Client/Sector: assigned Client/Project + Sector.
+Files
+-----
+index.html
+msm-logo.png                         = shield-only logo
+msm-security-guards-logo.png         = full company identity logo
+hero-salute.svg                      = stable local hero background
+region-north.svg                     = North visual
+region-south.svg                     = South visual
+region-east.svg                      = East visual
+region-west.svg                      = West visual
+region-database.svg                  = Full Database visual
+firestore.rules
+storage.rules
+manifest.webmanifest
+sw.js
+icon-192.png
+icon-512.png
+icon-512-maskable.png
 
-STABILITY FIXES INCLUDED
-- Region/Sector cards have explicit button hit areas, touch-action and z-index.
-- Parent can create Regions and Sectors.
-- Regional Office can create Sectors inside its assigned Region and add locations.
-- Sector catalog queries are scoped for Regional Office Firestore rules.
-- Client/Sector record queries are scoped to the assigned sector so Firestore can prove authorization.
-- Employee photo and police-verification files are uploaded to Firebase Storage instead of being stored as large Firestore base64 fields.
-- PDF certificate upload is supported.
-- Long Roll assignment requires Client/Project + Region + Sector for Parent.
-- Regional Office assignment is forced to its authorized Region/Sectors.
-- Enrollment section remains part of the main authenticated page.
-- PWA Install button remains available.
-- Contact/About/Services are bilingual and Contact includes official company phone/email details.
+Deployment
+----------
+1. Replace website files with the contents of this ZIP.
+2. Publish firestore.rules in Firebase Firestore Rules.
+3. Publish storage.rules in Firebase Storage Rules.
+4. Do NOT delete existing Firestore records.
+5. Test login, region click, sector click, add sector, assignment, enrollment, photo upload,
+   police verification upload, save, register, print, import/export, recycle and PWA install.
 
-REGION VISUALS
-Region cards use photographic Pakistan landmarks from Wikimedia Commons via stable file redirects, with gradient fallback styling if an image cannot load. See the website source for the visual URLs and licensing pages.
-
-DO NOT DELETE FIREBASE DATA.
-Only replace the website files and publish the supplied rules. Do not delete the Firestore collections or existing records.
+Important
+---------
+The code has been syntax-checked. Live Firebase authentication/storage/database testing must be
+performed against the company's actual deployed Firebase account after deployment.
