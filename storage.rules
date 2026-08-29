@@ -5,19 +5,24 @@ service firebase.storage {
     function signedIn() {
       return request.auth != null && request.auth.token.email != null;
     }
+
     function authorized() {
       return signedIn() && firestore.exists(
         /databases/(default)/documents/authorizedUsers/$(request.auth.token.email.lower())
       );
     }
+
     match /enrollment/{uid}/{recordId}/{fileName} {
       allow read: if authorized();
-      allow write: if authorized()
+      allow create, update: if authorized()
         && request.auth.uid == uid
         && request.resource.size < 5 * 1024 * 1024
         && request.resource.contentType.matches('image/.*|application/pdf');
       allow delete: if authorized() && request.auth.uid == uid;
     }
-    match /{allPaths=**} { allow read, write: if false; }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
   }
 }

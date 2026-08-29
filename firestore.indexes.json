@@ -21,6 +21,20 @@
       ]
     },
     {
+      "collectionGroup": "sectorCatalog",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "regionId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "name",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "records",
       "queryScope": "COLLECTION",
       "fields": [
@@ -29,8 +43,8 @@
           "order": "ASCENDING"
         },
         {
-          "fieldPath": "createdAt",
-          "order": "DESCENDING"
+          "fieldPath": "sectorId",
+          "order": "ASCENDING"
         }
       ]
     },
@@ -53,12 +67,40 @@
       "queryScope": "COLLECTION",
       "fields": [
         {
-          "fieldPath": "region",
+          "fieldPath": "regionId",
           "order": "ASCENDING"
         },
         {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recycleBin",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "clientproject",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sectorId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "recycleBin",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
           "fieldPath": "regionId",
           "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deletedAt",
+          "order": "DESCENDING"
         }
       ]
     }

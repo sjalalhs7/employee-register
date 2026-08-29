@@ -3892,5 +3892,393 @@ if ('serviceWorker' in navigator) {
   setTimeout(()=>{ if(window.db && currentAccess){ window.msmEnsureUI?.(); loadSectorCatalogForAllScopedUsers(); } },700);
 })();
 </script>
+
+<script>
+/* ============================================================
+   MSM PROFESSIONAL FINAL STABILITY LAYER
+   Canonical scope: regionId + sectorId.
+   This layer intentionally overrides older name-based patches.
+   ============================================================ */
+(function(){
+  'use strict';
+
+  function norm(v){ return String(v || '').trim(); }
+  function key(v){ return (typeof msmRegionKeyFromName === 'function') ? msmRegionKeyFromName(v) : norm(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  function sectorKey(v){ return (typeof msmSectorKeyFromName === 'function') ? msmSectorKeyFromName(v) : norm(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,''); }
+  function mySectorIdFinal(){ return currentAccess ? norm(currentAccess.sectorId) : ''; }
+  function myRegionIdFinal(){ return currentAccess ? norm(currentAccess.regionId) : ''; }
+
+  async function getRegionById(regionId){
+    if(!db || !regionId) return null;
+    const snap=await db.collection(MSM_REGION_COLLECTION).doc(regionId).get();
+    return snap.exists ? {id:snap.id, regionId:norm(snap.data().regionId || snap.id), ...(snap.data()||{})} : null;
+  }
+
+  async function getSectorByName(name){
+    const id=sectorKey(name);
+    if(!db || !id) return null;
+    const snap=await db.collection(MSM_SECTOR_COLLECTION).doc(id).get();
+    return snap.exists ? {id:snap.id, sectorId:norm(snap.data().sectorId || snap.id), ...(snap.data()||{})} : null;
+  }
+
+  function ensureCanonicalOfficeFields(){
+    const anchor=document.getElementById('f_clientproject');
+    if(!anchor || document.getElementById('f_region_canonical')) return;
+    const field=anchor.closest('.field');
+    if(!field || !field.parentNode) return;
+    const regionWrap=document.createElement('div');
+    regionWrap.className='field';
+    regionWrap.id='canonicalRegionField';
+    regionWrap.innerHTML='<label>Region <span class="req">*</span></label><select id="f_region_canonical"><option value="">Select Region</option></select>';
+    const sectorWrap=document.createElement('div');
+    sectorWrap.className='field';
+    sectorWrap.id='canonicalSectorField';
+    sectorWrap.innerHTML='<label>Sector <span class="req">*</span></label><select id="f_sector_canonical"><option value="">Select Sector</option></select>';
+    field.parentNode.insertBefore(regionWrap, field);
+    field.parentNode.insertBefore(sectorWrap, field.nextSibling);
+    regionWrap.querySelector('select').addEventListener('change', ()=>populateCanonicalSectors(regionWrap.querySelector('select').value));
+  }
+
+  function populateCanonicalRegions(selectedId){
+    ensureCanonicalOfficeFields();
+    const el=document.getElementById('f_region_canonical');
+    if(!el) return;
+    const regions=(window.msmRegionCatalog||[]).map(r=>({
+      id:norm(r.regionId||r.id),
+      name:norm(r.name)
+    })).filter(r=>r.id && r.name);
+    el.innerHTML='<option value="">Select Region</option>'+regions.map(r=>'<option value="'+escapeHtml(r.id)+'">'+escapeHtml(r.name)+'</option>').join('');
+    const forced=isRegional()?myRegionIdFinal():'';
+    const wanted=forced || selectedId || el.dataset.selected || '';
+    if(wanted) el.value=wanted;
+    if(isRegional()){
+      el.value=myRegionIdFinal();
+      el.disabled=true;
+    }
+    populateCanonicalSectors(el.value);
+  }
+
+  async function populateCanonicalSectors(regionId, selectedSectorId){
+    ensureCanonicalOfficeFields();
+    const el=document.getElementById('f_sector_canonical');
+    if(!el) return;
+    if(!regionId){ el.innerHTML='<option value="">Select Region first</option>'; return; }
+    el.innerHTML='<option value="">Loading sectors…</option>';
+    try{
+      const snap=await db.collection(MSM_SECTOR_COLLECTION).where('regionId','==',String(regionId)).get();
+      const rows=snap.docs.map(d=>({id:d.id,sectorId:norm(d.data().sectorId||d.id),...(d.data()||{})}))
+        .sort((a,b)=>norm(a.name).localeCompare(norm(b.name)));
+      el.innerHTML='<option value="">Select Sector</option>'+rows.map(s=>'<option value="'+escapeHtml(s.sectorId)+'">'+escapeHtml(norm(s.name))+'</option>').join('');
+      const forced=isClient()?mySectorIdFinal():'';
+      const wanted=forced || selectedSectorId || el.dataset.selected || '';
+      if(wanted) el.value=wanted;
+      if(isClient() && forced){ el.disabled=true; }
+    }catch(e){
+      console.error(e);
+      el.innerHTML='<option value="">Could not load sectors</option>';
+      showToast('Could not load sectors: '+e.message);
+    }
+  }
+
+  async function refreshCanonicalOfficeFields(){
+    ensureCanonicalOfficeFields();
+    if(isRegional() && myRegionIdFinal()){
+      await populateCanonicalRegions(myRegionIdFinal());
+      return;
+    }
+    await populateCanonicalRegions();
+  }
+
+  // Override loaders: no fake/default Region/Sector data is injected.
+  window.msmLoadRegionCatalog=async function(){
+    if(!db) return;
+    let docs=[];
+    if(isRegional()){
+      const rid=myRegionIdFinal();
+      if(!rid){ window.msmRegionCatalog=[]; return; }
+      const one=await db.collection(MSM_REGION_COLLECTION).doc(rid).get();
+      docs=one.exists?[{id:one.id,...(one.data()||{})}]:[];
+    }else{
+      const snap=await db.collection(MSM_REGION_COLLECTION).get();
+      docs=snap.docs.map(d=>({id:d.id,...(d.data()||{})}));
+    }
+    window.msmRegionCatalog=docs.map(d=>({
+      id:norm(d.id), regionId:norm(d.regionId||d.id), name:norm(d.name),
+      sectors:[], locations:Array.isArray(d.locations)?d.locations:[] 
+    })).filter(r=>r.regionId && r.name);
+    await refreshCanonicalOfficeFields();
+    if(typeof msmRenderRegionPanel==='function') msmRenderRegionPanel();
+    if(typeof window.msmRenderSectorManager==='function') window.msmRenderSectorManager();
+  };
+
+  window.msmLoadSectorCatalog=async function(){
+    if(!db) return;
+    let query=db.collection(MSM_SECTOR_COLLECTION);
+    if(isRegional()){
+      const rid=myRegionIdFinal();
+      if(!rid){ window.msmSectorCatalog=[]; return; }
+      query=query.where('regionId','==',rid);
+    }
+    const snap=await query.get();
+    const docs=snap.docs.map(d=>({id:d.id,sectorId:norm(d.data().sectorId||d.id),...(d.data()||{})}));
+    docs.sort((a,b)=>norm(a.name).localeCompare(norm(b.name)));
+    window.msmSectorCatalog=docs.map(d=>norm(d.name)).filter(Boolean);
+    const byRegion=new Map();
+    docs.forEach(d=>{
+      const rid=norm(d.regionId);
+      if(!byRegion.has(rid)) byRegion.set(rid,[]);
+      byRegion.get(rid).push(norm(d.name));
+    });
+    (window.msmRegionCatalog||[]).forEach(r=>{ r.sectors=byRegion.get(norm(r.regionId))||[]; });
+    if(typeof msmPopulateSectorFilter==='function') msmPopulateSectorFilter();
+    if(typeof msmRenderRegionPanel==='function') msmRenderRegionPanel();
+    if(typeof window.msmRenderSectorManager==='function') window.msmRenderSectorManager();
+    await refreshCanonicalOfficeFields();
+  };
+
+  // Canonical Region click: regionId -> Firestore sector query -> render.
+  window.msmOpenRegion=async function(regionId){
+    if(!isParent() && !isRegional()) return msmScrollRegions();
+    const rid=isRegional()?myRegionIdFinal():norm(regionId);
+    if(!rid || rid==='all'){
+      window.msmActiveRegion='all';
+      window.msmActiveSector='full';
+      if(typeof renderTable==='function') renderTable();
+      if(typeof msmRenderRegionPanel==='function') msmRenderRegionPanel();
+      return;
+    }
+    window.msmActiveRegion=rid;
+    window.msmActiveSector='full';
+    await populateCanonicalSectors(rid);
+    try{
+      const snap=await db.collection(MSM_SECTOR_COLLECTION).where('regionId','==',rid).get();
+      const region=(window.msmRegionCatalog||[]).find(r=>norm(r.regionId)===rid);
+      if(region) region.sectors=snap.docs.map(d=>norm((d.data()||{}).name)).filter(Boolean);
+      if(typeof msmRenderRegionPanel==='function') msmRenderRegionPanel();
+      if(typeof msmRenderSectorNav==='function') msmRenderSectorNav();
+      msmScrollRegions();
+    }catch(e){ showToast('Could not open region: '+e.message); }
+  };
+
+  // Correct file mapping: actual uploadState files are stored separately.
+  window.uploadEnrollmentFiles=async function(data){
+    if(!storage) return data;
+    const uid=(currentUser?.uid||'anonymous').replace(/[^a-zA-Z0-9_-]/g,'_');
+    const recordKey=(editingId||('new-'+Date.now())).replace(/[^a-zA-Z0-9_-]/g,'_');
+    const base='enrollment/'+uid+'/'+recordKey;
+    async function upload(dataUrl, filename, fallbackType){
+      if(!dataUrl || !String(dataUrl).startsWith('data:')) return dataUrl || '';
+      const comma=dataUrl.indexOf(',');
+      if(comma<0) return '';
+      const raw=atob(dataUrl.slice(comma+1));
+      const bytes=new Uint8Array(raw.length);
+      for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+      const detected=dataUrl.slice(5,dataUrl.indexOf(';')) || fallbackType;
+      const ref=storage.ref(base+'/'+filename);
+      await ref.put(bytes,{contentType:detected});
+      return await ref.getDownloadURL();
+    }
+    data.photoUrl=await upload(data.photoData,'employee-photo','image/jpeg');
+    data.policeVerificationUrl=await upload(
+      data.policeVerifDoc,
+      String(data.policeVerifDoc||'').startsWith('data:application/pdf')?'police-verification.pdf':'police-verification',
+      'image/jpeg'
+    );
+    delete data.photoData;
+    delete data.policeVerifDoc;
+    return data;
+  };
+
+  const oldFill=window.fillForm;
+  window.fillForm=function(rec){
+    if(typeof oldFill==='function') oldFill(rec);
+    setTimeout(async ()=>{
+      ensureCanonicalOfficeFields();
+      const rid=norm(rec.regionId);
+      if(rid){
+        document.getElementById('f_region_canonical').dataset.selected=rid;
+        await populateCanonicalRegions(rid);
+        const sid=norm(rec.sectorId);
+        document.getElementById('f_sector_canonical').dataset.selected=sid;
+        await populateCanonicalSectors(rid,sid);
+      }
+      if(rec.photoUrl){ uploadState.photoData=rec.photoUrl; }
+      if(rec.policeVerificationUrl){ uploadState.policeVerifDoc=rec.policeVerificationUrl; }
+    },0);
+  };
+
+  // Canonical save for Parent, Regional and Client.
+  window.saveEntry=async function(){
+    const name=norm(document.getElementById('f_name')?.value);
+    if(!name){ showToast('Employee Name is required.'); document.getElementById('f_name')?.focus(); return; }
+    await refreshCanonicalOfficeFields();
+    const regionEl=document.getElementById('f_region_canonical');
+    const sectorEl=document.getElementById('f_sector_canonical');
+    const regionId=isRegional()?myRegionIdFinal():norm(regionEl?.value);
+    let sectorId=isClient()?mySectorIdFinal():norm(sectorEl?.value);
+    if((isParent()||isRegional()) && !regionId){ showToast('Select a Region before saving.'); return; }
+    if((isParent()||isRegional()) && !sectorId){ showToast('Select a Sector before saving.'); return; }
+    if(isClient() && mySector() && !sectorId){
+      const legacy=await getSectorByName(mySector());
+      sectorId=norm(legacy?.sectorId);
+    }
+    let region=null, sector=null;
+    if(regionId) region=await getRegionById(regionId);
+    if(sectorId){
+      const snap=await db.collection(MSM_SECTOR_COLLECTION).doc(sectorId).get();
+      sector=snap.exists?{id:snap.id,sectorId:norm(snap.data().sectorId||snap.id),...(snap.data()||{})}:null;
+    }
+    if((isParent()||isRegional()) && (!region || !sector || norm(sector.regionId)!==regionId)){
+      showToast('Region/Sector mapping is invalid. Select the sector again.');
+      return;
+    }
+    let data=readForm();
+    data.regionId=regionId || norm(sector?.regionId);
+    data.region=norm(region?.name || '');
+    data.sectorId=norm(sector?.sectorId || sectorId);
+    data.sector=norm(sector?.name || (isClient()?mySector():''));
+    if(isClient()){
+      data.clientproject=myClientProject();
+      if(!data.sector) data.sector=mySector();
+    }
+    if(isRegional()){
+      data.clientproject=data.clientproject || data.sector;
+    }
+    try{ data=await window.uploadEnrollmentFiles(data); }
+    catch(e){ console.error(e); showToast('File upload failed: '+e.message); return; }
+
+    data.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+    const targetId=editingId;
+    try{
+      if(targetId){
+        await db.collection(RECORDS_COLLECTION).doc(targetId).update(data);
+        await writeAuditLog('UPDATE_RECORD',targetId,{regionId:data.regionId,sectorId:data.sectorId});
+        showToast('Record updated successfully.');
+      }else{
+        const nextSno=records.length?Math.max(...records.map(r=>Number(r.sno)||0))+1:1;
+        const ref=await db.collection(RECORDS_COLLECTION).add({
+          sno:nextSno,
+          createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+          ...data
+        });
+        await writeAuditLog('CREATE_RECORD',ref.id,{sno:nextSno,regionId:data.regionId,sectorId:data.sectorId});
+        showToast('Record saved to Long Roll.');
+      }
+      persistMeta(); resetForm(); switchTab('register');
+    }catch(e){ console.error(e); showToast('Could not save: '+e.message); }
+  };
+
+  // Firestore rules are not filters: every non-parent query includes its rule scope.
+  window.subscribeRecords=function(){
+    if(recordsUnsub){ try{recordsUnsub();}catch(e){} recordsUnsub=null; }
+    const apply=(rows)=>{
+      const map=new Map(rows.map(r=>[r.id,r]));
+      records=[...map.values()].sort((a,b)=>(Number(a.sno)||0)-(Number(b.sno)||0));
+      updateStamp(); updateSectorPortal(); renderTable();
+    };
+    if(isParent()){
+      recordsUnsub=db.collection(RECORDS_COLLECTION).onSnapshot(s=>apply(s.docs.map(d=>({id:d.id,...d.data()}))),e=>showToast('Could not load records: '+e.message));
+      return;
+    }
+    if(isRegional()){
+      const rid=myRegionIdFinal();
+      if(!rid){ apply([]); return; }
+      recordsUnsub=db.collection(RECORDS_COLLECTION).where('regionId','==',rid).onSnapshot(
+        s=>apply(s.docs.map(d=>({id:d.id,...d.data()}))),
+        e=>showToast('Could not load regional records: '+e.message)
+      );
+      return;
+    }
+    const client=myClientProject(), sid=mySectorIdFinal(), sectorName=mySector();
+    if(!client){ apply([]); return; }
+    let q=db.collection(RECORDS_COLLECTION).where('clientproject','==',client);
+    if(sid) q=q.where('sectorId','==',sid);
+    else if(sectorName) q=q.where('sector','==',sectorName);
+    recordsUnsub=q.onSnapshot(s=>apply(s.docs.map(d=>({id:d.id,...d.data()}))),e=>showToast('Could not load client records: '+e.message));
+  };
+
+  // Regional recycle-bin query uses permanent regionId.
+  window.msmLoadRecycle=function(){
+    if(!currentAccess) return;
+    if(window.msmRecycleUnsub){ try{window.msmRecycleUnsub();}catch(e){} }
+    const render=(rows)=>{window.msmRecycleRows=rows; msmRenderRecycle();};
+    if(isParent()){
+      window.msmRecycleUnsub=db.collection(MSM_RECYCLE_COLLECTION).orderBy('deletedAt','desc').limit(1000).onSnapshot(
+        s=>render(s.docs.map(d=>({id:d.id,...d.data()}))),
+        e=>showToast('Could not load Recycle Bin: '+e.message)
+      );
+      return;
+    }
+    if(isRegional()){
+      const rid=myRegionIdFinal();
+      if(!rid){ render([]); return; }
+      window.msmRecycleUnsub=db.collection(MSM_RECYCLE_COLLECTION).where('regionId','==',rid).onSnapshot(
+        s=>render(s.docs.map(d=>({id:d.id,...d.data()}))),
+        e=>showToast('Could not load Regional Recycle Bin: '+e.message)
+      );
+      return;
+    }
+    const client=myClientProject(), sid=mySectorIdFinal(), sectorName=mySector();
+    let q=db.collection(MSM_RECYCLE_COLLECTION).where('clientproject','==',client);
+    if(sid) q=q.where('sectorId','==',sid);
+    else if(sectorName) q=q.where('sector','==',sectorName);
+    window.msmRecycleUnsub=q.onSnapshot(
+      s=>render(s.docs.map(d=>({id:d.id,...d.data()}))),
+      e=>showToast('Could not load Recycle Bin: '+e.message)
+    );
+  };
+
+  // Add region/sector with permanent IDs.
+  window.msmAddRegion=async function(){
+    if(!isParent()) return showToast('Parent/Admin access is required.');
+    const name=norm(document.getElementById('msmNewRegionName')?.value);
+    const regionId=key(name);
+    if(!name || !regionId) return showToast('Enter a valid Region name.');
+    try{
+      await db.collection(MSM_REGION_COLLECTION).doc(regionId).set({
+        name, regionId, locations:[], createdBy:(currentUser.email||'').toLowerCase(),
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+      await window.msmLoadRegionCatalog();
+      await writeAuditLog('ADD_REGION',regionId,{name});
+      showToast(name+' added.');
+    }catch(e){ showToast('Could not add Region: '+e.message); }
+  };
+
+  window.msmAddSector=async function(){
+    if(!(isParent()||isRegional())) return showToast('Parent/Admin or Regional access is required.');
+    const name=norm(document.getElementById('msmNewSectorName')?.value);
+    const selected=norm(document.getElementById('msmNewSectorRegion')?.value);
+    let region=(window.msmRegionCatalog||[]).find(r=>norm(r.name)===selected || norm(r.regionId)===selected);
+    if(isRegional()) region=await getRegionById(myRegionIdFinal());
+    if(!name || !region) return showToast('Enter a Sector name and select a valid Region.');
+    const sectorId=sectorKey(name);
+    try{
+      await db.collection(MSM_SECTOR_COLLECTION).doc(sectorId).set({
+        name, sectorId, regionId:norm(region.regionId||region.id), region:norm(region.name),
+        createdBy:(currentUser.email||'').toLowerCase(),
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
+      },{merge:true});
+      await window.msmLoadSectorCatalog();
+      await writeAuditLog('ADD_SECTOR',sectorId,{name,regionId:region.regionId});
+      showToast(name+' Sector added.');
+    }catch(e){ showToast('Could not add Sector: '+e.message); }
+  };
+
+  // Start after older patches have finished.
+  setTimeout(async ()=>{
+    if(window.db && currentAccess){
+      try{
+        await window.msmLoadRegionCatalog();
+        await window.msmLoadSectorCatalog();
+        ensureCanonicalOfficeFields();
+        await refreshCanonicalOfficeFields();
+        window.subscribeRecords();
+      }catch(e){ console.error('Final stability init:',e); }
+    }
+  },1200);
+})();
+</script>
+
 </body>
 </html>
