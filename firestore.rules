@@ -1,12 +1,5 @@
 rules_version = '2';
 
-// MSM LONGROLL DATABASE — FINAL RBAC RULES
-// Canonical IDs:
-// authorizedUsers/{lowercase-email}
-// regionCatalog/{regionId}
-// sectorCatalog/{sectorId} -> regionId
-// records/{recordId} -> regionId + optional sectorId
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -85,7 +78,8 @@ service cloud.firestore {
     }
 
     match /authorizedUsers/{userEmail} {
-      allow get: if isParent() || (signedIn() && email() == userEmail);
+      allow get: if isParent()
+        || (signedIn() && email() == userEmail);
       allow list: if isParent();
       allow create, update: if isParent();
       allow delete: if isParent()
@@ -131,9 +125,8 @@ service cloud.firestore {
         || (isRegional()
             && myRegionId() != ''
             && regionId == myRegionId()
-            && request.resource.data.get('regionId', '')
-               == resource.data.get('regionId', '')
-            && request.resource.data.get('regionId', '') == regionId);
+            && request.resource.data.get('regionId', '') == regionId
+            && resource.data.get('regionId', '') == regionId);
     }
 
     match /sectorCatalog/{sectorId} {
@@ -173,9 +166,11 @@ service cloud.firestore {
 
       allow create: if authorized()
         && request.resource.data.get('userEmail', '') == email()
-        && (!isRegional()
-            || request.resource.data.get('regionId', '') == ''
-            || request.resource.data.get('regionId', '') == myRegionId());
+        && (
+          !isRegional()
+          || request.resource.data.get('regionId', '') == ''
+          || request.resource.data.get('regionId', '') == myRegionId()
+        );
 
       allow update, delete: if false;
     }
