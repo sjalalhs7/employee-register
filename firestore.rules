@@ -1,11 +1,12 @@
 rules_version = '2';
 
 // MSM LONGROLL DATABASE — FINAL RBAC RULES
-// Canonical identifiers:
-//   authorizedUsers/{lowercase-email}
-//   regionCatalog/{regionId}
-//   sectorCatalog/{sectorId} -> regionId
-//   records/{recordId} -> regionId + optional sectorId
+// Canonical IDs:
+// authorizedUsers/{lowercase-email}
+// regionCatalog/{regionId}
+// sectorCatalog/{sectorId} -> regionId
+// records/{recordId} -> regionId + optional sectorId
+
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -61,8 +62,6 @@ service cloud.firestore {
       return authorized() ? userDoc().data.get('regionId', '') : '';
     }
 
-    // Client must always stay inside its client/project.
-    // sectorId is preferred; legacy sector name remains supported for old client docs.
     function clientRecord(data) {
       return isClient()
         && myClient() != ''
@@ -70,11 +69,11 @@ service cloud.firestore {
         && (
           (mySectorId() == '' && mySector() == '')
           || (mySectorId() != '' && data.get('sectorId', '') == mySectorId())
-          || (mySectorId() == '' && mySector() != '' && data.get('sector', '') == mySector())
+          || (mySectorId() == '' && mySector() != ''
+              && data.get('sector', '') == mySector())
         );
     }
 
-    // Regional scope is permanent regionId only.
     function regionalRecord(data) {
       return isRegional()
         && myRegionId() != ''
@@ -104,7 +103,8 @@ service cloud.firestore {
       allow list: if isParent() || scopedRecord(resource.data);
       allow create: if isParent() || scopedRecord(request.resource.data);
       allow update: if isParent()
-        || (scopedRecord(resource.data) && scopedRecord(request.resource.data));
+        || (scopedRecord(resource.data)
+            && scopedRecord(request.resource.data));
       allow delete: if isParent() || scopedRecord(resource.data);
     }
 
@@ -113,60 +113,70 @@ service cloud.firestore {
       allow list: if isParent() || scopedRecord(resource.data);
       allow create: if isParent() || scopedRecord(request.resource.data);
       allow update: if isParent()
-        || (scopedRecord(resource.data) && scopedRecord(request.resource.data));
+        || (scopedRecord(resource.data)
+            && scopedRecord(request.resource.data));
       allow delete: if isParent() || scopedRecord(resource.data);
     }
 
-    // Regional users can read/update only their own region document.
-    // They cannot change the permanent regionId.
     match /regionCatalog/{regionId} {
       allow get: if isParent()
-        || (isRegional() && myRegionId() != '' && regionId == myRegionId());
+        || (isRegional()
+            && myRegionId() != ''
+            && regionId == myRegionId());
+
       allow list: if isParent();
       allow create, delete: if isParent();
+
       allow update: if isParent()
         || (isRegional()
             && myRegionId() != ''
             && regionId == myRegionId()
-            && request.resource.data.get('regionId', '') == resource.data.get('regionId', ''));
+            && request.resource.data.get('regionId', '')
+               == resource.data.get('regionId', '')
+            && request.resource.data.get('regionId', '') == regionId);
     }
 
-    // Every sector has a permanent sectorId and regionId.
-    // Regional queries must include where('regionId', '==', myRegionId()).
     match /sectorCatalog/{sectorId} {
       allow get: if isParent()
         || (isRegional()
             && myRegionId() != ''
             && resource.data.get('regionId', '') == myRegionId());
+
       allow list: if isParent()
         || (isRegional()
             && myRegionId() != ''
             && resource.data.get('regionId', '') == myRegionId());
+
       allow create: if isParent()
         || (isRegional()
             && myRegionId() != ''
             && request.resource.data.get('regionId', '') == myRegionId());
+
       allow update: if isParent()
         || (isRegional()
             && myRegionId() != ''
             && resource.data.get('regionId', '') == myRegionId()
             && request.resource.data.get('regionId', '') == myRegionId());
+
       allow delete: if isParent();
     }
 
-    // Audit entries are append-only and the signed-in user identity cannot be spoofed.
     match /auditLogs/{logId} {
       allow get: if isParent()
         || (isRegional()
             && (resource.data.get('regionId', '') == myRegionId()
                 || resource.data.get('userEmail', '') == email()))
-        || (isClient() && resource.data.get('userEmail', '') == email());
+        || (isClient()
+            && resource.data.get('userEmail', '') == email());
+
       allow list: if isParent();
+
       allow create: if authorized()
         && request.resource.data.get('userEmail', '') == email()
         && (!isRegional()
             || request.resource.data.get('regionId', '') == ''
             || request.resource.data.get('regionId', '') == myRegionId());
+
       allow update, delete: if false;
     }
 
