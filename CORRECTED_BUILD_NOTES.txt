@@ -1,11 +1,6 @@
-MSM corrected build
-
-1. Fixed broken image paths: assets/* -> repository-root files.
-2. Restored MSM logo, shield, hero, database and region reference images.
-3. Removed hard-coded/default Regions and Sectors from dashboard rendering and loaders.
-4. Region/Sector dashboard lists now use actual Firestore catalogs.
-5. Statistics use live authorized records; recycle count uses live recycle-bin scope.
-6. Regional distribution chart is generated from actual records, with no North/South/East/West placeholders.
-7. Added Guards in Salute screensaver using the project hero-salute.svg artwork, with 5-second Sunshine/Snow/Autumn scenes, waving flag and weather effects.
-8. Made the top navigation sticky.
-9. Replaced invalid Word/WPS firestore.rules file with a real Firebase Firestore rules text file.
+V3 PROFESSIONAL VISUAL CORRECTION
+- Guards in Salute now uses the real uploaded hero-reference.png, not CSS-drawn guard silhouettes.
+- Snow/autumn are overlays on the real guard image.
+- Region cards use actual region reference images and never ball/placeholder illustrations.
+- Unknown region image falls back to database-reference.png.
+- Existing Firebase/RBAC/data-driven logic retained.
