@@ -1244,7 +1244,7 @@ button,input,select,textarea{font:inherit;}
 
 <!-- FINAL PROFESSIONAL MSM HOME -->
 <section id="msmHome" class="msm-home">
-  <div class="msm-topline"><div>🇵🇰 Serving Pakistan with Dedication &amp; Professionalism</div><div><span id="msmHomeClock">System Online</span> · <span class="msm-online">● Secure Access</span></div></div>
+  <div class="msm-topline"><div>🇵🇰 Serving Pakistan with Dedication &amp; Professionalism</div><div style="display:flex;align-items:center;gap:14px"><span id="msmHomeClock">System Online</span><span class="msm-online">● Secure Access</span><span style="display:flex;gap:8px"><a href="https://facebook.com" target="_blank" rel="noopener" style="color:#cfe0fb;text-decoration:none" title="Facebook">📘</a><a href="https://youtube.com" target="_blank" rel="noopener" style="color:#cfe0fb;text-decoration:none" title="YouTube">▶️</a><a href="https://linkedin.com" target="_blank" rel="noopener" style="color:#cfe0fb;text-decoration:none" title="LinkedIn">💼</a></span></div></div>
   <div class="msm-brandbar"><div class="msm-shell msm-brand"><img src="msm-logo.png" alt="MSM Security Guards logo"><div><h1>MSM SECURITY GUARDS PVT LTD</h1><div class="tag">PROFESSIONAL • RELIABLE • SECURE</div><div class="msm-contactline"><span>📍 House No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore</span><span>☎ 042-37169344</span><span>📱 0346-7780660</span><span>✉ msmsecurity11@gmail.com</span></div></div></div></div>
   <div class="msm-shell msm-nav">
     <button class="active" onclick="msmHomeGo('top')">⌂ Home</button><button onclick="msmHomeGo('regions')">◉ Regions / Sectors</button><button onclick="msmHomeGo('database')">▦ Full Database</button><button onclick="msmHomeInfo('about')">? About</button><button onclick="msmHomeInfo('services')">▤ Services</button><button onclick="msmHomeInfo('contact')">✉ Contact</button><button onclick="msmHomeGo('instructions')">▣ Instructions</button><div class="msm-account"><span id="msmHomeUser">Authorized User</span><br><small id="msmHomeRole">Loading access…</small></div>
@@ -4650,13 +4650,16 @@ if ('serviceWorker' in navigator) {
   if(target==='admin'){if(typeof window.switchTab==='function')window.switchTab('admin');document.querySelector('.tabbar')?.scrollIntoView({behavior:'smooth'});return;}
   if(target==='audit'){if(typeof window.switchTab==='function')window.switchTab('audit');document.querySelector('.tabbar')?.scrollIntoView({behavior:'smooth'});return;}
  };
- window.msmHomeInfo=function(type){
-  const map={
+ const msmSiteDefaults={
    about:{title:'About MSM SECURITY GUARDS PVT LTD',en:'MSM SECURITY GUARDS PVT LTD provides structured security workforce management through the MSM Longroll Database. The system organizes employee enrollment, regions, sectors, locations, clients, records, audit history and controlled access.',ur:'MSM SECURITY GUARDS PVT LTD کے لیے MSM Longroll Database ایک منظم نظام ہے جس کے ذریعے ملازمین کا اندراج، Regions، Sectors، Locations، Clients، Records، Audit History اور محدود User Access محفوظ اور منظم کیا جاتا ہے۔'},
    services:{title:'Services / خدمات',en:'Employee Enrollment • Long Roll Register • Region & Sector Management • Location & Client Management • Photo & Police Verification Upload • Excel Import / Export • Audit Logs • Recycle Bin • Role Based Access.',ur:'ملازمین کا اندراج • Long Roll Register • Region اور Sector Management • Location اور Client Management • تصویر اور Police Verification Upload • Excel Import / Export • Audit Logs • Recycle Bin • Role Based Access۔'},
    contact:{title:'Contact / رابطہ',en:'MSM SECURITY GUARDS PVT LTD\nHouse No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore\nTelephone: 042-37169344\nMobile: 0346-7780660\nEmail: msmsecurity11@gmail.com',ur:'MSM SECURITY GUARDS PVT LTD\nہاؤس نمبر 36-E، Cricketer Colony، Near Netsol Technologies، Airport Road، لاہور\nفون: 042-37169344\nموبائل: 0346-7780660\nای میل: msmsecurity11@gmail.com'}
   };
-  const d=map[type]; if(!d)return;
+  window.msmSiteContentCache=window.msmSiteContentCache||{};
+  window.msmSiteContentCollection=function(){return 'siteContentCatalog';};
+  window.msmHomeInfo=function(type,editMode){
+  const cached=window.msmSiteContentCache[type];
+  const d=cached||msmSiteDefaults[type]; if(!d)return;
   let regionDirectoryHtml='';
   if(type==='contact'){
    const regions=allRegions().filter(r=>r.opsManager||r.generalManager||r.seniorGM||r.phone||r.email||r.address);
@@ -4664,12 +4667,39 @@ if ('serviceWorker' in navigator) {
     regionDirectoryHtml=`<hr style="border-color:rgba(255,255,255,.12)"><h3>Region Staff Directory</h3><div style="display:grid;gap:10px">${regions.map(r=>`<div style="border:1px solid rgba(84,122,182,.45);border-radius:10px;padding:10px;font-size:12px"><b>${esc(r.name||'')}</b><br>${r.opsManager?`Operations Manager: ${esc(r.opsManager)}<br>`:''}${r.generalManager?`General Manager: ${esc(r.generalManager)}<br>`:''}${r.seniorGM?`Senior GM: ${esc(r.seniorGM)}<br>`:''}${r.phone?`Phone: ${esc(r.phone)}<br>`:''}${r.email?`Email: ${esc(r.email)}<br>`:''}${r.address?`Address: ${esc(r.address)}`:''}</div>`).join('')}</div>`;
    }
   }
-  document.getElementById('msmHomeModal')?.remove(); const m=document.createElement('div');m.id='msmHomeModal';m.className='msm-modal';m.innerHTML=`<div class="msm-modal-card"><button class="msm-modal-close" onclick="document.getElementById('msmHomeModal').remove()">✕</button><h2>${esc(d.title)}</h2><h3>English</h3><p>${esc(d.en).replace(/\n/g,'<br>')}</p><hr style="border-color:rgba(255,255,255,.12)"><h3 class="urdu">اردو</h3><p class="urdu">${esc(d.ur).replace(/\n/g,'<br>')}</p>${regionDirectoryHtml}</div>`;document.body.appendChild(m);
+  const canEdit=getAccess()?.role==='parent';
+  document.getElementById('msmHomeModal')?.remove(); const m=document.createElement('div');m.id='msmHomeModal';m.className='msm-modal';
+  if(editMode&&canEdit){
+   m.innerHTML=`<div class="msm-modal-card"><button class="msm-modal-close" onclick="document.getElementById('msmHomeModal').remove()">✕</button><h2>Edit: ${esc(d.title)}</h2><label style="display:block;margin-top:10px">Title<br><input id="msmSiteEdit_title" value="${esc(d.title)}" style="width:100%"></label><label style="display:block;margin-top:10px">English Text<br><textarea id="msmSiteEdit_en" rows="6" style="width:100%">${esc(d.en)}</textarea></label><label style="display:block;margin-top:10px">Urdu Text<br><textarea id="msmSiteEdit_ur" rows="6" style="width:100%;direction:rtl">${esc(d.ur)}</textarea></label><div class="msm-region-tools" style="margin-top:14px"><button onclick="msmSiteContentSave('${type}')">💾 Save</button><button onclick="msmHomeInfo('${type}')">Cancel</button></div></div>`;
+  } else {
+   m.innerHTML=`<div class="msm-modal-card"><button class="msm-modal-close" onclick="document.getElementById('msmHomeModal').remove()">✕</button>${canEdit?`<button class="msm-modal-close" style="right:52px;background:#185ed1" onclick="msmHomeInfo('${type}',true)">✎ Edit</button>`:''}<h2>${esc(d.title)}</h2><h3>English</h3><p>${esc(d.en).replace(/\n/g,'<br>')}</p><hr style="border-color:rgba(255,255,255,.12)"><h3 class="urdu">اردو</h3><p class="urdu">${esc(d.ur).replace(/\n/g,'<br>')}</p>${regionDirectoryHtml}${canEdit?'':''}</div>`;
+  }
+  document.body.appendChild(m);
+ };
+ window.msmSiteContentSave=async function(type){
+  if(!(getAccess()?.role==='parent'))return window.showToast?.('Only Parent/Admin can edit site content.');
+  const title=(document.getElementById('msmSiteEdit_title')?.value||'').trim();
+  const en=(document.getElementById('msmSiteEdit_en')?.value||'').trim();
+  const ur=(document.getElementById('msmSiteEdit_ur')?.value||'').trim();
+  const payload={title,en,ur,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:(getUser()?.email||'').toLowerCase()};
+  try{
+   await db.collection(window.msmSiteContentCollection()).doc(type).set(payload,{merge:true});
+   window.msmSiteContentCache[type]=payload;
+   window.showToast?.('Saved. Content updated for everyone.');
+   window.msmHomeInfo(type);
+  }catch(e){console.error(e);window.showToast?.('Could not save: '+e.message);}
+ };
+ window.msmLoadSiteContent=async function(){
+  try{
+   const snap=await db.collection(window.msmSiteContentCollection()).get();
+   snap.forEach(doc=>{window.msmSiteContentCache[doc.id]=doc.data();});
+  }catch(e){console.warn('Site content load skipped:',e.message);}
  };
  window.msmHomeRender=function(){
   const email=getUser()?.email||'Authorized User';document.getElementById('msmHomeUser').textContent=email;document.getElementById('msmHomeRole').textContent=homeRole();
   const rows=allRegions();const grid=document.getElementById('msmHomeRegionGrid');if(!grid)return;
-  grid.innerHTML=rows.length ? rows.map((r,i)=>{const id=ridOf(r);const tone=['north','south','east','west'][i%4];const secs=sectorsFor(r);return `<article class="msm-region-card" data-tone="${tone}"><img class="msm-region-photo" src="${esc(r.imageUrl||fallbackFor(r))}" alt="${esc(r.name||'Region')}" onerror="this.src='database-reference.png'"><div class="msm-region-body"><h3>${esc((r.name||'Region').toUpperCase())}</h3><p>${secs.length} Sectors Assigned</p><button onclick="msmHomeOpenRegion('${esc(id)}')">Open Region →</button></div></article>`;}).join('') : '<div class="msm-empty-data" style="grid-column:1/-1">No Regions found in the actual Firestore catalog for this authorized account.</div>';
+  const dbCard=`<article class="msm-region-card" data-tone="db"><img class="msm-region-photo" src="database-reference.png" alt="Full Database" onerror="this.style.display='none'"><div class="msm-region-body"><h3>FULL DATABASE</h3><p>All Regions &amp; Sectors</p><button onclick="msmHomeGo('database')">Open Database →</button></div></article>`;
+  grid.innerHTML=(rows.length ? rows.map((r,i)=>{const id=ridOf(r);const tone=['north','south','east','west'][i%4];const secs=sectorsFor(r);return `<article class="msm-region-card" data-tone="${tone}"><img class="msm-region-photo" src="${esc(r.imageUrl||fallbackFor(r))}" alt="${esc(r.name||'Region')}" onerror="this.src='database-reference.png'"><div class="msm-region-body"><h3>${esc((r.name||'Region').toUpperCase())}</h3><p>${secs.length} Sectors Assigned</p><button onclick="msmHomeOpenRegion('${esc(id)}')">Open Region →</button></div></article>`;}).join('') : '<div class="msm-empty-data" style="grid-column:1/-1">No Regions found in the actual Firestore catalog for this authorized account.</div>')+dbCard;
   const recs=getRecords();
   const uniqueRegionIds=new Set(recs.map(r=>norm(r.regionId||'')).filter(Boolean));
   const uniqueRegionNames=new Set(recs.map(r=>norm(r.region||'')).filter(Boolean));
@@ -4750,6 +4780,7 @@ if ('serviceWorker' in navigator) {
  function tick(){const d=new Date();const el=document.getElementById('msmHomeClock');if(el)el.textContent=d.toLocaleDateString(undefined,{weekday:'short',day:'2-digit',month:'short',year:'numeric'})+' | '+d.toLocaleTimeString();}
  setInterval(tick,1000);tick();
  setTimeout(window.msmHomeRender,1400);setInterval(()=>{if(document.getElementById('msmHome'))window.msmHomeRender();},8000);
+ setTimeout(()=>window.msmLoadSiteContent?.(),1200);
 })();
 </script>
 
