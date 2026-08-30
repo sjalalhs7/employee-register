@@ -1,0 +1,20 @@
+MSM SECURITY GUARDS — CORRECTED DASHBOARD PACKAGE
+
+Changes:
+1. Fixed firestore.rules: the previous firestore.rules file in the ZIP was a Word/WPS document with a .rules extension, not a valid Firebase rules text file.
+2. Replaced it with valid UTF-8 Firestore Rules.
+3. Regional record access now uses permanent regionId, with a legacy region-name fallback in rules.
+4. Regional recycle-bin access uses regionId.
+5. Removed injected/default Regions: North/South/East/West are no longer fabricated by the website.
+6. Removed injected/default Sectors: Islamabad/Rawalpindi/KPK/Chakwal are no longer fabricated by the website.
+7. Region/Sector dashboard cards are populated from Firestore regionCatalog/sectorCatalog only.
+8. Dashboard statistics are derived from the live authorized Firestore view; Parent/Admin gets actual authorized-user and recycle-bin counts.
+9. Regional distribution chart is generated from actual loaded records, not hard-coded North/South/East/West values.
+10. Added Guards in Salute screensaver using the supplied hero-salute.svg artwork, animated waving flag overlay, and 5-second Sunshine → Snow → Autumn scenes.
+11. The main database title is now dynamic: it shows the actual record count and displays 10,000+ only when the live record count is at least 10,000.
+
+Deployment:
+- Upload the corrected index.html to the GitHub Pages repository root.
+- Deploy firestore.rules to the same Firebase project configured by firebase.json.
+- Do not delete existing Firestore records.
+- Test Parent, Regional and Client accounts after deployment.
