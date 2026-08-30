@@ -824,6 +824,23 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 .msm-screen-dots{position:absolute;right:20px;top:20px;z-index:10;display:flex;gap:6px}.msm-screen-dot{width:9px;height:9px;border-radius:50%;background:#fff6;border:1px solid #fff8;cursor:pointer}.msm-screen-dot.active{background:#f6cf62;box-shadow:0 0 9px #f6cf62}
 @media(max-width:650px){.msm-screensaver{min-height:285px}.msm-screen-title{left:14px;top:14px}.msm-screen-title h2{font-size:24px}.msm-screen-caption{right:12px;bottom:12px;font-size:9px}}
 </style>
+<style id="msm-webview-stability">
+/* WebView/mobile stability: responsive viewport, safe-area spacing, no horizontal bleed. */
+html,body{width:100%;max-width:100%;overflow-x:hidden;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+body{-webkit-overflow-scrolling:touch;}
+img,svg,video,canvas{max-width:100%;height:auto;}
+button,input,select,textarea{font:inherit;}
+#msmLoginPage{min-height:100svh;min-height:100dvh;padding:clamp(14px,3vw,28px);padding-top:max(clamp(14px,3vw,28px),env(safe-area-inset-top));padding-bottom:max(clamp(14px,3vw,28px),env(safe-area-inset-bottom));}
+.msm-login-card{max-height:calc(100dvh - 28px);overflow:auto;-webkit-overflow-scrolling:touch;}
+.msm-login-logo{content:url('msm-security-guards-logo.png');width:min(280px,78vw)!important;height:auto!important;max-height:150px;object-fit:contain;}
+.msm-home{width:100%;overflow-x:hidden;}
+.msm-screensaver{isolation:isolate;}
+@media(max-width:650px){
+  .msm-login-card{max-height:none;width:100%;}
+  .msm-login-logo{width:min(230px,72vw)!important;max-height:120px;}
+  .msm-brand img{content:url('msm-security-guards-logo.png');}
+}
+</style>
 <style id="msm-final-stability">
 /* FINAL STABILITY: decorative effects must never interfere with interaction. */
 #sectorPortal .portal-record-stamp{animation:none !important;}
@@ -860,7 +877,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 <div id="loginGate" style="display:none;">
   <div id="msmLoginPage">
     <div class="msm-login-card">
-      <img class="msm-login-logo" src="msm-shield-reference.png" alt="MSM Security Guards Logo" id="msmLoginLogo">
+      <img class="msm-login-logo" src="msm-security-guards-logo.png" alt="MSM SECURITY GUARDS PVT LTD Logo" id="msmLoginLogo">
       <div class="msm-login-kicker">MSM SECURITY GUARDS PVT LTD</div>
       <h1 class="msm-login-title">MSM SECURITY GUARDS PVT LTD<br>LONGROLL DATABASE</h1>
       <div class="msm-login-designer">DESIGNED BY SYED JALAL HUSSAIN SHAH</div>
@@ -966,7 +983,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 <!-- FINAL PROFESSIONAL MSM HOME -->
 <section id="msmHome" class="msm-home">
   <div class="msm-topline"><div>🇵🇰 Serving Pakistan with Dedication &amp; Professionalism</div><div><span id="msmHomeClock">System Online</span> · <span class="msm-online">● Secure Access</span></div></div>
-  <div class="msm-brandbar"><div class="msm-shell msm-brand"><img src="msm-shield-reference.png" alt="MSM Security Guards logo"><div><h1>MSM SECURITY GUARDS PVT LTD</h1><div class="tag">PROFESSIONAL • RELIABLE • SECURE</div><div class="msm-contactline"><span>📍 House No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore</span><span>☎ 042-37169344</span><span>📱 0346-7780660</span><span>✉ msmsecurity11@gmail.com</span></div></div></div></div>
+  <div class="msm-brandbar"><div class="msm-shell msm-brand"><img src="msm-security-guards-logo.png" alt="MSM Security Guards logo"><div><h1>MSM SECURITY GUARDS PVT LTD</h1><div class="tag">PROFESSIONAL • RELIABLE • SECURE</div><div class="msm-contactline"><span>📍 House No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore</span><span>☎ 042-37169344</span><span>📱 0346-7780660</span><span>✉ msmsecurity11@gmail.com</span></div></div></div></div>
   <div class="msm-shell msm-nav">
     <button class="active" onclick="msmHomeGo('top')">⌂ Home</button><button onclick="msmHomeGo('regions')">◉ Regions / Sectors</button><button onclick="msmHomeGo('database')">▦ Full Database</button><button onclick="msmHomeInfo('about')">? About</button><button onclick="msmHomeInfo('services')">▤ Services</button><button onclick="msmHomeInfo('contact')">✉ Contact</button><button onclick="msmHomeGo('instructions')">▣ Instructions</button><div class="msm-account"><span id="msmHomeUser">Authorized User</span><br><small id="msmHomeRole">Loading access…</small></div>
   </div>
