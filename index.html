@@ -825,7 +825,8 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 
 /* ===== PROFESSIONAL GUARDED SALUTE SCREENSAVER ===== */
 .msm-screensaver{position:relative;overflow:hidden;min-height:390px;margin:10px 0 18px;border:1px solid rgba(246,201,79,.62);border-radius:18px;background:#07152f;box-shadow:0 18px 42px rgba(0,0,0,.34)}
-.msm-screen-scene{position:absolute;inset:0;opacity:0;transition:opacity 1s ease;background:center/cover no-repeat url('hero-reference.png')}
+.msm-screen-scene{position:absolute;inset:0;opacity:0;transition:opacity 1s ease;background:center/cover no-repeat url('hero-reference.png');background-size:100% 100%;animation:msmHeroKenBurns 18s ease-in-out infinite alternate}
+@media(prefers-reduced-motion:reduce){.msm-screen-scene{animation:none}}
 .msm-screen-scene.active{opacity:1}
 .msm-screen-scene.sunshine{background-image:linear-gradient(180deg,rgba(45,156,230,.02),rgba(5,18,42,.12)),url('hero-reference.png')}
 .msm-screen-scene.snow{background-image:linear-gradient(180deg,rgba(2,10,30,.50),rgba(5,18,38,.38)),url('hero-reference.png')}
@@ -839,7 +840,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 .msm-screen-welcome{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;max-width:760px;padding:36px 42px;pointer-events:none}
 .msm-screen-welcome .quote{font-size:16px;font-weight:900;color:#f1e7c4;text-shadow:0 3px 12px #000;margin-bottom:18px}
 .msm-screen-welcome h2{margin:0 0 10px;font-size:clamp(30px,5vw,58px);line-height:.98;letter-spacing:.4px;color:#fff;text-shadow:0 4px 16px #000}
-.msm-screen-welcome h2 span.msm-rainbow-text{
+.msm-rainbow-text{
   display:inline-block;
   background:linear-gradient(90deg,#ff3b3b,#ff9a3b,#f4e63b,#3bff6e,#3bd0ff,#7a3bff,#ff3bd0,#ff3b3b);
   background-size:400% 100%;
@@ -854,7 +855,10 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
   filter:blur(60px) opacity(.28);animation:msmRainbowSpin 8s linear infinite;border-radius:50%;
 }
 @keyframes msmRainbowSpin{to{transform:rotate(360deg)}}
-@media(prefers-reduced-motion:reduce){.msm-screen-welcome h2 span.msm-rainbow-text,.msm-screen-welcome .msm-rainbow-glow{animation:none}}
+@media(prefers-reduced-motion:reduce){.msm-rainbow-text,.msm-screen-welcome .msm-rainbow-glow{animation:none}}
+.msm-hero-animated{background-size:112% 112% !important;animation:msmHeroKenBurns 18s ease-in-out infinite alternate;}
+@keyframes msmHeroKenBurns{0%{background-position:50% 50%;background-size:100% 100%}100%{background-position:56% 44%;background-size:118% 118%}}
+@media(prefers-reduced-motion:reduce){.msm-hero-animated{animation:none}}
 .msm-screen-welcome p{margin:0 0 16px;font-size:14px;letter-spacing:1px;font-weight:800;color:#e7edf7;text-shadow:0 2px 10px #000}
 .msm-screen-welcome .msm-primary{pointer-events:auto;width:max-content}
 .msm-screen-welcome .msm-motto{margin-top:14px;font-weight:900;letter-spacing:1px;color:#fff;text-shadow:0 2px 10px #000}
@@ -1156,7 +1160,7 @@ button,input,select,textarea{font:inherit;}
     <div class="msm-login-card">
       <img class="msm-login-logo" src="msm-logo.png" alt="MSM SECURITY GUARDS PVT LTD Logo" id="msmLoginLogo">
       <div class="msm-login-kicker">MSM SECURITY GUARDS PVT LTD</div>
-      <h1 class="msm-login-title">MSM SECURITY GUARDS PVT LTD<br>LONGROLL DATABASE</h1>
+      <h1 class="msm-login-title"><span class="msm-rainbow-text">MSM SECURITY GUARDS PVT LTD</span><br><span class="msm-rainbow-text">LONGROLL DATABASE</span></h1>
       <div class="msm-login-designer">DESIGNED BY SYED JALAL HUSSAIN SHAH</div>
       <div class="msm-login-divider"></div>
 
@@ -1260,7 +1264,7 @@ button,input,select,textarea{font:inherit;}
 <!-- FINAL PROFESSIONAL MSM HOME -->
 <section id="msmHome" class="msm-home">
   <div class="msm-topline"><div>🇵🇰 Serving Pakistan with Dedication &amp; Professionalism</div><div style="display:flex;align-items:center;gap:14px"><span id="msmHomeClock">System Online</span><span class="msm-online">● Secure Access</span><span style="display:flex;gap:8px"><a href="https://facebook.com" target="_blank" rel="noopener" style="color:#cfe0fb;text-decoration:none" title="Facebook">📘</a><a href="https://youtube.com" target="_blank" rel="noopener" style="color:#cfe0fb;text-decoration:none" title="YouTube">▶️</a><a href="https://linkedin.com" target="_blank" rel="noopener" style="color:#cfe0fb;text-decoration:none" title="LinkedIn">💼</a></span></div></div>
-  <div class="msm-brandbar"><div class="msm-shell msm-brand"><img src="msm-logo.png" alt="MSM Security Guards logo"><div><h1>MSM SECURITY GUARDS PVT LTD</h1><div class="tag">PROFESSIONAL • RELIABLE • SECURE</div><div class="msm-contactline"><span>📍 House No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore</span><span>☎ 042-37169344</span><span>📱 0346-7780660</span><span>✉ msmsecurity11@gmail.com</span></div></div></div></div>
+  <div class="msm-brandbar"><div class="msm-shell msm-brand"><img src="msm-logo.png" alt="MSM Security Guards logo"><div><h1><span class="msm-rainbow-text">MSM SECURITY GUARDS PVT LTD</span></h1><div class="tag">PROFESSIONAL • RELIABLE • SECURE</div><div class="msm-contactline"><span>📍 House No. 36-E, Cricketer Colony, Near Netsol Technologies, Airport Road, Lahore</span><span>☎ 042-37169344</span><span>📱 0346-7780660</span><span>✉ msmsecurity11@gmail.com</span></div></div></div></div>
   <div class="msm-shell msm-nav">
     <button class="active" onclick="msmHomeGo('top')">⌂ Home</button><button onclick="msmHomeGo('regions')">◉ Regions / Sectors</button><button onclick="msmHomeGo('database')">▦ Full Database</button><button onclick="msmHomeInfo('about')">? About</button><button onclick="msmHomeInfo('services')">▤ Services</button><button onclick="msmHomeInfo('contact')">✉ Contact</button><button onclick="msmHomeGo('instructions')">▣ Instructions</button><div class="msm-account"><span id="msmHomeUser">Authorized User</span><br><small id="msmHomeRole">Loading access…</small></div>
   </div>
@@ -1282,7 +1286,7 @@ button,input,select,textarea{font:inherit;}
     <section class="msm-quick" style="margin-top:14px"><button onclick="msmHomeAddRegion()">＋ Add Region</button><button onclick="msmHomeAddSector()">＋ Add Sector</button><button onclick="msmHomeGo('database')">▦ Full Database</button><button onclick="msmHomeGo('audit')">◉ Audit Logs</button><button onclick="msmHomeGo('instructions')">▣ Instructions</button><button onclick="msmHomeInfo('contact')">✉ Contact</button></section>
     <section class="msm-widget-grid"><div class="msm-widget"><h3>⊕ Database Overview</h3><div style="font-size:11px;color:#aebed5">Regional Distribution of Guards — live Firestore data</div><div id="msmDynamicBars" class="msm-bars"><div class="msm-empty-data">Loading live regional analysis…</div></div></div><div class="msm-widget"><h3>◉ Latest Activities</h3><div id="msmActivity" class="msm-activity"><div>Live data appears here after Firestore loads.</div><div>Region and Sector changes are recorded in Audit Logs.</div><div>Enrollment saves are scoped by role and Region/Sector.</div></div></div><div class="msm-widget"><h3>⚙ System Features</h3><ul class="msm-check"><li>Role Based Access Control</li><li>Secure Firebase Database</li><li>Fast Search &amp; Filters</li><li>Excel Import / Export</li><li>Audit Logs &amp; Recycle Bin</li><li>Mobile Friendly PWA</li></ul></div></section>
     <section id="msmEnrollmentJump" class="msm-regions-wrap" style="margin-top:14px;background:linear-gradient(135deg,#3b124f,#123e68 52%,#1d6b57)"><div class="msm-section-head"><div><h2>EMPLOYEE ENROLLMENT</h2><p>Colourful enrollment workspace with employee photo and police verification upload.</p></div><button class="msm-primary" onclick="msmHomeGo('form')">Open Enrollment Form →</button></div></section>
-    <footer class="msm-footer">© 2026 MSM SECURITY GUARDS PVT LTD · All Rights Reserved<strong>MSM SECURITY GUARDS PVT LTD — LONGROLL DATABASE</strong>Designed By: Syed Jalal Hussain Shah · Digitalizing Security Management</footer>
+    <footer class="msm-footer">© 2026 MSM SECURITY GUARDS PVT LTD · All Rights Reserved<strong><span class="msm-rainbow-text">MSM SECURITY GUARDS PVT LTD — LONGROLL DATABASE</span></strong>Designed By: Syed Jalal Hussain Shah · Digitalizing Security Management</footer>
   </main>
 </section>
 
