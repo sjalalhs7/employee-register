@@ -839,7 +839,22 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 .msm-screen-welcome{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;max-width:760px;padding:36px 42px;pointer-events:none}
 .msm-screen-welcome .quote{font-size:16px;font-weight:900;color:#f1e7c4;text-shadow:0 3px 12px #000;margin-bottom:18px}
 .msm-screen-welcome h2{margin:0 0 10px;font-size:clamp(30px,5vw,58px);line-height:.98;letter-spacing:.4px;color:#fff;text-shadow:0 4px 16px #000}
-.msm-screen-welcome h2 span{color:#f4bf35}
+.msm-screen-welcome h2 span.msm-rainbow-text{
+  display:inline-block;
+  background:linear-gradient(90deg,#ff3b3b,#ff9a3b,#f4e63b,#3bff6e,#3bd0ff,#7a3bff,#ff3bd0,#ff3b3b);
+  background-size:400% 100%;
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;
+  animation:msmRainbowShift 6s linear infinite, msmRainbow3D 3.2s ease-in-out infinite;
+  text-shadow:none;filter:drop-shadow(0 6px 14px rgba(0,0,0,.55));
+}
+@keyframes msmRainbowShift{0%{background-position:0% 50%}100%{background-position:400% 50%}}
+@keyframes msmRainbow3D{0%,100%{transform:perspective(400px) rotateX(0deg) translateZ(0)}50%{transform:perspective(400px) rotateX(6deg) translateZ(10px)}}
+.msm-screen-welcome .msm-rainbow-glow{position:absolute;inset:-30px -60px auto -60px;height:220px;z-index:-1;pointer-events:none;
+  background:conic-gradient(from 0deg,#ff3b3b,#ff9a3b,#f4e63b,#3bff6e,#3bd0ff,#7a3bff,#ff3bd0,#ff3b3b);
+  filter:blur(60px) opacity(.28);animation:msmRainbowSpin 8s linear infinite;border-radius:50%;
+}
+@keyframes msmRainbowSpin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.msm-screen-welcome h2 span.msm-rainbow-text,.msm-screen-welcome .msm-rainbow-glow{animation:none}}
 .msm-screen-welcome p{margin:0 0 16px;font-size:14px;letter-spacing:1px;font-weight:800;color:#e7edf7;text-shadow:0 2px 10px #000}
 .msm-screen-welcome .msm-primary{pointer-events:auto;width:max-content}
 .msm-screen-welcome .msm-motto{margin-top:14px;font-weight:900;letter-spacing:1px;color:#fff;text-shadow:0 2px 10px #000}
@@ -1257,7 +1272,7 @@ button,input,select,textarea{font:inherit;}
   <div class="msm-screen-scene snow" data-scene="snow"><div class="msm-screen-title"><span>MSM Security • Pakistan • Snowy Night</span></div><div class="msm-weather"><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Snowfall</div></div>
   <div class="msm-screen-scene autumn" data-scene="autumn"><div class="msm-screen-title"><span>MSM Security • Pakistan • Autumn Breeze</span></div><div class="msm-weather"><span class="msm-leaf">🍂</span><span class="msm-leaf">🍁</span><span class="msm-leaf">🍂</span><span class="msm-leaf">🍁</span><span class="msm-leaf">🍂</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Autumn Breeze</div></div>
   <div class="msm-screen-dots"><button class="msm-screen-dot active" data-screen="0" aria-label="Sunshine scene"></button><button class="msm-screen-dot" data-screen="1" aria-label="Snow scene"></button><button class="msm-screen-dot" data-screen="2" aria-label="Autumn scene"></button></div>
-  <div class="msm-screen-welcome"><div class="quote">“Your Safety… Our Priority”</div><h2>WELCOME TO<br><span>MSM LONGROLL DATABASE</span></h2><p>PARENT / ADMIN CONTROL — REGIONS • SECTORS • LOCATIONS • CLIENTS</p><button class="msm-primary" onclick="msmHomeGo('database')">Open Longroll Database →</button><div class="msm-motto">Organized • Digital • Secure</div></div>
+  <div class="msm-screen-welcome" id="msmHeroWelcome" style="position:relative"><div class="msm-rainbow-glow"></div><div class="quote">“Your Safety… Our Priority”</div><h2 id="msmHeroHeadline">WELCOME TO<br><span class="msm-rainbow-text">MSM LONGROLL DATABASE</span></h2><p id="msmHeroTagline">PARENT / ADMIN CONTROL — REGIONS • SECTORS • LOCATIONS • CLIENTS</p><button class="msm-primary" onclick="msmHomeGo('database')">Open Longroll Database →</button><div class="msm-motto">Organized • Digital • Secure</div><button id="msmHeroEditBtn" style="display:none;position:absolute;top:0;right:0;pointer-events:auto;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.45);color:#fff;border-radius:8px;padding:6px 10px;font-size:11px" onclick="msmHomeEditHero()">✎ Edit Welcome Text</button></div>
 </section>
   <main class="msm-shell" id="msmHomeTop">
     <section class="msm-stats"><div class="msm-stat"><div>👥<small>ALL RECORDS</small><b id="msmStatRecords">0</b><small>Total Guards</small></div></div><div class="msm-stat"><div>▥<small>TOTAL REGIONS</small><b id="msmStatRegions">0</b><small>Active Regions</small></div></div><div class="msm-stat"><div>♙<small>TOTAL SECTORS</small><b id="msmStatSectors">0</b><small>All Sectors</small></div></div><div class="msm-stat"><div>🛡<small>ACTIVE USERS</small><b id="msmStatUsers">—</b><small>Authorized Users</small></div></div><div class="msm-stat"><div>♜<small>RECYCLE BIN</small><b id="msmStatRecycle">0</b><small>Deleted Records</small></div></div></section>
@@ -1849,8 +1864,11 @@ function showOnly(id){
   ['setupGate','loginGate','notAuthorizedGate','appRoot'].forEach(g=>{
     document.getElementById(g).style.display = (g===id) ? (g==='appRoot' ? 'block' : '') : 'none';
   });
+  /* Legacy #sectorPortal banner is retired — #msmHome now owns the single
+     "Welcome to MSM Longroll Database" hero. Keeping this permanently hidden
+     stops the duplicated welcome text you saw stacked on top of the hero. */
   const portal=document.getElementById('sectorPortal');
-  if(portal) portal.style.display=(id==='appRoot')?'block':'none';
+  if(portal) portal.style.display='none';
 }
 
 function initFirebase(){
@@ -4689,14 +4707,45 @@ if ('serviceWorker' in navigator) {
    window.msmHomeInfo(type);
   }catch(e){console.error(e);window.showToast?.('Could not save: '+e.message);}
  };
+ window.msmApplyHeroContent=function(){
+  const h=window.msmSiteContentCache['hero'];if(!h)return;
+  const headline=document.getElementById('msmHeroHeadline');
+  const tagline=document.getElementById('msmHeroTagline');
+  if(headline&&h.line1&&h.line2) headline.innerHTML=`${esc(h.line1)}<br><span class="msm-rainbow-text">${esc(h.line2)}</span>`;
+  if(tagline&&h.tagline) tagline.textContent=h.tagline;
+ };
+ window.msmHomeEditHero=function(){
+  if(!(getAccess()?.role==='parent'))return window.showToast?.('Only Parent/Admin can edit the homepage welcome text.');
+  const cur=window.msmSiteContentCache['hero']||{line1:'WELCOME TO',line2:'MSM LONGROLL DATABASE',tagline:'PARENT / ADMIN CONTROL — REGIONS • SECTORS • LOCATIONS • CLIENTS'};
+  document.getElementById('msmHomeModal')?.remove(); const m=document.createElement('div');m.id='msmHomeModal';m.className='msm-modal';
+  m.innerHTML=`<div class="msm-modal-card"><button class="msm-modal-close" onclick="document.getElementById('msmHomeModal').remove()">✕</button><h2>Edit Homepage Welcome Text</h2><label style="display:block;margin-top:10px">Line 1<br><input id="msmHeroEdit_l1" value="${esc(cur.line1)}" style="width:100%"></label><label style="display:block;margin-top:10px">Line 2 (rainbow highlight)<br><input id="msmHeroEdit_l2" value="${esc(cur.line2)}" style="width:100%"></label><label style="display:block;margin-top:10px">Tagline<br><input id="msmHeroEdit_tag" value="${esc(cur.tagline)}" style="width:100%"></label><div class="msm-region-tools" style="margin-top:14px"><button onclick="msmHomeSaveHero()">💾 Save</button><button onclick="document.getElementById('msmHomeModal').remove()">Cancel</button></div></div>`;
+  document.body.appendChild(m);
+ };
+ window.msmHomeSaveHero=async function(){
+  if(!(getAccess()?.role==='parent'))return window.showToast?.('Only Parent/Admin can edit the homepage welcome text.');
+  const line1=(document.getElementById('msmHeroEdit_l1')?.value||'').trim();
+  const line2=(document.getElementById('msmHeroEdit_l2')?.value||'').trim();
+  const tagline=(document.getElementById('msmHeroEdit_tag')?.value||'').trim();
+  if(!line1||!line2) return window.showToast?.('Both headline lines are required.');
+  const payload={line1,line2,tagline,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:(getUser()?.email||'').toLowerCase()};
+  try{
+   await db.collection(window.msmSiteContentCollection()).doc('hero').set(payload,{merge:true});
+   window.msmSiteContentCache['hero']=payload;
+   window.msmApplyHeroContent();
+   document.getElementById('msmHomeModal')?.remove();
+   window.showToast?.('Homepage welcome text updated.');
+  }catch(e){console.error(e);window.showToast?.('Could not save: '+e.message);}
+ };
  window.msmLoadSiteContent=async function(){
   try{
    const snap=await db.collection(window.msmSiteContentCollection()).get();
    snap.forEach(doc=>{window.msmSiteContentCache[doc.id]=doc.data();});
+   window.msmApplyHeroContent();
   }catch(e){console.warn('Site content load skipped:',e.message);}
  };
  window.msmHomeRender=function(){
   const email=getUser()?.email||'Authorized User';document.getElementById('msmHomeUser').textContent=email;document.getElementById('msmHomeRole').textContent=homeRole();
+  const heroBtn=document.getElementById('msmHeroEditBtn'); if(heroBtn) heroBtn.style.display=(getAccess()?.role==='parent')?'inline-block':'none';
   const rows=allRegions();const grid=document.getElementById('msmHomeRegionGrid');if(!grid)return;
   const dbCard=`<article class="msm-region-card" data-tone="db"><img class="msm-region-photo" src="database-reference.png" alt="Full Database" onerror="this.style.display='none'"><div class="msm-region-body"><h3>FULL DATABASE</h3><p>All Regions &amp; Sectors</p><button onclick="msmHomeGo('database')">Open Database →</button></div></article>`;
   grid.innerHTML=(rows.length ? rows.map((r,i)=>{const id=ridOf(r);const tone=['north','south','east','west'][i%4];const secs=sectorsFor(r);return `<article class="msm-region-card" data-tone="${tone}"><img class="msm-region-photo" src="${esc(r.imageUrl||fallbackFor(r))}" alt="${esc(r.name||'Region')}" onerror="this.src='database-reference.png'"><div class="msm-region-body"><h3>${esc((r.name||'Region').toUpperCase())}</h3><p>${secs.length} Sectors Assigned</p><button onclick="msmHomeOpenRegion('${esc(id)}')">Open Region →</button></div></article>`;}).join('') : '<div class="msm-empty-data" style="grid-column:1/-1">No Regions found in the actual Firestore catalog for this authorized account.</div>')+dbCard;
