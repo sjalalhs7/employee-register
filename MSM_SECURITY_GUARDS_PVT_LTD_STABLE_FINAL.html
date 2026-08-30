@@ -15,7 +15,7 @@
 <meta property="og:url" content="https://sjalalhs7.github.io/employee-register/">
 <meta property="og:site_name" content="MSM Longroll Database">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" href="msm-security-guards-logo.png">
+<link rel="icon" type="image/png" href="msm-logo.png">
 <meta name="theme-color" content="#0c1a2a">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -555,7 +555,7 @@
 }
 .msm-login-card::before{
   content:"";position:absolute;z-index:-1;inset:18% 8% 8%;
-  background-image:url('msm-security-guards-logo.png');background-repeat:no-repeat;background-position:center;
+  background-image:url('msm-logo.png');background-repeat:no-repeat;background-position:center;
   background-size:min(430px,92%);opacity:.075;filter:grayscale(1);
   mix-blend-mode:multiply;transform:rotate(-8deg);
 }
@@ -701,7 +701,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
   background:#111820 !important;color:#f8f0d4 !important;border:0 !important;
   border-bottom:4px solid #caa653 !important;box-shadow:none !important;overflow:hidden;position:relative;
 }
-#sectorPortal::after{content:"";position:absolute;inset:8% 18%;pointer-events:none;background:url('msm-security-guards-logo.png') center/58% auto no-repeat;opacity:.075;filter:grayscale(1) contrast(1.15);mix-blend-mode:screen;z-index:0;}
+#sectorPortal::after{content:"";position:absolute;inset:8% 18%;pointer-events:none;background:url('msm-logo.png') center/58% auto no-repeat;opacity:.075;filter:grayscale(1) contrast(1.15);mix-blend-mode:screen;z-index:0;}
 .msm-region-panel{position:relative;z-index:2;margin:22px 0 0;padding:20px 18px;border:1px solid rgba(202,166,83,.55);border-radius:16px;background:rgba(3,8,13,.68);box-shadow:inset 0 0 22px rgba(202,166,83,.04),0 8px 24px rgba(0,0,0,.24);}
 .msm-region-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
 .msm-region-title{color:#f0d88f;font-weight:900;letter-spacing:2px;text-transform:uppercase;font-size:14px;}
@@ -761,7 +761,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 #sectorPortal .portal-record-stamp .msm-record-top{color:#d8c58e;font-size:9px;letter-spacing:1.2px}
 #sectorPortal .portal-record-stamp .n{display:block;color:#fff;font-size:42px;line-height:1;font-weight:900}
 #sectorPortal .portal-record-stamp small{color:#d8c58e;font-size:9px;letter-spacing:1.2px;margin-top:4px}
-#sectorPortal::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background-image:url('msm-security-guards-logo.png');background-repeat:no-repeat;background-position:center 48%;background-size:min(520px,72vw);opacity:.055;filter:grayscale(.25) contrast(.95);mix-blend-mode:screen}
+#sectorPortal::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:0;background-image:url('msm-logo.png');background-repeat:no-repeat;background-position:center 48%;background-size:min(520px,72vw);opacity:.055;filter:grayscale(.25) contrast(.95);mix-blend-mode:screen}
 #sectorPortal .msm-master-frame{position:relative;z-index:1}
 #sectorPortal .portal-record-stamp{transform:perspective(520px) rotateX(3deg);transition:transform .25s ease,box-shadow .25s ease}
 #sectorPortal .portal-record-stamp:hover{transform:perspective(520px) rotateX(3deg) translateY(-4px) scale(1.035);box-shadow:inset 0 8px 10px rgba(255,255,255,.14),0 14px 28px rgba(0,0,0,.55),0 0 22px rgba(202,166,83,.20)}
@@ -792,6 +792,246 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
   #msmParentSectorNav{grid-template-columns:1fr 1fr !important;gap:8px !important}
 }
 </style>
+<style id="msm-final-3d-webview">
+
+/* ==========================================================
+   MSM FINAL 3D WEBVIEW EXPERIENCE
+   - Login: animated depth, floating crest, light sweep, particles
+   - Home: animated 3D depth, moving grid/orbs, lift cards
+   - WebView-safe: no external animation library required
+   ========================================================== */
+#msmLoginPage,
+#sectorPortal .msm-home{
+  perspective: 1400px;
+  perspective-origin: 50% 35%;
+}
+
+#msmLoginPage{
+  isolation:isolate;
+  overflow:hidden!important;
+  position:relative!important;
+  background:
+    radial-gradient(circle at 50% 8%, rgba(35,112,225,.24), transparent 34%),
+    radial-gradient(circle at 8% 88%, rgba(207,35,67,.16), transparent 32%),
+    linear-gradient(135deg,#020816 0%,#061a38 52%,#130a20 100%) !important;
+}
+
+#msmLoginPage::before{
+  content:"";
+  position:absolute;
+  inset:-25%;
+  z-index:0;
+  pointer-events:none;
+  background:
+    linear-gradient(rgba(94,165,255,.07) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(94,165,255,.07) 1px,transparent 1px);
+  background-size:54px 54px;
+  transform:perspective(650px) rotateX(62deg) translateY(24%);
+  transform-origin:center bottom;
+  animation:msmGridMove 13s linear infinite;
+  mask-image:linear-gradient(to top,rgba(0,0,0,.85),transparent 78%);
+}
+
+#msmLoginPage::after{
+  content:"";
+  position:absolute;
+  width:320px;height:320px;
+  left:50%;top:12%;
+  transform:translate(-50%,0);
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(246,201,79,.16),rgba(35,113,225,.08) 35%,transparent 70%);
+  filter:blur(4px);
+  pointer-events:none;
+  animation:msmPulse3D 4.5s ease-in-out infinite;
+  z-index:0;
+}
+
+.msm-login-card{
+  transform-style:preserve-3d;
+  animation:msmLoginFloat 6s ease-in-out infinite;
+  will-change:transform;
+  position:relative!important;
+  z-index:2!important;
+  backdrop-filter:blur(10px);
+  -webkit-backdrop-filter:blur(10px);
+}
+
+.msm-login-card::before{
+  background-image:none!important;
+}
+
+.msm-login-card::after{
+  content:""!important;
+  position:absolute!important;
+  inset:0!important;
+  border-radius:inherit!important;
+  pointer-events:none!important;
+  background:
+    linear-gradient(115deg,transparent 0%,rgba(255,255,255,.08) 45%,transparent 53%),
+    radial-gradient(circle at 18% 12%,rgba(255,255,255,.08),transparent 28%)!important;
+  background-size:220% 100%,100% 100%!important;
+  animation:msmCardSweep 7s ease-in-out infinite!important;
+  z-index:5!important;
+}
+
+.msm-login-logo{
+  content:url('msm-logo.png')!important;
+  transform:translateZ(55px);
+  animation:msmLogoFloat 4s ease-in-out infinite;
+  filter:drop-shadow(0 14px 24px rgba(0,0,0,.48)) drop-shadow(0 0 18px rgba(246,201,79,.14));
+}
+
+.msm-login-title,.msm-login-kicker,.msm-login-designer,
+.msm-login-divider,.msm-google-btn,.msm-login-note,
+.msm-login-security,.msm-login-footer,#passwordLoginBox,#msmLoginError{
+  transform:translateZ(24px);
+}
+
+/* Animated 3D homepage stage */
+#msmHome{
+  position:relative;
+  isolation:isolate;
+  transform-style:preserve-3d;
+}
+
+#msmHome::before{
+  content:"";
+  position:absolute;
+  left:-15%;right:-15%;
+  bottom:0;
+  height:55%;
+  pointer-events:none;
+  z-index:-2;
+  background:
+    linear-gradient(rgba(69,144,239,.055) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(69,144,239,.055) 1px,transparent 1px);
+  background-size:52px 52px;
+  transform:perspective(700px) rotateX(60deg) translateY(20%);
+  transform-origin:center bottom;
+  animation:msmGridMove 16s linear infinite;
+}
+
+#msmHome::after{
+  content:"";
+  position:absolute;
+  width:260px;height:260px;
+  right:-60px;top:90px;
+  border-radius:50%;
+  background:radial-gradient(circle,rgba(31,125,255,.18),transparent 68%);
+  filter:blur(10px);
+  pointer-events:none;
+  z-index:-1;
+  animation:msmOrbFloat 7s ease-in-out infinite;
+}
+
+.msm-topline,.msm-brandbar,.msm-nav,.msm-quick,
+.msm-hero,.msm-stat,.msm-regions-wrap,.msm-widget,
+.msm-region-page,.msm-footer{
+  transform-style:preserve-3d;
+}
+
+.msm-brandbar{
+  box-shadow:0 18px 50px rgba(0,0,0,.24);
+}
+
+.msm-brand img{
+  content:url('msm-logo.png');
+  transform:translateZ(35px);
+  animation:msmLogoFloat 5s ease-in-out infinite;
+}
+
+.msm-nav button,.msm-account,.msm-quick button{
+  transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease!important;
+}
+
+.msm-nav button:hover,.msm-nav button.active,.msm-quick button:hover{
+  transform:translateY(-4px) translateZ(10px)!important;
+  box-shadow:0 14px 28px rgba(0,0,0,.28),0 0 18px rgba(70,154,255,.13)!important;
+}
+
+.msm-hero{
+  transform:translateZ(0) rotateX(0deg);
+  animation:msmHeroFloat 7s ease-in-out infinite;
+  box-shadow:0 26px 65px rgba(0,0,0,.38),0 0 34px rgba(39,123,255,.10);
+}
+
+.msm-hero::after{
+  content:"";
+  position:absolute;
+  inset:-1px;
+  border-radius:inherit;
+  pointer-events:none;
+  background:linear-gradient(120deg,transparent 30%,rgba(255,255,255,.10) 48%,transparent 56%);
+  background-size:220% 100%;
+  animation:msmCardSweep 8s ease-in-out infinite;
+}
+
+.msm-stat{
+  animation:msmStatFloat 5s ease-in-out infinite;
+}
+.msm-stat:nth-child(2){animation-delay:.35s}
+.msm-stat:nth-child(3){animation-delay:.7s}
+.msm-stat:nth-child(4){animation-delay:1.05s}
+.msm-stat:nth-child(5){animation-delay:1.4s}
+
+.msm-stat:hover,.msm-region-card:hover,.msm-widget:hover,
+.msm-regions-wrap:hover,.msm-region-page:hover{
+  transform:translateY(-6px) translateZ(12px)!important;
+  box-shadow:0 24px 46px rgba(0,0,0,.34),0 0 24px rgba(55,141,255,.10)!important;
+}
+
+.msm-stat,.msm-region-card,.msm-widget,.msm-regions-wrap,.msm-region-page{
+  transition:transform .3s ease,box-shadow .3s ease!important;
+}
+
+@keyframes msmLoginFloat{
+  0%,100%{transform:rotateX(0deg) rotateY(0deg) translateY(0)}
+  50%{transform:rotateX(1.2deg) rotateY(-1.2deg) translateY(-7px)}
+}
+@keyframes msmLogoFloat{
+  0%,100%{transform:translateZ(55px) translateY(0) rotateY(0deg)}
+  50%{transform:translateZ(72px) translateY(-8px) rotateY(2deg)}
+}
+@keyframes msmHeroFloat{
+  0%,100%{transform:translateZ(0) rotateX(0deg)}
+  50%{transform:translateZ(7px) rotateX(.6deg)}
+}
+@keyframes msmStatFloat{
+  0%,100%{transform:translateY(0) translateZ(0)}
+  50%{transform:translateY(-5px) translateZ(5px)}
+}
+@keyframes msmOrbFloat{
+  0%,100%{transform:translate3d(0,0,0) scale(1)}
+  50%{transform:translate3d(-35px,28px,0) scale(1.12)}
+}
+@keyframes msmPulse3D{
+  0%,100%{transform:translate(-50%,0) scale(.9);opacity:.55}
+  50%{transform:translate(-50%,0) scale(1.12);opacity:.9}
+}
+@keyframes msmCardSweep{
+  0%,55%{background-position:200% 0,0 0}
+  75%,100%{background-position:-30% 0,0 0}
+}
+@keyframes msmGridMove{
+  from{background-position:0 0,0 0}
+  to{background-position:0 52px,52px 0}
+}
+
+/* Small-screen WebView tuning */
+@media(max-width:760px){
+  #msmLoginPage{padding-left:10px!important;padding-right:10px!important;overflow-x:hidden!important}
+  .msm-login-card{animation:msmLoginFloat 7s ease-in-out infinite}
+  .msm-login-logo{max-width:220px!important;height:auto!important;transform:translateZ(35px)!important}
+  .msm-hero{animation:msmHeroFloat 8s ease-in-out infinite}
+  .msm-stat{min-height:118px}
+}
+
+@media(prefers-reduced-motion:reduce){
+  #msmLoginPage::before,#msmLoginPage::after,#msmHome::before,#msmHome::after,
+  .msm-login-card,.msm-login-logo,.msm-brand img,.msm-hero,.msm-stat{animation:none!important}
+  *{scroll-behavior:auto!important}
+}
+</style>
 </head>
 <body>
 
@@ -818,7 +1058,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 <div id="loginGate" style="display:none;">
   <div id="msmLoginPage">
     <div class="msm-login-card">
-      <img class="msm-login-logo" src="msm-security-guards-logo.png" alt="MSM Security Guards Logo" id="msmLoginLogo">
+      <img class="msm-login-logo" src="msm-logo.png" alt="MSM Security Guards Logo" id="msmLoginLogo">
       <div class="msm-login-kicker">MSM SECURITY GUARDS PVT LTD</div>
       <h1 class="msm-login-title">MSM SECURITY GUARDS PVT LTD<br>LONGROLL DATABASE</h1>
       <div class="msm-login-designer">DESIGNED BY SYED JALAL HUSSAIN SHAH</div>
@@ -893,7 +1133,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
     </div>
     <div class="msm-master-logo-wrap">
       <div class="msm-logo-frame">
-        <img src="msm-security-guards-logo.png" alt="MSM SECURITY GUARDS PVT LTD">
+        <img src="msm-logo.png" alt="MSM SECURITY GUARDS PVT LTD">
       </div>
     </div>
     <div class="msm-designer">DESIGNED BY: SYED JALAL HUSSAIN SHAH · HRMS MSM SECURITY GUARDS PVT LTD</div>
@@ -923,7 +1163,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 <div class="cover">
   <div class="cover-inner">
     <div class="cover-title">
-      <div class="brand-row"><img class="cover-logo" src="msm-security-guards-logo.png" alt="MSM SECURITY GUARDS PVT LTD Logo"><span class="designer-title">Designed by : Syed Jalal Hussain Shah / MSM G-8 Head Office HR Head Clerk</span><input id="companyName" class="company-name-input display" value="MSM SECURITY GUARDS PVT LTD" /></div>
+      <div class="brand-row"><img class="cover-logo" src="msm-logo.png" alt="MSM SECURITY GUARDS PVT LTD Logo"><span class="designer-title">Designed by : Syed Jalal Hussain Shah / MSM G-8 Head Office HR Head Clerk</span><input id="companyName" class="company-name-input display" value="MSM SECURITY GUARDS PVT LTD" /></div>
       <div class="cover-tagline">Employee Enrollment &amp; Long Roll Register</div>
     </div>
     <div class="cover-meta">
@@ -3425,7 +3665,7 @@ if ('serviceWorker' in navigator) {
     .msm-master-frame:after{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;background:
       linear-gradient(120deg,rgba(226,42,61,.08),transparent 35%,rgba(36,91,190,.10) 72%,rgba(226,42,61,.06));}
     /* Real company-logo watermark on every signed-in home/sector portal */
-    #sectorPortal .msm-master-frame:before{content:"";position:absolute;inset:16% 18% 10%;background:url('msm-security-guards-logo.png') center/520px auto no-repeat;opacity:.075;filter:grayscale(.15) saturate(1.15);pointer-events:none;z-index:0;mix-blend-mode:screen;}
+    #sectorPortal .msm-master-frame:before{content:"";position:absolute;inset:16% 18% 10%;background:url('msm-logo.png') center/520px auto no-repeat;opacity:.075;filter:grayscale(.15) saturate(1.15);pointer-events:none;z-index:0;mix-blend-mode:screen;}
     .msm-master-frame>*{position:relative;z-index:1;}
 
     /* ===== Upper navigation ===== */
@@ -3522,7 +3762,7 @@ if ('serviceWorker' in navigator) {
   function makePublicNav(){
     const page=document.getElementById('msmLoginPage');if(!page||document.getElementById('msmPublicNav'))return;
     const nav=document.createElement('div');nav.id='msmPublicNav';nav.className='msm-public-nav';
-    nav.innerHTML='<div class="nav-brand"><img src="msm-security-guards-logo.png" alt="MSM logo"><span>MSM SECURITY GUARDS PVT LTD</span></div><button onclick="window.scrollTo({top:0,behavior:\'smooth\'})">HOME</button><button onclick="msmInfo(\'about\')">ABOUT</button><button onclick="msmInfo(\'services\')">SERVICES</button><button onclick="msmInfo(\'contact\')">CONTACT</button><button onclick="document.querySelector(\'.msm-google-btn\')?.click()">LOGIN</button><button onclick="msmInstallApp()">INSTALL APP</button>';
+    nav.innerHTML='<div class="nav-brand"><img src="msm-logo.png" alt="MSM logo"><span>MSM SECURITY GUARDS PVT LTD</span></div><button onclick="window.scrollTo({top:0,behavior:\'smooth\'})">HOME</button><button onclick="msmInfo(\'about\')">ABOUT</button><button onclick="msmInfo(\'services\')">SERVICES</button><button onclick="msmInfo(\'contact\')">CONTACT</button><button onclick="document.querySelector(\'.msm-google-btn\')?.click()">LOGIN</button><button onclick="msmInstallApp()">INSTALL APP</button>';
     page.insertBefore(nav,page.firstElementChild);
   }
 
@@ -3533,7 +3773,7 @@ if ('serviceWorker' in navigator) {
     if(!nav){nav=document.createElement('nav');nav.id='msmFinalTopNav';nav.className='msm-final-topnav';frame.insertBefore(nav,frame.firstElementChild);}
     const email=(currentUser&&currentUser.email)||'';
     const role=isParent()?'PARENT MASTER':(isRegional()?'REGIONAL OFFICE':'SECTOR USER');
-    nav.innerHTML='<div class="nav-brand"><img src="msm-security-guards-logo.png" alt="MSM logo"><span>MSM LONGROLL</span></div>'+
+    nav.innerHTML='<div class="nav-brand"><img src="msm-logo.png" alt="MSM logo"><span>MSM LONGROLL</span></div>'+
       '<button onclick="msmScrollHome()">HOME</button><button onclick="msmScrollRegions()">REGIONS / SECTORS</button>'+
       (isParent()?'<button onclick="msmOpenSector(\'full\')">FULL DATABASE</button>':(isRegional()?'<button onclick="msmScrollRegions()">MY REGION</button>':'<button onclick="msmOpenMySector()">MY SECTOR</button>'))+
       '<button onclick="msmInfo(\'about\')">ABOUT</button><button onclick="msmInfo(\'services\')">SERVICES</button><button onclick="msmInfo(\'contact\')">CONTACT</button>'+
