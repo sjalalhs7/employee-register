@@ -1,0 +1,304 @@
+rules_version = '2';
+
+service cloud.firestore {
+
+  match /databases/{database}/documents {
+
+    // =========================================================
+    // AUTHENTICATION / USER HELPERS
+    // =========================================================
+
+    function signedIn() {
+      return request.auth != null && request.auth.token.email != null;
+    }
+
+    function authEmail() {
+      return request.auth.token.email;
+    }
+
+    function userPath() {
+      return /databases/$(database)/documents/authorizedUsers/$(authEmail());
+    }
+
+    function authorized() {
+      return signedIn() && exists(userPath());
+    }
+
+    function myUser() {
+      return get(userPath());
+    }
+
+    function myUserData() {
+      return myUser().data;
+    }
+
+    function myRole() {
+      return myUserData().get('role', '');
+    }
+
+    function isParent() {
+      return authorized() && myRole() == 'parent';
+    }
+
+    function isClient() {
+      return authorized() && myRole() == 'client';
+    }
+
+    function isRegional() {
+      return authorized() && myRole() == 'regional';
+    }
+
+    function myRegion() {
+      return myUserData().get('region', '');
+    }
+
+    function myRegionId() {
+      return myUserData().get('regionId', '');
+    }
+
+    function myClient() {
+      return myUserData().get('clientproject', '');
+    }
+
+    function mySector() {
+      return myUserData().get('sector', '');
+    }
+
+
+    // =========================================================
+    // REGION HELPERS
+    // =========================================================
+
+    function regionDoc() {
+      return /databases/$(database)/documents/regionCatalog/$(myRegionId());
+    }
+
+    function regionExists() {
+      return myRegionId() != '' && exists(regionDoc());
+    }
+
+    function getRegionSectors() {
+      return get(regionDoc()).data.get('sectors', []);
+    }
+
+
+    // =========================================================
+    // REGIONAL ACCESS
+    // =========================================================
+
+    function regionalRecordAccess(data) {
+      return isRegional()
+        && regionExists()
+        && (
+          // Normal sector-tagged record
+          (
+            data.get('sector', '') != ''
+            && getRegionSectors().hasAny([data.get('sector', '')])
+          )
+          ||
+          // Legacy records where clientproject contains sector
+          (
+            data.get('sector', '') == ''
+            && data.get('clientproject', '') != ''
+            && getRegionSectors().hasAny([data.get('clientproject', '')])
+          )
+        );
+    }
+
+
+    // =========================================================
+    // CLIENT ACCESS
+    // =========================================================
+
+    function clientRecordAccess(data) {
+      return isClient()
+        && (
+          // Client has a sector
+          (
+            mySector() != ''
+            && (
+              data.get('sector', '') == mySector()
+              || data.get('clientproject', '') == mySector()
+              || data.get('clientproject', '') == myClient()
+            )
+          )
+          ||
+          // Legacy client without sector
+          (
+            mySector() == ''
+            && data.get('clientproject', '') == myClient()
+          )
+        );
+    }
+
+
+    // =========================================================
+    // GENERAL RECORD SCOPE
+    // =========================================================
+
+    function recordInMyScope(data) {
+      return regionalRecordAccess(data) || clientRecordAccess(data);
+    }
+
+
+    // =========================================================
+    // AUDIT LOG OWNERSHIP
+    // =========================================================
+
+    function auditOwnedByCaller() {
+      return authorized()
+        && (isRegional() || isClient())
+        && request.resource.data.get('userEmail', '') == authEmail()
+        && request.resource.data.get('role', '') == myRole();
+    }
+
+
+    // =========================================================
+    // AUTHORIZED USERS
+    // =========================================================
+
+    match /authorizedUsers/{email} {
+      // Direct auth check used here to prevent infinite loop recursion during user lookup
+      allow read: if signedIn() && (
+        email == authEmail() || 
+        (exists(userPath()) && get(userPath()).data.get('role', '') == 'parent')
+      );
+
+      // Only Parent manages users.
+      allow create, update, delete: if isParent();
+    }
+
+
+    // =========================================================
+    // REGION CATALOG
+    // =========================================================
+
+    match /regionCatalog/{regionId} {
+
+      // All authorized users can read regions/sectors.
+      allow read: if authorized();
+
+      // Parent has full control.
+      allow create, delete: if isParent();
+
+      // Parent can update anything; Regional can update only its own region.
+      allow update: if isParent()
+        || (
+          isRegional()
+          && regionId == myRegionId()
+        );
+    }
+
+
+    // =========================================================
+    // SECTOR CATALOG
+    // =========================================================
+
+    match /sectorCatalog/{sectorId} {
+
+      // All authorized users can read sectors.
+      allow read: if authorized();
+
+      // Parent can create anything; Regional can create sectors only in own region.
+      allow create: if isParent()
+        || (
+          isRegional()
+          && request.resource.data.get('region', '') == myRegion()
+        );
+
+      // Parent can update anything; Regional can update sectors belonging to own region.
+      allow update: if isParent()
+        || (
+          isRegional()
+          && request.resource.data.get('region', '') == myRegion()
+          && (
+            resource.data.get('region', '') == myRegion()
+            || resource.data.get('region', '') == ''
+          )
+        );
+
+      // Only Parent can delete sectors.
+      allow delete: if isParent();
+    }
+
+
+    // =========================================================
+    // RECORDS
+    // =========================================================
+
+    match /records/{recordId} {
+
+      allow read: if isParent() || recordInMyScope(resource.data);
+
+      allow create: if isParent() || recordInMyScope(request.resource.data);
+
+      allow update: if isParent()
+        || (
+          recordInMyScope(resource.data)
+          && recordInMyScope(request.resource.data)
+        );
+
+      allow delete: if isParent() || recordInMyScope(resource.data);
+    }
+
+
+    // =========================================================
+    // RECYCLE BIN
+    // =========================================================
+
+    match /recycleBin/{recycleId} {
+
+      allow read: if isParent()
+        || recordInMyScope(resource.data.get('recordData', {}));
+
+      allow create: if isParent()
+        || (
+          request.resource.data.get('originalRecordId', '') is string
+          && request.resource.data.get('recordData', {}) is map
+          && recordInMyScope(
+               request.resource.data.get('recordData', {})
+             )
+        );
+
+      allow update: if false;
+
+      allow delete: if isParent()
+        || recordInMyScope(resource.data.get('recordData', {}));
+    }
+
+
+    // =========================================================
+    // AUDIT LOGS
+    // =========================================================
+
+    match /auditLogs/{logId} {
+
+      allow read: if isParent();
+
+      allow create: if isParent() || auditOwnedByCaller();
+
+      allow update, delete: if false;
+    }
+
+
+    // =========================================================
+    // TRANSFER HISTORY
+    // =========================================================
+
+    match /transferHistory/{historyId} {
+
+      allow read, create: if isParent();
+
+      allow update, delete: if false;
+    }
+
+
+    // =========================================================
+    // DEFAULT DENY
+    // =========================================================
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
