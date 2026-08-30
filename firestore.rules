@@ -15,9 +15,10 @@ service cloud.firestore {
     function inMyRegion(data) {
       return isRegional()
         && myRegionId() != ''
+        && exists(regionDoc())
         && (
-          data.get('regionId','') == myRegionId()
-          || (data.get('regionId','') == '' && data.get('region','') == myRegion())
+          (data.get('sector','') != '' && get(regionDoc()).data.get('sectors', []).hasAny([data.get('sector','')])) ||
+          (data.get('sector','') == '' && data.get('clientproject','') != '' && get(regionDoc()).data.get('sectors', []).hasAny([data.get('clientproject','')]))
         );
     }
     function myClient() { return myUser().data.get('clientproject', ''); }
