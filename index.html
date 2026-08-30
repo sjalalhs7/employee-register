@@ -836,6 +836,14 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 @keyframes msmFall{to{transform:translate(100px,480px) rotate(360deg)}}
 .msm-screen-caption{position:absolute;right:22px;bottom:18px;z-index:8;padding:8px 12px;border:1px solid rgba(255,255,255,.25);border-radius:999px;background:rgba(3,12,29,.66);color:#fff;font-size:11px;font-weight:800;backdrop-filter:blur(6px)}
 .msm-screen-dots{position:absolute;right:20px;top:20px;z-index:10;display:flex;gap:6px}.msm-screen-dot{width:9px;height:9px;border-radius:50%;background:#fff6;border:1px solid #fff8;cursor:pointer}.msm-screen-dot.active{background:#f6cf62;box-shadow:0 0 9px #f6cf62}
+.msm-screen-welcome{position:absolute;inset:0;z-index:9;display:flex;flex-direction:column;justify-content:center;max-width:760px;padding:36px 42px;pointer-events:none}
+.msm-screen-welcome .quote{font-size:16px;font-weight:900;color:#f1e7c4;text-shadow:0 3px 12px #000;margin-bottom:18px}
+.msm-screen-welcome h2{margin:0 0 10px;font-size:clamp(30px,5vw,58px);line-height:.98;letter-spacing:.4px;color:#fff;text-shadow:0 4px 16px #000}
+.msm-screen-welcome h2 span{color:#f4bf35}
+.msm-screen-welcome p{margin:0 0 16px;font-size:14px;letter-spacing:1px;font-weight:800;color:#e7edf7;text-shadow:0 2px 10px #000}
+.msm-screen-welcome .msm-primary{pointer-events:auto;width:max-content}
+.msm-screen-welcome .msm-motto{margin-top:14px;font-weight:900;letter-spacing:1px;color:#fff;text-shadow:0 2px 10px #000}
+@media(max-width:650px){.msm-screen-welcome{padding:18px}.msm-screen-welcome .quote{font-size:11px;margin-bottom:10px}.msm-screen-welcome p{font-size:10px}}
 @media(max-width:650px){.msm-screensaver{min-height:285px}.msm-screen-title{left:14px;top:14px}.msm-screen-title h2{font-size:24px}.msm-screen-caption{right:12px;bottom:12px;font-size:9px}}
 </style>
 <style id="msm-webview-stability">
@@ -1244,14 +1252,14 @@ button,input,select,textarea{font:inherit;}
   <div class="msm-shell msm-quick">
     <button onclick="msmHomeAddRegion()">＋ Add Region</button><button onclick="msmHomeAddSector()">＋ Add Sector</button><button onclick="document.getElementById('longRollImport')?.click()">⇅ Import / Export</button><button onclick="msmOpenRecycle()">♜ Recycle Bin</button><button onclick="msmHomeGo('audit')">◉ Audit Logs</button><button onclick="msmHomeGo('admin')">♙ Manage Users</button><button onclick="msmInstallApp()">▣ Install App</button><button class="danger" onclick="doSignOut()">↩ Sign Out</button>
   </div>
-  <section class="msm-shell msm-screensaver" id="msmScreensaver" aria-label="Guards in Salute screensaver">
+  <section class="msm-shell msm-screensaver" id="msmScreensaver" aria-label="MSM Longroll Database welcome screensaver">
   <div class="msm-screen-scene sunshine active" data-scene="sunshine"><div class="msm-screen-title"><span>MSM Security • Pakistan • Clear Blue Sky</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Faisal Mosque</div></div>
   <div class="msm-screen-scene snow" data-scene="snow"><div class="msm-screen-title"><span>MSM Security • Pakistan • Snowy Night</span></div><div class="msm-weather"><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Snowfall</div></div>
   <div class="msm-screen-scene autumn" data-scene="autumn"><div class="msm-screen-title"><span>MSM Security • Pakistan • Autumn Breeze</span></div><div class="msm-weather"><span class="msm-leaf">🍂</span><span class="msm-leaf">🍁</span><span class="msm-leaf">🍂</span><span class="msm-leaf">🍁</span><span class="msm-leaf">🍂</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Autumn Breeze</div></div>
   <div class="msm-screen-dots"><button class="msm-screen-dot active" data-screen="0" aria-label="Sunshine scene"></button><button class="msm-screen-dot" data-screen="1" aria-label="Snow scene"></button><button class="msm-screen-dot" data-screen="2" aria-label="Autumn scene"></button></div>
+  <div class="msm-screen-welcome"><div class="quote">“Your Safety… Our Priority”</div><h2>WELCOME TO<br><span>MSM LONGROLL DATABASE</span></h2><p>PARENT / ADMIN CONTROL — REGIONS • SECTORS • LOCATIONS • CLIENTS</p><button class="msm-primary" onclick="msmHomeGo('database')">Open Longroll Database →</button><div class="msm-motto">Organized • Digital • Secure</div></div>
 </section>
   <main class="msm-shell" id="msmHomeTop">
-    <section class="msm-hero"><div class="msm-hero-copy"><div class="quote">“Your Safety… Our Priority”</div><h2>WELCOME TO<br><span>MSM LONGROLL DATABASE</span></h2><p>PARENT / ADMIN CONTROL — REGIONS • SECTORS • LOCATIONS • CLIENTS</p><button class="msm-primary" onclick="msmHomeGo('database')">Open Longroll Database →</button></div><div class="msm-motto">Organized • Digital • Secure</div></section>
     <section class="msm-stats"><div class="msm-stat"><div>👥<small>ALL RECORDS</small><b id="msmStatRecords">0</b><small>Total Guards</small></div></div><div class="msm-stat"><div>▥<small>TOTAL REGIONS</small><b id="msmStatRegions">0</b><small>Active Regions</small></div></div><div class="msm-stat"><div>♙<small>TOTAL SECTORS</small><b id="msmStatSectors">0</b><small>All Sectors</small></div></div><div class="msm-stat"><div>🛡<small>ACTIVE USERS</small><b id="msmStatUsers">—</b><small>Authorized Users</small></div></div><div class="msm-stat"><div>♜<small>RECYCLE BIN</small><b id="msmStatRecycle">0</b><small>Deleted Records</small></div></div></section>
     <div class="msm-access">🛡 Parent/Admin Access — controlled access over Regions, Sectors, Locations, Clients &amp; Records</div>
     <section id="msmHomeRegions" class="msm-regions-wrap"><div class="msm-section-head"><div><h2>✧ REGIONS &amp; SECTORS</h2><p>Select a Region → view its home page → select a Sector → manage Locations / Clients.</p></div><button class="msm-primary" onclick="msmHomeRender()">Refresh</button></div><div id="msmHomeRegionGrid" class="msm-region-grid"></div></section>
