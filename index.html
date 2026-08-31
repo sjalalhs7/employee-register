@@ -5032,7 +5032,7 @@ if ('serviceWorker' in navigator) {
   document.querySelector('.cover')?.scrollIntoView({behavior:'smooth'});
  };
  window.msmHomeAddRegion=async function(){
-  if(!(getAccess()?.role==='parent'))return window.showToast?.('Parent/Admin access is required to add a Region.');const name=prompt('New Region name:');if(!norm(name))return;const id=norm(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  if(!(['parent','admin'].includes(String(getAccess()?.role||'').toLowerCase())))return window.showToast?.('Parent/Admin access is required to add a Region.');const name=prompt('New Region name:');if(!norm(name))return;const id=norm(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
   try{await db.collection(regionCollection()).doc(id).set({name:norm(name),regionId:id,sectors:[],locations:[],createdBy:(getUser()?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});await window.msmLoadRegionCatalog?.();window.msmHomeRender();window.showToast?.(norm(name)+' added successfully.');}catch(e){console.error(e);window.showToast?.('Could not add Region: '+e.message);}
  };
  window.msmHomeAddSector=async function(preRegion){
@@ -5345,6 +5345,103 @@ if ('serviceWorker' in navigator) {
   new MutationObserver(desktopFix).observe(document.documentElement,{childList:true,subtree:true});
 })();
 </script>
+
+<!-- MSM FINAL INTERACTION RECOVERY LAYER -->
+<script>
+(function(){
+  'use strict';
+  const say=(m)=>{ try{ window.showToast ? window.showToast(m) : console.log(m); }catch(e){ console.log(m); } };
+  const role=()=>String(window.currentAccess?.role || '').toLowerCase();
+  const isParentAdmin=()=>['parent','admin'].includes(role());
+  const key=(v)=>String(v||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+
+  // Make dashboard controls physically clickable even when older decorative layers overlap them.
+  const css=document.createElement('style');
+  css.textContent=`
+    .msm-home button,.msm-region-card button,.msm-quick button,.msm-top-menu button,
+    #msmRegionHomePage button,.msm-region-panel button{pointer-events:auto!important;position:relative!important;z-index:100!important;cursor:pointer!important}
+    .msm-region-card,.msm-region-body,.msm-region-grid{pointer-events:auto!important}
+    .msm-region-card button:focus,.msm-quick button:focus{outline:3px solid #f6c94f!important;outline-offset:3px}
+  `;
+  document.head.appendChild(css);
+
+  // Preserve whatever region opener was installed by the original application.
+  const originalOpen=window.msmHomeOpenRegion;
+  window.msmHomeOpenRegion=async function(regionId){
+    try{
+      if(typeof window.msmLoadRegionCatalog==='function') await window.msmLoadRegionCatalog();
+      const rows=Array.isArray(window.msmRegionCatalog)?window.msmRegionCatalog:[];
+      const r=rows.find(x=>String(x.regionId||x.id||key(x.name))===String(regionId)||key(x.name)===key(regionId));
+      const rid=String(r?.regionId||r?.id||regionId||'');
+      if(!rid){ say('Region was not found in Firestore. Refresh and try again.'); return; }
+      window.msmHomeSelectedRegion=rid;
+      window.msmActiveRegion=rid;
+      window.msmHomeSelectedSector=null;
+      window.msmActiveSector='full';
+      if(typeof originalOpen==='function'){
+        const out=await originalOpen.call(this,rid);
+        return out;
+      }
+      if(typeof window.msmOpenRegion==='function') await window.msmOpenRegion(rid);
+      // Safe functional fallback: open the database in the selected Region scope.
+      if(typeof window.msmHomeGo==='function') window.msmHomeGo('database');
+      else document.getElementById('msmRegionHomePage')?.scrollIntoView({behavior:'smooth'});
+      say((r?.name||'Region')+' selected successfully.');
+    }catch(e){ console.error('Region interaction recovery:',e); say('Could not open Region: '+(e?.message||e)); }
+  };
+
+  // Add Region: Parent and Admin must both work.
+  const originalAddRegion=window.msmHomeAddRegion;
+  window.msmHomeAddRegion=async function(){
+    if(!isParentAdmin()){ say('Parent/Admin access is required to add a Region.'); return; }
+    if(typeof originalAddRegion==='function') return originalAddRegion();
+    const name=prompt('New Region name:');
+    if(!String(name||'').trim()) return;
+    if(!window.db){ say('Database is not ready. Please wait a moment and try again.'); return; }
+    const n=String(name).trim(), id=key(n);
+    try{
+      await window.db.collection('regionCatalog').doc(id).set({name:n,regionId:id,sectors:[],locations:[],createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+      await window.msmLoadRegionCatalog?.();
+      window.msmHomeRender?.();
+      say(n+' added successfully.');
+    }catch(e){ console.error(e); say('Could not add Region: '+e.message); }
+  };
+
+  // Reliable delegated click handling for dynamically rendered cards and toolbar buttons.
+  document.addEventListener('click',async function(e){
+    const btn=e.target.closest('button');
+    if(!btn) return;
+    const text=(btn.textContent||'').replace(/\s+/g,' ').trim();
+    const onclick=btn.getAttribute('onclick')||'';
+    if(/Open Region/i.test(text) || /msmHomeOpenRegion\(/.test(onclick)){
+      e.preventDefault(); e.stopPropagation();
+      const m=onclick.match(/msmHomeOpenRegion\(['\"]([^'\"]+)/);
+      if(m) return window.msmHomeOpenRegion(m[1]);
+      const card=btn.closest('.msm-region-card');
+      const title=card?.querySelector('h3')?.textContent||'';
+      return window.msmHomeOpenRegion(title);
+    }
+    if(/Import\s*\/\s*Export|Import Region|Import Long Roll/i.test(text)){
+      const input=document.getElementById('longRollImport');
+      if(input){ e.preventDefault(); input.disabled=false; input.style.pointerEvents='auto'; input.click(); }
+    }
+  },true);
+
+  // Ensure file selection always reaches the current import function.
+  function wireImport(){
+    const input=document.getElementById('longRollImport');
+    if(!input || input.dataset.msmRecoveryWired) return;
+    input.dataset.msmRecoveryWired='1';
+    input.addEventListener('change',function(){
+      const file=this.files && this.files[0];
+      if(file && typeof window.importLongRoll==='function') window.importLongRoll(file);
+    });
+  }
+  document.addEventListener('DOMContentLoaded',wireImport);
+  setInterval(wireImport,1500);
+})();
+</script>
+
 </body>
 </html>
 
