@@ -797,7 +797,7 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 :root{--msmNavy:#06152f;--msmPanel:#0b1d3c;--msmLine:#2b5ea5;--msmGold:#f6c94f;--msmBlue:#2388ff;--msmGreen:#20c879;--msmOrange:#ff9b27;--msmPurple:#8b5cf6;--msmRed:#e53955;}
 #sectorPortal{display:none!important}
 #publicSeoInfo{display:none!important}
-#appRoot{background:radial-gradient(circle at 20% 0%,rgba(50,108,195,.34),transparent 32%),radial-gradient(circle at 90% 12%,rgba(150,38,80,.24),transparent 32%),#0f2a52;color:#f4f7ff;min-height:100vh}
+#appRoot{background:radial-gradient(circle at 20% 0%,rgba(30,78,155,.28),transparent 28%),radial-gradient(circle at 90% 12%,rgba(126,18,58,.20),transparent 28%),#030a18;color:#f4f7ff;min-height:100vh}
 #msmLoginPage{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 15%,rgba(30,102,205,.25),transparent 30%),radial-gradient(circle at 85% 85%,rgba(179,27,52,.18),transparent 35%),linear-gradient(135deg,#030a18,#071a38 55%,#12091b)}
 .msm-login-card{width:min(520px,100%);padding:30px 28px!important;border:1px solid rgba(246,201,79,.48)!important;border-radius:24px!important;background:linear-gradient(155deg,rgba(8,24,52,.98),rgba(4,12,28,.98))!important;box-shadow:0 28px 90px rgba(0,0,0,.55),inset 0 1px rgba(255,255,255,.08)!important;color:#fff!important;overflow:hidden}
 .msm-login-card:before{content:""!important;position:absolute!important;inset:auto 8% 0!important;height:4px!important;background:linear-gradient(90deg,#0c5fff,#f5c44a,#d92c48)!important;opacity:1!important;transform:none!important}
@@ -1219,6 +1219,28 @@ button,input,select,textarea{font:inherit;}
   .msm-login-card,.msm-login-logo,.msm-brand img,.msm-hero,.msm-stat{animation:none!important}
   *{scroll-behavior:auto!important}
 }
+</style>
+
+<!-- AUDIT-BASED UI/UX POLISH OVERRIDE -->
+<style id="auditDesignPatch">
+:root{--msm-navy:#071b33;--msm-navy2:#0d2d52;--msm-gold:#c9a253;--msm-cream:#f7f3ea;--msm-ink:#142131}
+html{scroll-behavior:smooth}
+body{overflow-x:hidden!important}
+#msmLoginPage{min-height:100svh!important;padding:92px 16px 34px!important;overflow:visible!important;background:linear-gradient(135deg,#061426 0%,#0d2d52 48%,#10213a 100%)!important}
+#msmLoginPage::after{opacity:.55}
+#msmLoginPage>.msm-public-nav{position:fixed!important;top:12px!important;left:50%!important;transform:translateX(-50%)!important;width:min(1180px,calc(100% - 24px))!important;min-height:56px!important;z-index:100!important;border:1px solid rgba(201,162,83,.45)!important;background:rgba(7,27,51,.88)!important;box-shadow:0 12px 34px rgba(0,0,0,.28)!important;backdrop-filter:blur(18px)!important}
+.msm-public-nav .nav-brand{color:#fff!important;font-size:12px!important}.msm-public-nav .nav-brand img{box-shadow:0 4px 14px rgba(0,0,0,.22)}
+.msm-public-nav button{min-height:38px!important;border:1px solid rgba(255,255,255,.14)!important;background:rgba(255,255,255,.06)!important;color:#f8fafc!important;transition:.2s ease!important}
+.msm-public-nav button:hover,.msm-public-nav button:focus-visible{background:rgba(201,162,83,.18)!important;border-color:rgba(201,162,83,.72)!important;outline:none!important;transform:translateY(-1px)!important}
+.msm-public-nav button:last-child{background:linear-gradient(135deg,#c9a253,#9f7627)!important;border-color:transparent!important;color:#fff!important}
+.msm-login-card{width:min(580px,100%)!important;max-height:none!important;height:auto!important;overflow:visible!important;margin-top:22px!important;border-radius:24px!important;box-shadow:0 28px 80px rgba(0,0,0,.38)!important}
+.msm-login-card input,.msm-login-card select{min-height:48px!important}
+#publicSeoInfo{display:none!important}
+.msm-info-modal{padding:16px!important;overflow-y:auto!important;align-items:flex-start!important;padding-top:92px!important}
+.msm-info-card{width:min(780px,96vw)!important;max-height:none!important;overflow:visible!important;background:linear-gradient(145deg,#08203a,#102c4f)!important;border-color:rgba(201,162,83,.55)!important}
+.msm-info-card h2{font-size:clamp(24px,4vw,34px)!important}.msm-info-card p{font-size:15px!important;line-height:1.75!important}
+.msm-info-card .audit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}.msm-info-card .audit-item{padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.05)}.msm-info-card .audit-item strong{display:block;color:#f5d58d;margin-bottom:6px}.msm-info-card .audit-note{margin-top:16px;padding:14px;border-left:3px solid #c9a253;background:rgba(201,162,83,.08);border-radius:10px}
+@media(max-width:760px){#msmLoginPage{padding:148px 10px 28px!important}#msmLoginPage>.msm-public-nav{top:8px!important;width:calc(100% - 16px)!important;justify-content:center!important}.msm-public-nav .nav-brand{width:100%!important;justify-content:center!important;margin-right:0!important;font-size:10px!important}.msm-public-nav button{font-size:9px!important;padding:7px 8px!important;min-height:34px!important}.msm-info-modal{padding-top:118px!important}.msm-info-card .audit-grid{grid-template-columns:1fr!important}}
 </style>
 </head>
 <body>
@@ -4956,8 +4978,7 @@ if ('serviceWorker' in navigator) {
   catch(e){console.error(e);window.showToast?.('Could not save Region details: '+e.message);}
  };
  window.msmHomeOpenRegion=function(regionKey){
-  try{
-  const rows=allRegions();const r=rows.find(x=>ridOf(x)===regionKey)||rows[0];if(!r){window.showToast?.('Could not find that Region in the current data. Try Refresh.');return;}
+  const rows=allRegions();const r=rows.find(x=>ridOf(x)===regionKey)||rows[0];if(!r)return;
   if(typeof window.msmOpenRegion==='function') window.msmOpenRegion(regionKey);
   window.msmHomeSelectedRegion=regionKey;const page=document.getElementById('msmRegionHomePage');const secs=sectorsFor(r);const img=r.imageUrl||fallbackFor(r,rows.indexOf(r));
   document.getElementById('msmHome')?.classList.add('msm-region-focused');
@@ -4965,10 +4986,6 @@ if ('serviceWorker' in navigator) {
   const cf=(id,val)=>canEdit?`<input id="${id}" value="${esc(val||'')}">`:`<span>${esc(val||'—')}</span>`;
   page.classList.add('active');page.innerHTML=`<button class="msm-back-btn" onclick="msmHomeCloseRegion()">← Back to Full Dashboard</button><div class="msm-region-hero" style="background-image:url('${esc(img)}')"><div class="msm-region-hero-inner"><h2>${esc(r.name||'Region')}</h2><p>This is the dedicated Region homepage. Select a Sector to open its working scope. Parent can manage all Regions; Regional Office access remains restricted by the existing RBAC rules.</p><div class="msm-region-tools"><button onclick="msmHomePickRegionPhoto('${esc(regionKey)}')">🖼 Change Region Photo</button><button onclick="msmHomeAddSector('${esc(regionKey)}')">＋ Add Sector</button><button onclick="msmHomeGoRegionForm()">＋ Add Guard / Record</button><button onclick="msmHomeGo('database')">▦ View Region Records</button><button onclick="exportExcel()">⬇ Export Region (.xlsx)</button><button onclick="document.getElementById('longRollImport')?.click()">⬆ Import Region (.xlsx)</button></div></div></div><div class="msm-location-box"><b>SECTORS INSIDE ${esc((r.name||'REGION').toUpperCase())}</b><div class="msm-sector-list">${secs.length?secs.map(s=>{const name=typeof s==='string'?s:(s.name||s.sector||s.sectorId);const sid=(typeof window.msmSectorKeyFromName==='function'?window.msmSectorKeyFromName(name):norm(name).toLowerCase().replace(/[^a-z0-9]+/g,'-'));return `<div class="msm-sector-card"><b>${esc(name)}</b><small>Open Sector → manage records, Locations / Clients.</small><button onclick="msmHomeOpenSector('${esc(sid)}','${esc(regionKey)}')">Open Sector →</button></div>`;}).join(''):'<div class="msm-sector-card"><b>No Sector yet</b><small>Parent/Admin or assigned Regional Office can add the first Sector.</small></div>'}</div></div><div class="msm-location-box"><b>REGION CONTACT &amp; STAFF DIRECTORY</b><small style="color:#aebed5">Operations Manager, General Manager, Senior GM and office contact details for ${esc(r.name||'this Region')}.${canEdit?' Editable by Parent/Admin and this Region\'s assigned Regional Office.':' Read-only for your access level.'}</small><div class="msm-region-contact-grid"><label>Operations Manager<br>${cf('msmRC_opsManager',r.opsManager)}</label><label>General Manager<br>${cf('msmRC_gm',r.generalManager)}</label><label>Senior General Manager<br>${cf('msmRC_sgm',r.seniorGM)}</label><label>Phone<br>${cf('msmRC_phone',r.phone)}</label><label>Email<br>${cf('msmRC_email',r.email)}</label><label>Office Address<br>${cf('msmRC_address',r.address)}</label></div>${canEdit?`<div class="msm-region-tools"><button onclick="msmHomeSaveRegionContact('${esc(regionKey)}')">💾 Save Region Details</button></div>`:''}</div>`;
   page.scrollIntoView({behavior:'smooth',block:'start'});
-  }catch(e){
-   console.error('msmHomeOpenRegion failed for',regionKey,e);
-   window.showToast?.('Could not open this Region: '+e.message+' (tell your developer this exact message)');
-  }
  };
  window.msmHomeGoRegionForm=function(){
   window.msmHomeGo('form');
@@ -5003,5 +5020,31 @@ if ('serviceWorker' in navigator) {
 })();
 </script>
 
+
+<script id="auditDesignPatchScript">
+(function(){
+  function richInfo(type){
+    const content={
+      about:{title:'About MSM Longroll',html:'<p><strong>MSM SECURITY GUARDS PVT LTD</strong> uses MSM Longroll as a controlled employee enrollment and operational register for authorized users.</p><div class="audit-grid"><div class="audit-item"><strong>Secure Access</strong>Role-based access for Parent, Regional and Client-level users.</div><div class="audit-item"><strong>Clear Structure</strong>Parent → Region → Sector → Location / Client.</div><div class="audit-item"><strong>Operational Control</strong>Enrollment, long-roll records, audit trail and recycle-bin workflow.</div><div class="audit-item"><strong>Designed for Growth</strong>Regions and sectors can be managed without rebuilding the system.</div></div><div class="audit-note">This portal is for authorized personnel. Data access must remain enforced by Firebase Authentication and Firestore rules.</div>'},
+      services:{title:'Services & System Features',html:'<div class="audit-grid"><div class="audit-item"><strong>Employee Enrollment</strong>Controlled entry of employee records and required documents.</div><div class="audit-item"><strong>Long Roll Database</strong>Searchable operational register for authorized users.</div><div class="audit-item"><strong>Region & Sector Management</strong>Parent-managed regional hierarchy with scoped access.</div><div class="audit-item"><strong>Import & Export</strong>Excel workflows and printable records where enabled.</div><div class="audit-item"><strong>Audit & Recovery</strong>Audit trail and recycle-bin support for controlled changes.</div><div class="audit-item"><strong>Progressive Web App</strong>Install support when the browser makes the install prompt available.</div></div>'},
+      contact:{title:'Contact & Support',html:'<p><strong>MSM SECURITY GUARDS PVT LTD</strong></p><div class="audit-grid"><div class="audit-item"><strong>System Access</strong>Access is restricted to authorized accounts. Sign in with the approved account assigned to your role.</div><div class="audit-item"><strong>Portal Support</strong>For account, region, sector or client access issues, contact your Parent Administrator.</div><div class="audit-item"><strong>System Designer</strong>Syed Jalal Hussain Shah</div><div class="audit-item"><strong>Security Notice</strong>Never share passwords, administrator credentials or private employee data through public channels.</div></div>'}
+    }[type];
+    if(!content)return;
+    document.getElementById('msmInfoModal')?.remove();
+    const modal=document.createElement('div');modal.id='msmInfoModal';modal.className='msm-info-modal';
+    modal.innerHTML='<div class="msm-info-card" role="dialog" aria-modal="true" aria-label="'+content.title+'"><button class="msm-info-close" aria-label="Close" onclick="document.getElementById(\\'msmInfoModal\\')?.remove()">✕</button><h2>'+content.title+'</h2>'+content.html+'<button class="btn btn-primary" style="margin-top:8px" onclick="document.getElementById(\\'msmInfoModal\\')?.remove()">Close</button></div>';
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.remove()});document.body.appendChild(modal);
+  }
+  window.msmInfo=richInfo;
+  function upgradeNav(){
+    const nav=document.getElementById('msmPublicNav');if(!nav)return;
+    const buttons=[...nav.querySelectorAll('button')];
+    buttons.forEach(b=>{const t=b.textContent.trim();if(t==='HOME')b.setAttribute('aria-label','Go to home');if(t==='LOGIN')b.setAttribute('aria-label','Open secure login');if(t==='INSTALL APP')b.setAttribute('aria-label','Install MSM Longroll app')});
+  }
+  const observer=new MutationObserver(upgradeNav);observer.observe(document.documentElement,{childList:true,subtree:true});
+  upgradeNav();
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('msmInfoModal')?.remove()});
+})();
+</script>
 </body>
 </html>
