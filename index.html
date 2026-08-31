@@ -5046,5 +5046,220 @@ if ('serviceWorker' in navigator) {
   document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('msmInfoModal')?.remove()});
 })();
 </script>
+<script id="desktopRegionTransferFix">
+/* Desktop + Region Import/Export stability patch */
+(function(){
+  const sleep = ms => new Promise(r=>setTimeout(r,ms));
+  const norm = v => String(v ?? '').trim();
+  const key = v => norm(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const lower = v => norm(v).toLowerCase();
+
+  window.msmEnsureXLSX = async function(){
+    if(window.XLSX) return window.XLSX;
+    const urls=[
+      'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+      'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
+    ];
+    let lastError=null;
+    for(const src of urls){
+      try{
+        await new Promise((resolve,reject)=>{
+          const old=[...document.scripts].find(s=>s.src===src);
+          if(old){ old.addEventListener('load',resolve,{once:true}); old.addEventListener('error',()=>reject(new Error('Could not load Excel library')),{once:true}); setTimeout(resolve,250); return; }
+          const s=document.createElement('script'); s.src=src; s.async=true;
+          s.onload=resolve; s.onerror=()=>reject(new Error('Could not load '+src));
+          document.head.appendChild(s);
+        });
+        if(window.XLSX) return window.XLSX;
+      }catch(e){ lastError=e; }
+    }
+    throw lastError||new Error('Excel library is unavailable. Check the internet connection and reload the page.');
+  };
+
+  // Preserve region/sector metadata during Excel round-trips.
+  Object.assign(IMPORT_ALIASES,{
+    region:['region','regionname'],
+    regionId:['regionid','region id'],
+    sector:['sector','sectorname'],
+    sectorId:['sectorid','sector id']
+  });
+
+  function catalogRegions(){ return Array.isArray(window.msmRegionCatalog)?window.msmRegionCatalog:[]; }
+  function catalogSectors(){ return Array.isArray(window.msmSectorCatalog)?window.msmSectorCatalog:[]; }
+  function findRegion(v){
+    const q=key(v);
+    return catalogRegions().find(r=>key(r.regionId||r.id||r.name)===q || key(r.name)===q) || null;
+  }
+  function findSector(v,regionId){
+    const q=key(v), rid=key(regionId||'');
+    return catalogSectors().find(s=>{
+      const same=key(s.sectorId||s.id||s.name)===q || key(s.name)===q;
+      return same && (!rid || key(s.regionId)===rid);
+    }) || null;
+  }
+  function sectorsForRegion(region){
+    const rid=key(region?.regionId||region?.id||region?.name||'');
+    return catalogSectors().filter(s=>key(s.regionId)===rid);
+  }
+  function activeRegion(){
+    const raw=window.msmHomeSelectedRegion || window.msmActiveRegion || '';
+    return findRegion(raw) || (isRegional&&isRegional()?findRegion((typeof myRegionIdFinal==='function'?myRegionIdFinal():myRegionId&&myRegionId()) || (myRegion&&myRegion())):null);
+  }
+  function activeSector(){
+    const raw=window.msmHomeSelectedSector || window.msmActiveSector || '';
+    return raw && raw!=='full' ? findSector(raw) : null;
+  }
+  function regionMatchesRecord(rec,region){
+    if(!region) return true;
+    const rid=key(region.regionId||region.id||region.name);
+    if(key(rec.regionId)===rid || key(rec.region)===key(region.name)) return true;
+    const sec=findSector(rec.sectorId||rec.sector||rec.clientproject,rid);
+    return !!sec;
+  }
+  function resolveScope(rec){
+    let region=null, sector=null;
+    const role=String(currentAccess?.role||'').toLowerCase();
+    if(role==='regional'){
+      region=findRegion((typeof myRegionIdFinal==='function'?myRegionIdFinal():'') || (typeof myRegionId==='function'?myRegionId():'') || (typeof myRegion==='function'?myRegion():''));
+    }else if(role==='client'){
+      sector=findSector((typeof mySectorIdFinal==='function'?mySectorIdFinal():'') || (typeof mySector==='function'?mySector():''));
+      region=sector?findRegion(sector.regionId):null;
+    }else{
+      region=findRegion(rec.regionId||rec.region) || activeRegion();
+    }
+    sector=sector || findSector(rec.sectorId||rec.sector,region?.regionId) || findSector(rec.clientproject,region?.regionId) || activeSector();
+    if(!region && sector) region=findRegion(sector.regionId);
+    if(region && !sector){
+      const choices=sectorsForRegion(region);
+      if(choices.length===1) sector=choices[0];
+    }
+    if(role==='client' && !sector) return {error:'Your account has no valid Sector assignment.'};
+    if((role==='regional'||role==='parent'||role==='admin') && !region) return {error:'No Region selected for this import.'};
+    if((role==='regional'||role==='parent'||role==='admin') && !sector) return {error:'No Sector could be identified. Add a Sector column to Excel or open/select one Sector before importing.'};
+    if(region && sector && key(sector.regionId)!==key(region.regionId||region.id||region.name)) return {error:'Sector does not belong to the selected Region.'};
+    return {region,sector};
+  }
+
+  // Opening a Region now always synchronizes the active Region scope on desktop and mobile.
+  const previousOpenRegion=window.msmHomeOpenRegion;
+  if(typeof previousOpenRegion==='function'){
+    window.msmHomeOpenRegion=function(regionKey){
+      const r=findRegion(regionKey);
+      if(!r){ window.showToast?.('Region could not be found. Refresh the dashboard and try again.'); return; }
+      window.msmHomeSelectedRegion=key(r.regionId||r.id||r.name);
+      window.msmActiveRegion=window.msmHomeSelectedRegion;
+      window.msmHomeSelectedSector=null;
+      if(window.msmActiveSector && window.msmActiveSector!=='full') window.msmActiveSector='full';
+      try{return previousOpenRegion.call(this,window.msmHomeSelectedRegion);}catch(e){console.error('Region open error:',e);window.showToast?.('Could not open Region: '+e.message);}
+    };
+  }
+
+  window.importLongRoll=async function(file){
+    if(!file) return;
+    if(!currentAccess){ window.showToast?.('Please sign in first.'); return; }
+    if(!/\.(xlsx|xls|csv)$/i.test(file.name||'')){ window.showToast?.('Please select an Excel (.xlsx/.xls) or CSV file.'); return; }
+    if(file.size>25*1024*1024){ window.showToast?.('File is too large. Maximum supported size is 25 MB.'); return; }
+    try{
+      const XLSX=await window.msmEnsureXLSX();
+      const data=await file.arrayBuffer();
+      const wb=XLSX.read(data,{type:'array',cellDates:false});
+      const first=wb.SheetNames?.[0]; if(!first) throw new Error('No worksheet was found in the selected file.');
+      const ws=wb.Sheets[first]; const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+      if(!aoa.length){ window.showToast?.('The selected file is empty.'); return; }
+      let headerRow=0,bestScore=-1;
+      for(let r=0;r<Math.min(20,aoa.length);r++){
+        const score=aoa[r].reduce((n,v)=>{const h=normalizeHeader(v);return n+(Object.values(IMPORT_ALIASES).some(list=>list.some(a=>normalizeHeader(a)===h))?1:0);},0);
+        if(score>bestScore){bestScore=score;headerRow=r;}
+      }
+      if(bestScore<2) throw new Error('Could not identify the Long Roll header row. Use the exported template or include Employee Name and CNIC columns.');
+      const headers=aoa[headerRow], colMap={};
+      for(const k of Object.keys(IMPORT_ALIASES)) colMap[k]=findImportColumn(headers,IMPORT_ALIASES[k]);
+      const imported=[];
+      for(let r=headerRow+1;r<aoa.length;r++){
+        const row=aoa[r]; if(!row||row.every(v=>norm(v)==='')) continue;
+        const rec={}; for(const k of Object.keys(IMPORT_ALIASES)){const i=colMap[k];rec[k]=i>=0?norm(row[i]):'';}
+        if(!rec.name&&!rec.cnic&&!rec.msmno) continue;
+        const scope=resolveScope(rec);
+        if(scope.error){ rec.__scopeError=scope.error; }
+        else{
+          rec.regionId=norm(scope.region.regionId||scope.region.id||key(scope.region.name));
+          rec.region=norm(scope.region.name);
+          rec.sectorId=norm(scope.sector.sectorId||scope.sector.id||key(scope.sector.name));
+          rec.sector=norm(scope.sector.name);
+          if(!rec.clientproject) rec.clientproject=(String(currentAccess?.role||'').toLowerCase()==='client' ? (typeof myClientProject==='function'?myClientProject():rec.sector) : rec.sector);
+        }
+        imported.push(rec);
+      }
+      if(!imported.length){ window.showToast?.('No employee rows were found.'); return; }
+      const checked=validateImportRows(imported).map(r=>{
+        if(r.__scopeError) return {...r,__ok:false,__reason:[r.__reason,r.__scopeError].filter(Boolean).join('; ')};
+        return r;
+      });
+      showImportPreview(checked,file.name||'Import file');
+    }catch(e){ console.error('Import error:',e); window.showToast?.('Could not import this file: '+e.message); }
+    finally{const input=document.getElementById('longRollImport');if(input)input.value='';}
+  };
+
+  window.confirmLongRollImport=async function(){
+    if(!currentAccess||!pendingImport) return;
+    const rows=pendingImport.rows.filter(r=>r.__ok); if(!rows.length) return;
+    const btn=document.getElementById('confirmImportBtn'); if(btn){btn.disabled=true;btn.textContent='Importing…';}
+    try{
+      const existingByMsm=new Map(records.map(r=>[importKey(r.msmno),r]));
+      const existingByCnic=new Map(records.map(r=>[importKey(r.cnic),r]));
+      let nextSno=records.length?Math.max(...records.map(r=>Number(r.sno)||0))+1:1, added=0, updated=0;
+      for(let i=0;i<rows.length;i+=400){
+        const batch=db.batch();
+        rows.slice(i,i+400).forEach(rec=>{
+          const m=importKey(rec.msmno), c=importKey(rec.cnic);
+          const existing=(m&&existingByMsm.get(m))||(c&&existingByCnic.get(c));
+          const clean={...rec};
+          ['__row','__ok','__reason','__scopeError'].forEach(k=>delete clean[k]);
+          clean.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
+          if(existing){ batch.set(db.collection(RECORDS_COLLECTION).doc(existing.id),clean,{merge:true}); updated++; }
+          else{ const ref=db.collection(RECORDS_COLLECTION).doc(); batch.set(ref,{...clean,sno:clean.sno?(Number(clean.sno)||nextSno):nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp()}); nextSno++; added++; }
+        });
+        await batch.commit();
+      }
+      try{await writeAuditLog('BULK_IMPORT',rows.length,{count:rows.length,added,updated,sourceFile:pendingImport.fileName||'',desktopSafe:true});}catch(e){console.warn('Audit log failed:',e);}
+      closeImportPreview(); window.showToast?.(`Import complete: ${added} added, ${updated} updated.`);
+      if(typeof window.subscribeRecords==='function') window.subscribeRecords(); else if(typeof renderTable==='function') renderTable();
+    }catch(e){console.error('Import write error:',e);window.showToast?.('Import failed: '+e.message);}
+    finally{if(btn){btn.disabled=false;btn.textContent='Confirm Import';}}
+  };
+
+  window.exportExcel=async function(){
+    try{
+      const XLSX=await window.msmEnsureXLSX();
+      if(!records.length){ window.showToast?.('No records to export yet.'); return; }
+      let visible=typeof getFilteredRecordsForExport==='function'?getFilteredRecordsForExport():records.slice();
+      const region=activeRegion();
+      if(region) visible=visible.filter(r=>regionMatchesRecord(r,region));
+      if(!visible.length){ window.showToast?.('No records match the selected Region, Sector or filters.'); return; }
+      const company=norm(document.getElementById('companyName')?.value)||'Company';
+      const scope=region?norm(region.name):'All Regions';
+      const title=[`Long Roll — ${company} — ${scope}`];
+      const header=[...COLUMNS.map(c=>c.label),'Region','Region ID','Sector','Sector ID'];
+      const rows=visible.map(r=>[...COLUMNS.map(c=>r[c.key]??''),r.region??'',r.regionId??'',r.sector??'',r.sectorId??'']);
+      const ws=XLSX.utils.aoa_to_sheet([title,header,...rows]);
+      ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}}];
+      ws['!cols']=header.map((h,i)=>({wch:i<2?18:(h.length>18?24:16)}));
+      const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'long roll');
+      const date=new Date().toISOString().slice(0,10);
+      const safe=scope.replace(/[\\/:*?"<>|]+/g,'-')||'All_Regions';
+      const filename=`${safe}_Long_Roll_${date}.xlsx`;
+      XLSX.writeFile(wb,filename,{compression:true});
+      window.showToast?.(`Exported ${visible.length} record(s): ${filename}`);
+    }catch(e){console.error('Export error:',e);window.showToast?.('Export failed: '+e.message);}
+  };
+
+  // Make file-picker clicks reliable on desktop browsers after dynamic region rendering.
+  document.addEventListener('click',e=>{
+    const btn=e.target.closest?.('[data-msm-import-region]');
+    if(btn) document.getElementById('longRollImport')?.click();
+  });
+})();
+</script>
+
 </body>
 </html>
