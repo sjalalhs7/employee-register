@@ -884,8 +884,8 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 .msm-hero-animated{background-size:112% 112% !important;animation:msmHeroKenBurns 18s ease-in-out infinite alternate;}
 @keyframes msmHeroKenBurns{0%{background-position:50% 50%;background-size:100% 100%}100%{background-position:56% 44%;background-size:118% 118%}}
 @media(prefers-reduced-motion:reduce){.msm-hero-animated{animation:none}}
-.msm-login-splash{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;text-align:center;overflow:hidden;
-  background:radial-gradient(circle at 50% 40%,#0c2454,#020814 78%);opacity:0;transition:opacity .6s ease;padding:24px}
+.msm-login-splash{position:fixed!important;top:0!important;left:0!important;right:0!important;bottom:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;margin:0!important;border-radius:0!important;box-sizing:border-box;z-index:100000;display:flex;align-items:center;justify-content:center;text-align:center;overflow-y:auto;overflow-x:hidden;
+  background:radial-gradient(circle at 22% 14%,rgba(200,28,54,.42),transparent 42%),radial-gradient(circle at 80% 86%,rgba(200,28,54,.30),transparent 46%),linear-gradient(155deg,#0a1638 0%,#0c1f4d 55%,#220810 100%);opacity:0;transition:opacity .6s ease;padding:24px}
 .msm-login-splash.msm-splash-show{opacity:1}
 .msm-login-splash.msm-splash-hide{opacity:0;pointer-events:none}
 .msm-splash-inner{position:relative;z-index:2;max-width:900px}
@@ -904,8 +904,11 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
   animation:msmGoldShimmer 6s linear infinite;filter:drop-shadow(0 3px 10px rgba(0,0,0,.5))}
 @keyframes msmGoldShimmer{0%{background-position:0% 50%}100%{background-position:300% 50%}}
 @media(prefers-reduced-motion:reduce){.msm-sacred-bismillah,.msm-sacred-durood{animation:none}}
-.msm-page-watermark{position:absolute;inset:0;z-index:0;pointer-events:none;display:flex;align-items:center;justify-content:center;overflow:hidden}
+.msm-page-watermark{position:absolute;inset:0;z-index:0;pointer-events:none;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden}
 .msm-page-watermark img{width:min(90vw,820px);max-width:none;opacity:.08;filter:grayscale(1) brightness(2)}
+.msm-page-watermark .msm-wm-letters{position:absolute;font-weight:900;font-size:min(45vw,520px);line-height:1;letter-spacing:6px;
+  color:transparent;-webkit-text-stroke:2px rgba(200,28,54,.16);opacity:.5;user-select:none}
+#loginGate #msmLoginPage,#loginGate{background:radial-gradient(circle at 20% 10%,rgba(200,28,54,.30),transparent 40%),radial-gradient(circle at 82% 90%,rgba(200,28,54,.22),transparent 44%),linear-gradient(155deg,#0a1638 0%,#0c1f4d 55%,#220810 100%)!important;min-height:100vh;min-height:100dvh}
 .msm-splash-petals{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
 .msm-splash-petals .msm-petal{font-size:24px;animation-duration:5.5s}
 .msm-splash-petals .msm-petal:nth-child(1){left:2%;animation-delay:0s}
@@ -1242,7 +1245,7 @@ button,input,select,textarea{font:inherit;}
 <!-- ============ PREMIUM MSM LOGIN SCREEN ============ -->
 <div id="loginGate" style="display:none;">
   <div id="msmLoginPage" style="position:relative;overflow:hidden">
-    <div class="msm-page-watermark"><img src="msm-logo.png" alt="" aria-hidden="true"></div>
+    <div class="msm-page-watermark"><span class="msm-wm-letters">MSM</span><img src="msm-logo.png" alt="" aria-hidden="true"></div>
     <div class="msm-splash-petals">
       <span class="msm-petal">🌸</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span><span class="msm-petal">🌺</span><span class="msm-petal">🌸</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span><span class="msm-petal">🌺</span><span class="msm-petal">🌸</span>
       <span class="msm-petal">🌼</span><span class="msm-petal">🌺</span><span class="msm-petal">🌸</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span><span class="msm-petal">🌺</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span>
@@ -1306,7 +1309,7 @@ button,input,select,textarea{font:inherit;}
 <!-- ============ MAIN APP (shown only once signed in + authorized) ============ -->
 <div id="appRoot" style="display:none;">
 <div id="msmLoginSplash" class="msm-login-splash" style="display:none">
-  <div class="msm-page-watermark"><img src="msm-logo.png" alt="" aria-hidden="true"></div>
+  <div class="msm-page-watermark"><span class="msm-wm-letters">MSM</span><img src="msm-logo.png" alt="" aria-hidden="true"></div>
   <div class="msm-splash-petals">
     <span class="msm-petal">🌸</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span><span class="msm-petal">🌺</span><span class="msm-petal">🌸</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span><span class="msm-petal">🌺</span><span class="msm-petal">🌸</span>
     <span class="msm-petal">🌼</span><span class="msm-petal">🌺</span><span class="msm-petal">🌸</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span><span class="msm-petal">🌺</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span>
