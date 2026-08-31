@@ -1415,7 +1415,7 @@ body{overflow-x:hidden!important}
     <button class="active" onclick="msmHomeGo('top')">⌂ Home</button><button onclick="msmHomeGo('regions')">◉ Regions / Sectors</button><button onclick="msmHomeGo('database')">▦ Full Database</button><button onclick="msmHomeInfo('about')">? About</button><button onclick="msmHomeInfo('services')">▤ Services</button><button onclick="msmHomeInfo('contact')">✉ Contact</button><button onclick="msmHomeGo('instructions')">▣ Instructions</button><div class="msm-account"><span id="msmHomeUser">Authorized User</span><br><small id="msmHomeRole">Loading access…</small></div>
   </div>
   <div class="msm-shell msm-quick">
-    <button onclick="msmHomeAddRegion()">＋ Add Region</button><button onclick="msmHomeAddSector()">＋ Add Sector</button><button onclick="document.getElementById('longRollImport')?.click()">⇅ Import / Export</button><button onclick="msmOpenRecycle()">♜ Recycle Bin</button><button onclick="msmHomeGo('audit')">◉ Audit Logs</button><button onclick="msmHomeGo('admin')">♙ Manage Users</button><button onclick="msmInstallApp()">▣ Install App</button><button class="danger" onclick="doSignOut()">↩ Sign Out</button>
+    <button onclick="msmHomeAddRegion()">＋ Add Region</button><button onclick="msmHomeAddSector()">＋ Add Sector</button><button onclick="msmHomeTransferMenu()">⇅ Import / Export</button><button onclick="msmOpenRecycle()">♜ Recycle Bin</button><button onclick="msmHomeGo('audit')">◉ Audit Logs</button><button onclick="msmHomeGo('admin')">♙ Manage Users</button><button onclick="msmInstallApp()">▣ Install App</button><button class="danger" onclick="doSignOut()">↩ Sign Out</button>
   </div>
   <section class="msm-shell msm-screensaver" id="msmScreensaver" aria-label="MSM Longroll Database welcome screensaver">
   <div class="msm-screen-scene sunshine active" data-scene="sunshine"><div class="msm-screen-title"><span>MSM Security • Pakistan • Clear Blue Sky</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Faisal Mosque</div></div>
@@ -1473,7 +1473,7 @@ body{overflow-x:hidden!important}
     <button class="btn" onclick="printLiveForm()">🖨 Print Enrollment Form (2 + Verification)</button>
     <button class="btn btn-brass" onclick="exportExcel()">⬇ Export Long Roll (.xlsx)</button>
     <button class="btn" id="importLongRollBtn" style="display:none;" onclick="document.getElementById('longRollImport').click()">⬆ Import Long Roll (.xlsx)</button>
-    <input id="longRollImport" type="file" accept=".xlsx,.xls,.csv" style="display:none" onchange="importLongRoll(this.files[0])">
+    <input id="longRollImport" type="file" accept=".xlsx,.xls,.csv" style="display:none">
   </div>
 </div>
 
@@ -4045,7 +4045,7 @@ renderTable = function(){
     let visible=0;document.querySelectorAll('#tbody tr').forEach(tr=>{const id=tr.querySelector('.record-check')?.value;const r=records.find(x=>x.id===id);const show=!r||msmFilterSector(r);tr.style.display=show?'':'none';if(show)visible++;});const pill=document.getElementById('rowCountPill');if(pill)pill.textContent=`${visible} of ${records.length} entries`;
   }
 };
-setInterval(msmEnsureUI,1500);
+document.addEventListener('DOMContentLoaded',()=>setTimeout(msmEnsureUI,300),{once:true});
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 }
@@ -5043,7 +5043,7 @@ if ('serviceWorker' in navigator) {
  window.msmHomePickRegionPhoto=function(rid){if(getAccess()?.role!=='parent')return window.showToast?.('Only Parent/Admin can change Region background photos.');const old=document.getElementById('msmRegionPhotoInput');old?.remove();const input=document.createElement('input');input.id='msmRegionPhotoInput';input.type='file';input.accept='image/*';input.style.display='none';input.onchange=async()=>{const f=input.files?.[0];if(!f)return;try{if(!storage)throw new Error('Firebase Storage is not available.');const ref=storage.ref('regions/'+rid+'/background-'+Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_'));await ref.put(f);const url=await ref.getDownloadURL();await db.collection(regionCollection()).doc(rid).set({imageUrl:url,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});await window.msmLoadRegionCatalog?.();window.msmHomeRender();window.msmHomeOpenRegion(rid);window.showToast?.('Region background photo updated.');}catch(e){console.error(e);window.showToast?.('Photo upload failed: '+e.message);}};document.body.appendChild(input);input.click();};
  function tick(){const d=new Date();const el=document.getElementById('msmHomeClock');if(el)el.textContent=d.toLocaleDateString(undefined,{weekday:'short',day:'2-digit',month:'short',year:'numeric'})+' | '+d.toLocaleTimeString();}
  setInterval(tick,1000);tick();
- setTimeout(window.msmHomeRender,1400);setInterval(()=>{const home=document.getElementById('msmHome');if(!home)return;const grid=document.getElementById('msmHomeRegionGrid');if(grid&&grid.matches(':hover'))return;if(home.classList.contains('msm-region-focused'))return;window.msmHomeRender();},8000);
+ setTimeout(window.msmHomeRender,1400);
  setTimeout(()=>window.msmLoadSiteContent?.(),1200);
 })();
 </script>
@@ -5069,423 +5069,161 @@ if ('serviceWorker' in navigator) {
     const buttons=[...nav.querySelectorAll('button')];
     buttons.forEach(b=>{const t=b.textContent.trim();if(t==='HOME')b.setAttribute('aria-label','Go to home');if(t==='LOGIN')b.setAttribute('aria-label','Open secure login');if(t==='INSTALL APP')b.setAttribute('aria-label','Install MSM Longroll app')});
   }
-  const observer=new MutationObserver(upgradeNav);observer.observe(document.documentElement,{childList:true,subtree:true});
   upgradeNav();
   document.addEventListener('keydown',e=>{if(e.key==='Escape')document.getElementById('msmInfoModal')?.remove()});
 })();
 </script>
-<script id="desktopRegionTransferFix">
-/* Desktop + Region Import/Export stability patch */
-(function(){
-  const sleep = ms => new Promise(r=>setTimeout(r,ms));
-  const norm = v => String(v ?? '').trim();
-  const key = v => norm(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  const lower = v => norm(v).toLowerCase();
 
-  window.msmEnsureXLSX = async function(){
-    if(window.XLSX) return window.XLSX;
-    const urls=[
-      'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-      'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js'
-    ];
-    let lastError=null;
-    for(const src of urls){
-      try{
-        await new Promise((resolve,reject)=>{
-          const old=[...document.scripts].find(s=>s.src===src);
-          if(old){ old.addEventListener('load',resolve,{once:true}); old.addEventListener('error',()=>reject(new Error('Could not load Excel library')),{once:true}); setTimeout(resolve,250); return; }
-          const s=document.createElement('script'); s.src=src; s.async=true;
-          s.onload=resolve; s.onerror=()=>reject(new Error('Could not load '+src));
-          document.head.appendChild(s);
-        });
-        if(window.XLSX) return window.XLSX;
-      }catch(e){ lastError=e; }
-    }
-    throw lastError||new Error('Excel library is unavailable. Check the internet connection and reload the page.');
-  };
-
-  // Preserve region/sector metadata during Excel round-trips.
-  Object.assign(IMPORT_ALIASES,{
-    region:['region','regionname'],
-    regionId:['regionid','region id'],
-    sector:['sector','sectorname'],
-    sectorId:['sectorid','sector id']
-  });
-
-  function catalogRegions(){ return Array.isArray(window.msmRegionCatalog)?window.msmRegionCatalog:[]; }
-  function catalogSectors(){ return Array.isArray(window.msmSectorCatalog)?window.msmSectorCatalog:[]; }
-  function findRegion(v){
-    const q=key(v);
-    return catalogRegions().find(r=>key(r.regionId||r.id||r.name)===q || key(r.name)===q) || null;
-  }
-  function findSector(v,regionId){
-    const q=key(v), rid=key(regionId||'');
-    return catalogSectors().find(s=>{
-      const same=key(s.sectorId||s.id||s.name)===q || key(s.name)===q;
-      return same && (!rid || key(s.regionId)===rid);
-    }) || null;
-  }
-  function sectorsForRegion(region){
-    const rid=key(region?.regionId||region?.id||region?.name||'');
-    return catalogSectors().filter(s=>key(s.regionId)===rid);
-  }
-  function activeRegion(){
-    const raw=window.msmHomeSelectedRegion || window.msmActiveRegion || '';
-    return findRegion(raw) || (isRegional&&isRegional()?findRegion((typeof myRegionIdFinal==='function'?myRegionIdFinal():myRegionId&&myRegionId()) || (myRegion&&myRegion())):null);
-  }
-  function activeSector(){
-    const raw=window.msmHomeSelectedSector || window.msmActiveSector || '';
-    return raw && raw!=='full' ? findSector(raw) : null;
-  }
-  function regionMatchesRecord(rec,region){
-    if(!region) return true;
-    const rid=key(region.regionId||region.id||region.name);
-    if(key(rec.regionId)===rid || key(rec.region)===key(region.name)) return true;
-    const sec=findSector(rec.sectorId||rec.sector||rec.clientproject,rid);
-    return !!sec;
-  }
-  function resolveScope(rec){
-    let region=null, sector=null;
-    const role=String(currentAccess?.role||'').toLowerCase();
-    if(role==='regional'){
-      region=findRegion((typeof myRegionIdFinal==='function'?myRegionIdFinal():'') || (typeof myRegionId==='function'?myRegionId():'') || (typeof myRegion==='function'?myRegion():''));
-    }else if(role==='client'){
-      sector=findSector((typeof mySectorIdFinal==='function'?mySectorIdFinal():'') || (typeof mySector==='function'?mySector():''));
-      region=sector?findRegion(sector.regionId):null;
-    }else{
-      region=findRegion(rec.regionId||rec.region) || activeRegion();
-    }
-    sector=sector || findSector(rec.sectorId||rec.sector,region?.regionId) || findSector(rec.clientproject,region?.regionId) || activeSector();
-    if(!region && sector) region=findRegion(sector.regionId);
-    if(region && !sector){
-      const choices=sectorsForRegion(region);
-      if(choices.length===1) sector=choices[0];
-    }
-    if(role==='client' && !sector) return {error:'Your account has no valid Sector assignment.'};
-    if((role==='regional'||role==='parent'||role==='admin') && !region) return {error:'No Region selected for this import.'};
-    if((role==='regional'||role==='parent'||role==='admin') && !sector) return {error:'No Sector could be identified. Add a Sector column to Excel or open/select one Sector before importing.'};
-    if(region && sector && key(sector.regionId)!==key(region.regionId||region.id||region.name)) return {error:'Sector does not belong to the selected Region.'};
-    return {region,sector};
-  }
-
-  // Opening a Region now always synchronizes the active Region scope on desktop and mobile.
-  const previousOpenRegion=window.msmHomeOpenRegion;
-  if(typeof previousOpenRegion==='function'){
-    window.msmHomeOpenRegion=async function(regionKey){
-      let r=findRegion(regionKey);
-      if(!r && typeof window.msmLoadRegionCatalog==='function'){
-        window.showToast?.('Loading Regions…');
-        try{ await window.msmLoadRegionCatalog(); }catch(e){ console.warn('Region catalog reload failed:',e.message); }
-        r=findRegion(regionKey);
-      }
-      if(!r){ window.showToast?.('Region could not be found. Refresh the dashboard and try again.'); return; }
-      window.msmHomeSelectedRegion=key(r.regionId||r.id||r.name);
-      window.msmActiveRegion=window.msmHomeSelectedRegion;
-      window.msmHomeSelectedSector=null;
-      if(window.msmActiveSector && window.msmActiveSector!=='full') window.msmActiveSector='full';
-      try{return previousOpenRegion.call(this,window.msmHomeSelectedRegion);}catch(e){console.error('Region open error:',e);window.showToast?.('Could not open Region: '+e.message);}
-    };
-  }
-
-  window.importLongRoll=async function(file){
-    if(!file) return;
-    if(!currentAccess){ window.showToast?.('Please sign in first.'); return; }
-    if(!/\.(xlsx|xls|csv)$/i.test(file.name||'')){ window.showToast?.('Please select an Excel (.xlsx/.xls) or CSV file.'); return; }
-    if(file.size>25*1024*1024){ window.showToast?.('File is too large. Maximum supported size is 25 MB.'); return; }
-    try{
-      const XLSX=await window.msmEnsureXLSX();
-      const data=await file.arrayBuffer();
-      const wb=XLSX.read(data,{type:'array',cellDates:false});
-      const first=wb.SheetNames?.[0]; if(!first) throw new Error('No worksheet was found in the selected file.');
-      const ws=wb.Sheets[first]; const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
-      if(!aoa.length){ window.showToast?.('The selected file is empty.'); return; }
-      let headerRow=0,bestScore=-1;
-      for(let r=0;r<Math.min(20,aoa.length);r++){
-        const score=aoa[r].reduce((n,v)=>{const h=normalizeHeader(v);return n+(Object.values(IMPORT_ALIASES).some(list=>list.some(a=>normalizeHeader(a)===h))?1:0);},0);
-        if(score>bestScore){bestScore=score;headerRow=r;}
-      }
-      if(bestScore<2) throw new Error('Could not identify the Long Roll header row. Use the exported template or include Employee Name and CNIC columns.');
-      const headers=aoa[headerRow], colMap={};
-      for(const k of Object.keys(IMPORT_ALIASES)) colMap[k]=findImportColumn(headers,IMPORT_ALIASES[k]);
-      const imported=[];
-      for(let r=headerRow+1;r<aoa.length;r++){
-        const row=aoa[r]; if(!row||row.every(v=>norm(v)==='')) continue;
-        const rec={}; for(const k of Object.keys(IMPORT_ALIASES)){const i=colMap[k];rec[k]=i>=0?norm(row[i]):'';}
-        if(!rec.name&&!rec.cnic&&!rec.msmno) continue;
-        const scope=resolveScope(rec);
-        if(scope.error){ rec.__scopeError=scope.error; }
-        else{
-          rec.regionId=norm(scope.region.regionId||scope.region.id||key(scope.region.name));
-          rec.region=norm(scope.region.name);
-          rec.sectorId=norm(scope.sector.sectorId||scope.sector.id||key(scope.sector.name));
-          rec.sector=norm(scope.sector.name);
-          if(!rec.clientproject) rec.clientproject=(String(currentAccess?.role||'').toLowerCase()==='client' ? (typeof myClientProject==='function'?myClientProject():rec.sector) : rec.sector);
-        }
-        imported.push(rec);
-      }
-      if(!imported.length){ window.showToast?.('No employee rows were found.'); return; }
-      const checked=validateImportRows(imported).map(r=>{
-        if(r.__scopeError) return {...r,__ok:false,__reason:[r.__reason,r.__scopeError].filter(Boolean).join('; ')};
-        return r;
-      });
-      showImportPreview(checked,file.name||'Import file');
-    }catch(e){ console.error('Import error:',e); window.showToast?.('Could not import this file: '+e.message); }
-    finally{const input=document.getElementById('longRollImport');if(input)input.value='';}
-  };
-
-  window.confirmLongRollImport=async function(){
-    if(!currentAccess||!pendingImport) return;
-    const rows=pendingImport.rows.filter(r=>r.__ok); if(!rows.length) return;
-    const btn=document.getElementById('confirmImportBtn'); if(btn){btn.disabled=true;btn.textContent='Importing…';}
-    try{
-      const existingByMsm=new Map(records.map(r=>[importKey(r.msmno),r]));
-      const existingByCnic=new Map(records.map(r=>[importKey(r.cnic),r]));
-      let nextSno=records.length?Math.max(...records.map(r=>Number(r.sno)||0))+1:1, added=0, updated=0;
-      for(let i=0;i<rows.length;i+=400){
-        const batch=db.batch();
-        rows.slice(i,i+400).forEach(rec=>{
-          const m=importKey(rec.msmno), c=importKey(rec.cnic);
-          const existing=(m&&existingByMsm.get(m))||(c&&existingByCnic.get(c));
-          const clean={...rec};
-          ['__row','__ok','__reason','__scopeError'].forEach(k=>delete clean[k]);
-          clean.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
-          if(existing){ batch.set(db.collection(RECORDS_COLLECTION).doc(existing.id),clean,{merge:true}); updated++; }
-          else{ const ref=db.collection(RECORDS_COLLECTION).doc(); batch.set(ref,{...clean,sno:clean.sno?(Number(clean.sno)||nextSno):nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp()}); nextSno++; added++; }
-        });
-        await batch.commit();
-      }
-      try{await writeAuditLog('BULK_IMPORT',rows.length,{count:rows.length,added,updated,sourceFile:pendingImport.fileName||'',desktopSafe:true});}catch(e){console.warn('Audit log failed:',e);}
-      closeImportPreview(); window.showToast?.(`Import complete: ${added} added, ${updated} updated.`);
-      if(typeof window.subscribeRecords==='function') window.subscribeRecords(); else if(typeof renderTable==='function') renderTable();
-    }catch(e){console.error('Import write error:',e);window.showToast?.('Import failed: '+e.message);}
-    finally{if(btn){btn.disabled=false;btn.textContent='Confirm Import';}}
-  };
-
-  window.exportExcel=async function(){
-    try{
-      const XLSX=await window.msmEnsureXLSX();
-      if(!records.length){ window.showToast?.('No records to export yet.'); return; }
-      let visible=typeof getFilteredRecordsForExport==='function'?getFilteredRecordsForExport():records.slice();
-      const region=activeRegion();
-      if(region) visible=visible.filter(r=>regionMatchesRecord(r,region));
-      if(!visible.length){ window.showToast?.('No records match the selected Region, Sector or filters.'); return; }
-      const company=norm(document.getElementById('companyName')?.value)||'Company';
-      const scope=region?norm(region.name):'All Regions';
-      const title=[`Long Roll — ${company} — ${scope}`];
-      const header=[...COLUMNS.map(c=>c.label),'Region','Region ID','Sector','Sector ID'];
-      const rows=visible.map(r=>[...COLUMNS.map(c=>r[c.key]??''),r.region??'',r.regionId??'',r.sector??'',r.sectorId??'']);
-      const ws=XLSX.utils.aoa_to_sheet([title,header,...rows]);
-      ws['!merges']=[{s:{r:0,c:0},e:{r:0,c:header.length-1}}];
-      ws['!cols']=header.map((h,i)=>({wch:i<2?18:(h.length>18?24:16)}));
-      const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'long roll');
-      const date=new Date().toISOString().slice(0,10);
-      const safe=scope.replace(/[\\/:*?"<>|]+/g,'-')||'All_Regions';
-      const filename=`${safe}_Long_Roll_${date}.xlsx`;
-      XLSX.writeFile(wb,filename,{compression:true});
-      window.showToast?.(`Exported ${visible.length} record(s): ${filename}`);
-    }catch(e){console.error('Export error:',e);window.showToast?.('Export failed: '+e.message);}
-  };
-
-  // Make file-picker clicks reliable on desktop browsers after dynamic region rendering.
-  document.addEventListener('click',e=>{
-    const btn=e.target.closest?.('[data-msm-import-region]');
-    if(btn) document.getElementById('longRollImport')?.click();
-  });
-})();
-</script>
-
-
-<script id="msm-desktop-home-guard">
-(function(){
-  function call(fn){ return typeof window[fn] === 'function'; }
-  function text(el){ return (el.textContent || '').replace(/\s+/g,' ').trim().toLowerCase(); }
-  function bindHomeActions(){
-    document.querySelectorAll('button').forEach(function(btn){
-      if(btn.dataset.msmGuardBound==='1') return;
-      var t=text(btn), action=null, arg=null;
-      if(t.includes('regions / sectors')) { action='msmHomeGo'; arg='regions'; }
-      else if(t.includes('full database')) { action='msmHomeGo'; arg='database'; }
-      else if(t==='home' || t.includes('⌂ home')) { action='msmHomeGo'; arg='top'; }
-      else if(t.includes('about')) { action='msmHomeInfo'; arg='about'; }
-      else if(t.includes('services')) { action='msmHomeInfo'; arg='services'; }
-      else if(t.includes('contact')) { action='msmHomeInfo'; arg='contact'; }
-      else if(t.includes('instructions')) { action='msmHomeGo'; arg='instructions'; }
-      else if(t.includes('install app')) { action='msmInstallApp'; }
-      else if(t.includes('add region')) { action='msmHomeAddRegion'; }
-      else if(t.includes('add sector')) { action='msmHomeAddSector'; }
-      else if(t.includes('import / export')) {
-        btn.addEventListener('click', function(){
-          var input=document.getElementById('longRollImport');
-          if(input) input.click(); else window.showToast?.('Import control is not ready. Please reload and try again.');
-        }, true);
-        btn.dataset.msmGuardBound='1';
-        return;
-      }
-      if(action){
-        btn.addEventListener('click', function(){
-          try{
-            if(call(action)) window[action](arg);
-            else window.showToast?.('This feature is still loading. Please wait one second and try again.');
-          }catch(e){ console.error('Homepage action failed:', e); window.showToast?.('Homepage action failed: '+(e.message||'Unknown error')); }
-        }, true);
-        btn.dataset.msmGuardBound='1';
-      }
-    });
-  }
-  function desktopFix(){
-    bindHomeActions();
-    var home=document.querySelector('.msm-home') || document.getElementById('msmHome');
-    if(home){ home.style.pointerEvents='auto'; }
-    document.querySelectorAll('.msm-home button,.msm-side-nav button,.msm-quick-actions button').forEach(function(b){
-      b.style.pointerEvents='auto';
-      b.style.position=b.style.position||'relative';
-    });
-  }
-  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', desktopFix, {once:true}); else desktopFix();
-  new MutationObserver(desktopFix).observe(document.documentElement,{childList:true,subtree:true});
-})();
-</script>
-
-<!-- MSM FINAL INTERACTION RECOVERY LAYER -->
-<script>
+<!-- MSM CONSOLIDATED STABLE PC INTERACTION LAYER -->
+<style id="msm-stable-pc-layer">
+@media (min-width:1024px){
+  .msm-shell,.msm-master-frame,main{max-width:1500px!important}
+  .sheet{padding:28px!important}
+  .grid{grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px 20px}
+  .field.wide{grid-column:1/-1}
+  .field input,.field select,.field textarea{min-height:44px;font-size:14px}
+  .table-wrap{max-height:72vh;overflow:auto}
+  table.register{min-width:2200px}
+}
+.msm-transfer-modal{position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.66);display:none;align-items:center;justify-content:center;padding:20px}
+.msm-transfer-modal.open{display:flex}
+.msm-transfer-card{width:min(560px,96vw);background:#0d1b35;color:#fff;border:1px solid rgba(255,255,255,.18);border-radius:18px;padding:24px;box-shadow:0 24px 80px rgba(0,0,0,.55)}
+.msm-transfer-card h2{margin:0 0 8px}.msm-transfer-card p{color:#bfd0ea;line-height:1.5}.msm-transfer-actions{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.msm-transfer-actions button{min-height:52px;border-radius:12px;border:1px solid rgba(255,255,255,.2);font-weight:800;cursor:pointer}.msm-transfer-import{background:linear-gradient(90deg,#2f7bff,#4ea0ff);color:#fff}.msm-transfer-export{background:linear-gradient(90deg,#e7a420,#ffd35c);color:#1b1404}.msm-transfer-cancel{grid-column:1/-1;background:#192845;color:#fff}
+.msm-home button,.msm-region-card,.msm-region-card button,#msmRegionHomePage button,.msm-region-tools button{pointer-events:auto!important;cursor:pointer!important}
+@media print{.pf-police-page{width:8.5in!important;height:11in!important;page-break-before:always!important;page-break-after:always!important}.pf-police-page>img,.pf-police-page>canvas{position:absolute!important;left:0!important;top:0!important;width:8.5in!important;height:11in!important;object-fit:contain!important;margin:0!important;padding:0!important}}
+</style>
+<script id="msmConsolidatedStableLayer">
 (function(){
   'use strict';
-  const say=(m)=>{ try{ window.showToast ? window.showToast(m) : console.log(m); }catch(e){ console.log(m); } };
-  const role=()=>String(window.currentAccess?.role || '').toLowerCase();
-  const isParentAdmin=()=>['parent','admin'].includes(role());
-  const key=(v)=>String(v||'').trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const $=id=>document.getElementById(id);
+  const norm=v=>String(v??'').trim();
+  const key=v=>norm(v).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
+  const say=m=>{try{window.showToast?window.showToast(m):console.log(m)}catch(_){console.log(m)}};
+  const wait=(p,ms,label)=>Promise.race([Promise.resolve(p),new Promise((_,rej)=>setTimeout(()=>rej(new Error(label||'Timed out')),ms))]);
+  const role=()=>String(window.currentAccess?.role||'').toLowerCase();
+  const canManage=()=>['parent','admin','regional'].includes(role());
 
-  // Make dashboard controls physically clickable even when older decorative layers overlap them.
-  const css=document.createElement('style');
-  css.textContent=`
-    .msm-home button,.msm-region-card button,.msm-quick button,.msm-top-menu button,
-    #msmRegionHomePage button,.msm-region-panel button{pointer-events:auto!important;position:relative!important;z-index:100!important;cursor:pointer!important}
-    .msm-region-card,.msm-region-body,.msm-region-grid{pointer-events:auto!important}
-    .msm-region-card button:focus,.msm-quick button:focus{outline:3px solid #f6c94f!important;outline-offset:3px}
-  `;
-  document.head.appendChild(css);
+  // Remove the expensive stacked interaction observers from prior versions by using one direct layer only.
+  // No document-wide MutationObserver and no repeating setInterval event wiring are used here.
 
-  // Preserve whatever region opener was installed by the original application.
-  const originalOpen=window.msmHomeOpenRegion;
-  window.msmHomeOpenRegion=async function(regionId){
-    try{
-      if(typeof window.msmLoadRegionCatalog==='function') await window.msmLoadRegionCatalog();
-      const rows=Array.isArray(window.msmRegionCatalog)?window.msmRegionCatalog:[];
-      const r=rows.find(x=>String(x.regionId||x.id||key(x.name))===String(regionId)||key(x.name)===key(regionId));
-      const rid=String(r?.regionId||r?.id||regionId||'');
-      if(!rid){ say('Region was not found in Firestore. Refresh and try again.'); return; }
-      window.msmHomeSelectedRegion=rid;
-      window.msmActiveRegion=rid;
-      window.msmHomeSelectedSector=null;
-      window.msmActiveSector='full';
-      if(typeof originalOpen==='function'){
-        const out=await originalOpen.call(this,rid);
-        return out;
-      }
-      if(typeof window.msmOpenRegion==='function') await window.msmOpenRegion(rid);
-      // Safe functional fallback: open the database in the selected Region scope.
-      if(typeof window.msmHomeGo==='function') window.msmHomeGo('database');
-      else document.getElementById('msmRegionHomePage')?.scrollIntoView({behavior:'smooth'});
-      say((r?.name||'Region')+' selected successfully.');
-    }catch(e){ console.error('Region interaction recovery:',e); say('Could not open Region: '+(e?.message||e)); }
-  };
+  function ensureTransferModal(){
+    if($('msmTransferModal')) return;
+    const m=document.createElement('div');m.id='msmTransferModal';m.className='msm-transfer-modal';
+    m.innerHTML='<div class="msm-transfer-card" role="dialog" aria-modal="true"><h2>Import / Export Long Roll</h2><p>Import an Excel/CSV file into the currently selected Region/Sector, or export the current filtered scope to Excel.</p><div class="msm-transfer-actions"><button type="button" class="msm-transfer-import" id="msmTransferImportBtn">⬆ Import Excel / CSV</button><button type="button" class="msm-transfer-export" id="msmTransferExportBtn">⬇ Export Current Scope</button><button type="button" class="msm-transfer-cancel" id="msmTransferCancelBtn">Cancel</button></div></div>';
+    document.body.appendChild(m);
+    $('msmTransferImportBtn').addEventListener('click',()=>{m.classList.remove('open');openImportPicker()});
+    $('msmTransferExportBtn').addEventListener('click',async()=>{m.classList.remove('open');await safeExport()});
+    $('msmTransferCancelBtn').addEventListener('click',()=>m.classList.remove('open'));
+    m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')});
+  }
+  window.msmHomeTransferMenu=function(){ensureTransferModal();$('msmTransferModal').classList.add('open')};
 
-  // Add Region: Parent and Admin must both work.
-  const originalAddRegion=window.msmHomeAddRegion;
-  window.msmHomeAddRegion=async function(){
-    if(!isParentAdmin()){ say('Parent/Admin access is required to add a Region.'); return; }
-    if(typeof originalAddRegion==='function') return originalAddRegion();
-    const name=prompt('New Region name:');
-    if(!String(name||'').trim()) return;
-    if(!window.db){ say('Database is not ready. Please wait a moment and try again.'); return; }
-    const n=String(name).trim(), id=key(n);
-    try{
-      await window.db.collection('regionCatalog').doc(id).set({name:n,regionId:id,sectors:[],locations:[],createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-      await window.msmLoadRegionCatalog?.();
-      window.msmHomeRender?.();
-      say(n+' added successfully.');
-    }catch(e){ console.error(e); say('Could not add Region: '+e.message); }
-  };
-
-  // Reliable delegated click handling for dynamically rendered cards and toolbar buttons.
-  document.addEventListener('click',async function(e){
-    const btn=e.target.closest('button');
-    if(!btn) return;
-    const text=(btn.textContent||'').replace(/\s+/g,' ').trim();
-    const onclick=btn.getAttribute('onclick')||'';
-    if(/Open Region/i.test(text) || /msmHomeOpenRegion\(/.test(onclick)){
-      e.preventDefault(); e.stopPropagation();
-      const m=onclick.match(/msmHomeOpenRegion\(['\"]([^'\"]+)/);
-      if(m) return window.msmHomeOpenRegion(m[1]);
-      const card=btn.closest('.msm-region-card');
-      const title=card?.querySelector('h3')?.textContent||'';
-      return window.msmHomeOpenRegion(title);
+  async function ensureXLSX(){
+    if(window.XLSX) return window.XLSX;
+    const urls=['https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js','https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'];
+    for(const src of urls){
+      try{await wait(new Promise((resolve,reject)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=resolve;sc.onerror=reject;document.head.appendChild(sc)}),12000,'Excel library load timed out');if(window.XLSX)return window.XLSX}catch(e){console.warn('XLSX load failed',src,e)}
     }
-    if(/Import\s*\/\s*Export|Import Region|Import Long Roll/i.test(text)){
-      const input=document.getElementById('longRollImport');
-      if(input){ e.preventDefault(); input.disabled=false; input.style.pointerEvents='auto'; input.click(); }
-    }
-  },true);
+    throw new Error('Excel library could not be loaded. Check internet connection and reload.');
+  }
 
-  // Ensure file selection always reaches the current import function.
-  function wireImport(){
-    const input=document.getElementById('longRollImport');
-    if(!input || input.dataset.msmRecoveryWired) return;
-    input.dataset.msmRecoveryWired='1';
-    input.addEventListener('change',function(){
-      const file=this.files && this.files[0];
-      if(file && typeof window.importLongRoll==='function') window.importLongRoll(file);
+  function wireImportOnce(){
+    const input=$('longRollImport'); if(!input || input.dataset.stableWired==='1') return;
+    input.dataset.stableWired='1';
+    input.addEventListener('change',async function(){
+      const file=this.files?.[0];
+      try{if(file && typeof window.importLongRoll==='function') await window.importLongRoll(file)}
+      catch(e){console.error(e);say('Import failed: '+(e.message||e))}
+      finally{this.value=''}
     });
   }
-  document.addEventListener('DOMContentLoaded',wireImport);
-  setInterval(wireImport,1500);
-})();
-</script>
+  function openImportPicker(){wireImportOnce();const input=$('longRollImport');if(!input){say('Import control is missing.');return}input.value='';input.click()}
+  window.msmOpenImportPicker=openImportPicker;
 
-</body>
-</html>
-
-
-<!-- FINAL STABILITY PATCH: Desktop-first data entry + reliable full-page police verification print -->
-<style id="final-stability-patch">
-@media (min-width: 1024px){
-  body{font-size:14px;}
-  .msm-shell,.msm-master-frame,main{max-width:1440px!important;}
-  .sheet{padding:32px!important;}
-  .grid{grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px 20px;}
-  .field.wide{grid-column:1/-1;}
-  .field input,.field select,.field textarea{min-height:44px;font-size:14px;}
-  .register-controls{grid-template-columns:minmax(320px,2fr) repeat(4,minmax(170px,1fr));}
-  .table-wrap{max-height:72vh;overflow:auto;}
-  table.register{min-width:2200px;}
-}
-@media print{
-  .pf-police-page{width:8.5in!important;height:11in!important;page-break-before:always!important;page-break-after:always!important;break-before:page!important;break-after:page!important;}
-  .pf-police-page > img,.pf-police-page > canvas{
-    position:absolute!important;left:0!important;top:0!important;
-    width:8.5in!important;height:11in!important;
-    max-width:8.5in!important;max-height:11in!important;
-    object-fit:contain!important;object-position:center center!important;
-    margin:0!important;padding:0!important;
+  async function safeExport(){
+    try{
+      await ensureXLSX();
+      if(typeof window.exportExcel!=='function') throw new Error('Export function is unavailable.');
+      return await window.exportExcel();
+    }catch(e){console.error(e);say('Export failed: '+(e.message||e))}
   }
-}
-</style>
-<script>
-(function(){
-  // Prevent duplicate rapid submissions from creating unstable UI state.
-  document.addEventListener('submit',function(e){
-    const f=e.target;
-    if(!f || !f.dataset) return;
-    if(f.dataset.finalBusy==='1'){ e.preventDefault(); return; }
-    f.dataset.finalBusy='1';
-    setTimeout(()=>{try{delete f.dataset.finalBusy}catch(_){f.dataset.finalBusy='';}},1200);
-  },true);
-  // Desktop keyboard support for data-entry forms.
-  document.addEventListener('keydown',function(e){
-    if(e.key==='Enter' && e.target && e.target.tagName==='INPUT' && e.target.type!=='submit'){
-      const form=e.target.form;
-      if(form && e.target.dataset.enterSubmit!=='true') return;
+
+  const baseHomeOpen=window.msmHomeOpenRegion;
+  window.msmHomeOpenRegion=async function(regionId){
+    try{
+      if(typeof window.msmLoadRegionCatalog==='function'){
+        try{await wait(window.msmLoadRegionCatalog(),7000,'Region catalog timed out')}catch(e){console.warn(e);say('Region list is taking longer than expected. Trying available data…')}
+      }
+      const rows=Array.isArray(window.msmRegionCatalog)?window.msmRegionCatalog:[];
+      const r=rows.find(x=>norm(x.regionId||x.id)===norm(regionId)||key(x.name)===key(regionId));
+      if(!r){say('Region not found. Refresh the dashboard and try again.');return}
+      const rid=norm(r.regionId||r.id||regionId);
+      window.msmHomeSelectedRegion=rid;window.msmActiveRegion=rid;window.msmHomeSelectedSector='';window.msmActiveSector='full';
+      if(typeof window.msmOpenRegion==='function'){
+        try{await wait(window.msmOpenRegion(rid),7000,'Opening Region timed out')}catch(e){console.warn(e);say('Region scope opened partially; continuing with the dashboard.')}
+      }
+      if(typeof baseHomeOpen==='function') baseHomeOpen.call(this,rid);
+      else if(typeof window.msmHomeGo==='function') window.msmHomeGo('database');
+    }catch(e){console.error('Open Region',e);say('Could not open Region: '+(e.message||e))}
+  };
+
+  const baseHomeSector=window.msmHomeOpenSector;
+  window.msmHomeOpenSector=async function(sectorId,regionId){
+    try{
+      if(regionId){window.msmHomeSelectedRegion=norm(regionId);window.msmActiveRegion=norm(regionId)}
+      window.msmHomeSelectedSector=norm(sectorId);window.msmActiveSector=norm(sectorId);
+      if(typeof window.msmOpenSector==='function') await Promise.resolve(window.msmOpenSector(norm(sectorId)));
+      if(typeof baseHomeSector==='function') await Promise.resolve(baseHomeSector.call(this,norm(sectorId),norm(regionId)));
+      await selectCanonicalScope(norm(regionId),norm(sectorId));
+    }catch(e){console.error('Open Sector',e);say('Could not open Sector: '+(e.message||e))}
+  };
+
+  async function selectCanonicalScope(regionId,sectorId){
+    try{
+      if(typeof window.msmHomeGo==='function'){} // keep helper available
+      const re=$('f_region_canonical'), se=$('f_sector_canonical');
+      if(!re || !se) return;
+      if(regionId){
+        re.dataset.selected=regionId;
+        re.value=regionId;
+        re.dispatchEvent(new Event('change',{bubbles:true}));
+        await new Promise(r=>setTimeout(r,350));
+      }
+      se.dataset.selected=sectorId;
+      if(sectorId) se.value=sectorId;
+    }catch(e){console.warn('Canonical scope selection',e)}
+  }
+
+  const baseGoForm=window.msmHomeGoRegionForm;
+  window.msmHomeGoRegionForm=async function(){
+    if(typeof baseGoForm==='function') baseGoForm();
+    await new Promise(r=>setTimeout(r,0));
+    const rid=norm(window.msmHomeSelectedRegion||window.msmActiveRegion);
+    const sid=norm(window.msmHomeSelectedSector||window.msmActiveSector);
+    if(rid && rid!=='all') await selectCanonicalScope(rid,sid==='full'?'':sid);
+    if(rid && sid && sid!=='full' && $('f_clientproject') && !$('f_clientproject').value){
+      const secName=typeof window.msmSectorByKey==='function'?window.msmSectorByKey(sid):'';
+      if(secName) $('f_clientproject').value=secName;
+    }
+    $('f_name')?.focus();
+  };
+
+  // One delegated click handler, no text-based duplicate rebinding loops.
+  document.addEventListener('click',function(e){
+    const b=e.target.closest('button');if(!b)return;
+    const onclick=b.getAttribute('onclick')||'';
+    if(onclick.includes("longRollImport") || /Import\s*\/\s*Export/.test(b.textContent||'')){
+      if(!onclick.includes('msmHomeTransferMenu')){e.preventDefault();e.stopImmediatePropagation();openImportPicker()}
     }
   },true);
+
+  // Make import/export available after login and avoid hidden import button on desktop.
+  function ready(){
+    wireImportOnce();
+    const btn=$('importLongRollBtn');if(btn) btn.style.display='inline-flex';
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ready,{once:true}); else ready();
 })();
 </script>
+</body>
+</html>
