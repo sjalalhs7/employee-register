@@ -3009,7 +3009,8 @@ function renderTable(){
   tbody.innerHTML = filtered.map(r=>{
     const cells = COLUMNS.map(c=>`<td>${escapeHtml(r[c.key] ?? '')}</td>`).join('');
     const photoLink = r.photoData ? `<a href="${r.photoData}" target="_blank" rel="noopener" title="View photo"><img src="${r.photoData}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>` : '';
-    const verifLink = r.policeVerifDoc ? (r.policeVerifDoc.startsWith('data:image') ? `<a href="${r.policeVerifDoc}" target="_blank" rel="noopener" title="View police verification document"><img src="${r.policeVerifDoc}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>` : `<a class="btn btn-sm" href="${r.policeVerifDoc}" target="_blank" rel="noopener">🛡 Verif Doc</a>`) : '';
+    const verifDocSrc = r.policeVerifDoc || r.policeVerificationUrl || '';
+    const verifLink = verifDocSrc ? (verifDocSrc.startsWith('data:image') ? `<a href="${verifDocSrc}" target="_blank" rel="noopener" title="View police verification document"><img src="${verifDocSrc}" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>` : `<a class="btn btn-sm" href="${verifDocSrc}" target="_blank" rel="noopener">🛡 Verif Doc</a>`) : '';
     return `<tr><td><input class="row-check record-check" type="checkbox" value="${escapeHtml(r.id)}" ${selected.has(r.id)?'checked':''} onchange="toggleRecordSelection('${r.id}',this.checked)"></td>${cells}<td class="row-actions"><button class="btn btn-sm" onclick="editRecord('${r.id}')">Edit</button><button class="btn btn-sm" onclick="printRecordForm('${r.id}')">🖨 Print</button>${photoLink}${verifLink}<button class="btn btn-sm btn-danger" onclick="deleteRecord('${r.id}')">Delete</button></td></tr>`;
   }).join('');
   document.getElementById('rowCountPill').textContent = `${filtered.length} of ${records.length} entries`;
@@ -3554,17 +3555,21 @@ async function populatePrintTemplate(){
   // PDFs are rendered to a canvas with PDF.js before printing; this fixes the
   // previous blank 3rd page problem caused by accepting PDFs but only printing images.
   document.querySelectorAll('#printFormTemplate .pf-police-page').forEach(el=>el.remove());
-  if(d.policeVerifDoc && (d.policeVerifDoc.startsWith('data:image') || d.policeVerifDoc.startsWith('data:application/pdf'))){
+  const verifSrc = d.policeVerifDoc || d.policeVerificationUrl || '';
+  const verifIsPdf = verifSrc.startsWith('data:application/pdf') || (/^https?:/i.test(verifSrc) && /\.pdf(\?|$)/i.test(verifSrc));
+  const verifIsImage = verifSrc.startsWith('data:image') || (/^https?:/i.test(verifSrc) && !verifIsPdf);
+  if(verifSrc && (verifIsImage || verifIsPdf)){
     const page = document.createElement('div');
     page.className = 'pf-print-page pf-police-page';
     page.id = 'pf_policeVerifPage';
     page.style.background = '#fff';
     const img = document.createElement('img');
+    img.crossOrigin = 'anonymous';
     img.style.position='absolute'; img.style.inset='0'; img.style.display='block'; img.style.width='100%'; img.style.height='100%'; img.style.maxWidth='none'; img.style.maxHeight='none'; img.style.objectFit='contain';
     page.appendChild(img);
     document.getElementById('printFormTemplate').appendChild(page);
-    if(d.policeVerifDoc.startsWith('data:image')){
-      img.src=d.policeVerifDoc;
+    if(verifIsImage){
+      img.src=verifSrc;
       if(img.decode){
         try{ await img.decode(); }catch(_e){}
       } else {
@@ -3574,19 +3579,26 @@ async function populatePrintTemplate(){
         });
       }
     } else {
-      await renderPolicePdfForPrint(d.policeVerifDoc, img, page);
+      await renderPolicePdfForPrint(verifSrc, img, page);
     }
   }
 }
 
-async function renderPolicePdfForPrint(dataUrl, imgEl, pageEl){
+async function renderPolicePdfForPrint(src, imgEl, pageEl){
   try{
     if(!window.pdfjsLib) throw new Error('PDF renderer is not loaded');
     pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    const raw=atob(dataUrl.split(',')[1]);
-    const bytes=new Uint8Array(raw.length);
-    for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+    let bytes;
+    if(String(src).startsWith('data:')){
+      const raw=atob(src.split(',')[1]);
+      bytes=new Uint8Array(raw.length);
+      for(let i=0;i<raw.length;i++) bytes[i]=raw.charCodeAt(i);
+    } else {
+      const resp=await fetch(src);
+      if(!resp.ok) throw new Error('Could not download the saved certificate ('+resp.status+')');
+      bytes=new Uint8Array(await resp.arrayBuffer());
+    }
 
     const pdf=await pdfjsLib.getDocument({data:bytes}).promise;
 
@@ -5031,7 +5043,7 @@ if ('serviceWorker' in navigator) {
  window.msmHomePickRegionPhoto=function(rid){if(getAccess()?.role!=='parent')return window.showToast?.('Only Parent/Admin can change Region background photos.');const old=document.getElementById('msmRegionPhotoInput');old?.remove();const input=document.createElement('input');input.id='msmRegionPhotoInput';input.type='file';input.accept='image/*';input.style.display='none';input.onchange=async()=>{const f=input.files?.[0];if(!f)return;try{if(!storage)throw new Error('Firebase Storage is not available.');const ref=storage.ref('regions/'+rid+'/background-'+Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_'));await ref.put(f);const url=await ref.getDownloadURL();await db.collection(regionCollection()).doc(rid).set({imageUrl:url,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});await window.msmLoadRegionCatalog?.();window.msmHomeRender();window.msmHomeOpenRegion(rid);window.showToast?.('Region background photo updated.');}catch(e){console.error(e);window.showToast?.('Photo upload failed: '+e.message);}};document.body.appendChild(input);input.click();};
  function tick(){const d=new Date();const el=document.getElementById('msmHomeClock');if(el)el.textContent=d.toLocaleDateString(undefined,{weekday:'short',day:'2-digit',month:'short',year:'numeric'})+' | '+d.toLocaleTimeString();}
  setInterval(tick,1000);tick();
- setTimeout(window.msmHomeRender,1400);setInterval(()=>{if(document.getElementById('msmHome'))window.msmHomeRender();},8000);
+ setTimeout(window.msmHomeRender,1400);setInterval(()=>{const home=document.getElementById('msmHome');if(!home)return;const grid=document.getElementById('msmHomeRegionGrid');if(grid&&grid.matches(':hover'))return;if(home.classList.contains('msm-region-focused'))return;window.msmHomeRender();},8000);
  setTimeout(()=>window.msmLoadSiteContent?.(),1200);
 })();
 </script>
@@ -5159,8 +5171,13 @@ if ('serviceWorker' in navigator) {
   // Opening a Region now always synchronizes the active Region scope on desktop and mobile.
   const previousOpenRegion=window.msmHomeOpenRegion;
   if(typeof previousOpenRegion==='function'){
-    window.msmHomeOpenRegion=function(regionKey){
-      const r=findRegion(regionKey);
+    window.msmHomeOpenRegion=async function(regionKey){
+      let r=findRegion(regionKey);
+      if(!r && typeof window.msmLoadRegionCatalog==='function'){
+        window.showToast?.('Loading Regions…');
+        try{ await window.msmLoadRegionCatalog(); }catch(e){ console.warn('Region catalog reload failed:',e.message); }
+        r=findRegion(regionKey);
+      }
       if(!r){ window.showToast?.('Region could not be found. Refresh the dashboard and try again.'); return; }
       window.msmHomeSelectedRegion=key(r.regionId||r.id||r.name);
       window.msmActiveRegion=window.msmHomeSelectedRegion;
@@ -5330,3 +5347,48 @@ if ('serviceWorker' in navigator) {
 </script>
 </body>
 </html>
+
+
+<!-- FINAL STABILITY PATCH: Desktop-first data entry + reliable full-page police verification print -->
+<style id="final-stability-patch">
+@media (min-width: 1024px){
+  body{font-size:14px;}
+  .msm-shell,.msm-master-frame,main{max-width:1440px!important;}
+  .sheet{padding:32px!important;}
+  .grid{grid-template-columns:repeat(4,minmax(220px,1fr));gap:16px 20px;}
+  .field.wide{grid-column:1/-1;}
+  .field input,.field select,.field textarea{min-height:44px;font-size:14px;}
+  .register-controls{grid-template-columns:minmax(320px,2fr) repeat(4,minmax(170px,1fr));}
+  .table-wrap{max-height:72vh;overflow:auto;}
+  table.register{min-width:2200px;}
+}
+@media print{
+  .pf-police-page{width:8.5in!important;height:11in!important;page-break-before:always!important;page-break-after:always!important;break-before:page!important;break-after:page!important;}
+  .pf-police-page > img,.pf-police-page > canvas{
+    position:absolute!important;left:0!important;top:0!important;
+    width:8.5in!important;height:11in!important;
+    max-width:8.5in!important;max-height:11in!important;
+    object-fit:contain!important;object-position:center center!important;
+    margin:0!important;padding:0!important;
+  }
+}
+</style>
+<script>
+(function(){
+  // Prevent duplicate rapid submissions from creating unstable UI state.
+  document.addEventListener('submit',function(e){
+    const f=e.target;
+    if(!f || !f.dataset) return;
+    if(f.dataset.finalBusy==='1'){ e.preventDefault(); return; }
+    f.dataset.finalBusy='1';
+    setTimeout(()=>{try{delete f.dataset.finalBusy}catch(_){f.dataset.finalBusy='';}},1200);
+  },true);
+  // Desktop keyboard support for data-entry forms.
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Enter' && e.target && e.target.tagName==='INPUT' && e.target.type!=='submit'){
+      const form=e.target.form;
+      if(form && e.target.dataset.enterSubmit!=='true') return;
+    }
+  },true);
+})();
+</script>
