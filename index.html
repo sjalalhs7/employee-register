@@ -5225,5 +5225,219 @@ if ('serviceWorker' in navigator) {
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ready,{once:true}); else ready();
 })();
 </script>
+
+<!-- MSM_FINAL_USER_REQUEST_PATCH_20260831 -->
+<style id="msmFinalUserRequestStyles">
+  .msm-designer,.msm-footer,.msm-login-footer,.msm-splash-designer{
+    text-transform:none !important;
+    letter-spacing:.01em !important;
+  }
+  .msm-designer{
+    font-size:11px !important;
+    font-weight:500 !important;
+    opacity:.82;
+  }
+  .msm-footer{font-size:12px !important;line-height:1.5 !important;}
+  .msm-login-footer{font-size:11px !important;line-height:1.45 !important;}
+  .msm-splash-designer{font-size:12px !important;}
+  #msmPagination{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:12px 0;font-size:12px}
+  #msmPagination button{min-width:34px;padding:7px 10px;border:1px solid var(--line,#ccd);background:var(--panel,#fff);border-radius:7px;cursor:pointer}
+  #msmPagination button:disabled{opacity:.45;cursor:not-allowed}
+  #msmPagination select{padding:7px;border-radius:7px;border:1px solid var(--line,#ccd);background:var(--panel,#fff)}
+  .msm-print-adjust-overlay{position:fixed;inset:0;background:rgba(8,12,20,.62);display:none;align-items:center;justify-content:center;z-index:999999;padding:18px}
+  .msm-print-adjust-card{width:min(560px,96vw);background:#fff;color:#172033;border-radius:16px;box-shadow:0 24px 70px rgba(0,0,0,.38);padding:20px}
+  .msm-print-adjust-card h3{margin:0 0 6px;font-size:19px}.msm-print-adjust-card p{margin:0 0 16px;color:#526075;font-size:13px;line-height:1.45}
+  .msm-print-adjust-grid{display:grid;grid-template-columns:1fr auto;gap:12px 16px;align-items:center}
+  .msm-print-adjust-grid label{font-size:13px;font-weight:700}.msm-print-adjust-grid input[type=range]{width:100%}
+  .msm-print-adjust-value{min-width:64px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+  .msm-print-adjust-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px;flex-wrap:wrap}
+  .msm-print-adjust-actions button{padding:10px 14px;border-radius:8px;border:1px solid #b8c2d0;background:#fff;cursor:pointer;font-weight:700}
+  .msm-print-adjust-actions .primary{background:#1f5eff;color:#fff;border-color:#1f5eff}
+  .msm-print-adjust-actions .reset{margin-right:auto}
+  .pf-police-page{--pv-scale:1;--pv-margin:0mm;--pv-x:0mm;--pv-y:0mm}
+  .pf-police-page>img,.pf-police-page>canvas{left:var(--pv-margin)!important;top:var(--pv-margin)!important;width:calc(100% - (var(--pv-margin) * 2))!important;height:calc(100% - (var(--pv-margin) * 2))!important;object-fit:contain!important;transform:translate(var(--pv-x),var(--pv-y)) scale(var(--pv-scale))!important;transform-origin:top left!important}
+  @media print{.msm-print-adjust-overlay,#msmPagination{display:none!important}.pf-police-page{width:8.5in!important;height:11in!important;overflow:hidden!important}}
+</style>
+<script>
+(function(){
+  'use strict';
+  const PATCH='MSM_FINAL_USER_REQUEST_PATCH_20260831';
+  if(window[PATCH]) return; window[PATCH]=true;
+  const $=id=>document.getElementById(id);
+  const toast=m=>{ try{window.showToast?.(m);}catch(e){} };
+
+  // Footer: normal, smaller and reusable branding text.
+  function normalizeFooterBranding(){
+    const exact='Design by : Syed Jalal Hussain Shah';
+    document.querySelectorAll('.msm-designer,.msm-footer,.msm-login-footer,.msm-splash-designer').forEach(el=>{
+      if(!el || el.dataset.brandNormalized==='1') return;
+      const t=(el.textContent||'').replace(/\s+/g,' ').trim();
+      if(/syed jalal hussain shah/i.test(t)){
+        el.dataset.brandNormalized='1';
+        if(el.classList.contains('msm-designer')) el.textContent=exact;
+        else if(el.classList.contains('msm-login-footer')) el.innerHTML='MSM Longroll Database © All Rights Reserved<br><span style="font-size:10px;font-weight:500;text-transform:none">'+exact+'</span>';
+        else if(el.classList.contains('msm-splash-designer')) el.textContent=exact;
+        else if(el.classList.contains('msm-footer')) el.innerHTML='© 2026 MSM Security Guards Pvt Ltd · All Rights Reserved<br><span style="font-size:10px;font-weight:500;text-transform:none">'+exact+'</span>';
+      }
+    });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',normalizeFooterBranding,{once:true}); else normalizeFooterBranding();
+
+  // Strong Region/Sector click recovery using one delegated listener; no polling or MutationObserver.
+  function extractQuotedCall(code,name){
+    const m=String(code||'').match(new RegExp(name+'\\(\\s*["\\\']([^"\\\']+)["\\\']'));
+    return m?m[1]:'';
+  }
+  document.addEventListener('click',function(ev){
+    const btn=ev.target.closest('button,.msm-region-card,.msm-sector-chip,.msm-sector-card');
+    if(!btn) return;
+    const code=btn.getAttribute('onclick')||'';
+    const regionId=extractQuotedCall(code,'msmHomeOpenRegion')||extractQuotedCall(code,'msmOpenRegion');
+    const sectorId=extractQuotedCall(code,'msmHomeOpenSector')||extractQuotedCall(code,'msmOpenSector');
+    if(regionId){
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      Promise.resolve().then(async()=>{
+        try{
+          if(code.includes('msmHomeOpenRegion') && typeof window.msmHomeOpenRegion==='function') await window.msmHomeOpenRegion(regionId);
+          else if(typeof window.msmOpenRegion==='function') await window.msmOpenRegion(regionId);
+          window.msmActiveRegion=regionId; window.msmHomeSelectedRegion=regionId;
+          toast('Region selected. You can now open a Sector or add a record.');
+        }catch(e){console.error('Region selection:',e);toast('Region could not be opened: '+(e.message||e));}
+      });
+      return;
+    }
+    if(sectorId){
+      ev.preventDefault(); ev.stopImmediatePropagation();
+      Promise.resolve().then(async()=>{
+        try{
+          if(code.includes('msmHomeOpenSector') && typeof window.msmHomeOpenSector==='function') await window.msmHomeOpenSector(sectorId,window.msmActiveRegion||window.msmHomeSelectedRegion||'');
+          else if(typeof window.msmOpenSector==='function') await window.msmOpenSector(sectorId);
+          window.msmActiveSector=sectorId; window.msmHomeSelectedSector=sectorId;
+          toast('Sector selected. Data entry and editing are now scoped to this Sector.');
+        }catch(e){console.error('Sector selection:',e);toast('Sector could not be opened: '+(e.message||e));}
+      });
+    }
+  },true);
+
+  // Make Add Guard/Record retain the current Region/Sector before opening the form.
+  const oldGo=window.msmHomeGo;
+  window.msmHomeGo=function(view){
+    if(view==='form'){
+      window.msmFormScope={regionId:window.msmActiveRegion||window.msmHomeSelectedRegion||'',sectorId:window.msmActiveSector||window.msmHomeSelectedSector||''};
+    }
+    return typeof oldGo==='function'?oldGo.apply(this,arguments):undefined;
+  };
+
+  // Persist the selected Region/Sector into every parent/admin data entry so records stay editable in the correct scope.
+  const baseReadForm=window.readForm;
+  if(typeof baseReadForm==='function'){
+    window.readForm=function(){
+      const data=baseReadForm.apply(this,arguments)||{};
+      const scope=window.msmFormScope||{};
+      const activeRegion=scope.regionId||window.msmActiveRegion||window.msmHomeSelectedRegion||'';
+      const activeSector=scope.sectorId||window.msmActiveSector||window.msmHomeSelectedSector||'';
+      if(activeRegion && activeRegion!=='all' && activeRegion!=='full'){
+        let region=null; try{region=typeof msmRegionByKey==='function'?msmRegionByKey(activeRegion):null;}catch(e){}
+        data.regionId=region?.regionId||region?.id||activeRegion;
+        data.region=region?.name||data.region||activeRegion;
+      }
+      if(activeSector && activeSector!=='all' && activeSector!=='full'){
+        let sectorName=''; try{sectorName=typeof msmSectorByKey==='function'?(msmSectorByKey(activeSector)||''):'';}catch(e){}
+        data.sectorId=activeSector;
+        data.sector=sectorName||data.sector||activeSector;
+      }
+      return data;
+    };
+  }
+
+  // 10,000-record UI protection: paginate DOM rendering instead of inserting every row.
+  let filterTimer=null;
+  window.msmRegisterPage=1;
+  window.msmRegisterPageSize=100;
+  window.msmSetRegisterPage=function(p){window.msmRegisterPage=Math.max(1,Number(p)||1);window.renderTable?.();};
+  window.msmSetRegisterPageSize=function(n){window.msmRegisterPageSize=Math.max(25,Math.min(500,Number(n)||100));window.msmRegisterPage=1;window.renderTable?.();};
+  function filteredRows(){
+    const q=($('searchBox')?.value||'').trim().toLowerCase();
+    const fc=$('filterClient')?.value||'', fl=$('filterLocation')?.value||'', fs=$('filterSupervisor')?.value||'', fstation=$('filterStation')?.value||'', frank=$('filterRank')?.value||'', fst=$('filterStatus')?.value||'';
+    const from=$('filterDateFrom')?.value||'', to=$('filterDateTo')?.value||'';
+    const keys=['name','cnic','clientproject','sector','supervisor','msmno','location','cell','deployloc','unitrank'];
+    let arr=(window.records||[]);
+    // `records` is a global lexical in the existing app; if not exposed, use direct global fallback below via current function closure unavailable.
+    return arr.filter(r=>{
+      if(typeof window.msmFilterSector==='function' && window.isParent?.() && window.msmActiveSector!=='full' && !window.msmFilterSector(r)) return false;
+      if(q&&!keys.some(k=>String(r[k]??'').toLowerCase().includes(q)))return false;
+      if(fc&&String(r.clientproject||'')!==fc)return false;if(fl&&String(r.location||'')!==fl)return false;if(fs&&String(r.supervisor||'')!==fs)return false;if(fstation&&String(r.deployloc||'')!==fstation)return false;if(frank&&String(r.unitrank||'')!==frank)return false;if(fst&&window.normalizedStatus?.(r)!==fst)return false;
+      const d=String(r.doe||'').slice(0,10);if(from&&d&&d<from)return false;if(to&&d&&d>to)return false;return true;
+    });
+  }
+  // Replace full-DOM rendering with true pagination. Only the current page (50-500 rows) is inserted into the table.
+  const baseRender=window.renderTable;
+  if(typeof baseRender==='function'){
+    window.renderTable=function(){
+      const thead=$('theadRow'), tbody=$('tbody'); if(!thead||!tbody) return;
+      thead.innerHTML='<th><input class="row-check" type="checkbox" title="Select all visible" onchange="selectAllVisible(this.checked)"></th>'+COLUMNS.map(c=>'<th class="sort-head">'+escapeHtml(c.label)+'</th>').join('')+'<th>Actions</th>';
+      try{ refreshRegisterFilters(); }catch(e){ console.warn('Filter refresh:',e); }
+      const q=($('searchBox')?.value||'').trim().toLowerCase();
+      const fc=$('filterClient')?.value||'',fl=$('filterLocation')?.value||'',fs=$('filterSupervisor')?.value||'',fstation=$('filterStation')?.value||'',frank=$('filterRank')?.value||'',fst=$('filterStatus')?.value||'';
+      const from=$('filterDateFrom')?.value||'',to=$('filterDateTo')?.value||'';
+      const keys=['name','cnic','clientproject','sector','supervisor','msmno','location','cell','deployloc','unitrank'];
+      let filtered=records.filter(r=>{
+        if(typeof msmFilterSector==='function' && isParent() && msmActiveSector!=='full' && !msmFilterSector(r)) return false;
+        if(q&&!keys.some(k=>String(r[k]??'').toLowerCase().includes(q)))return false;
+        if(fc&&String(r.clientproject||'')!==fc)return false;if(fl&&String(r.location||'')!==fl)return false;if(fs&&String(r.supervisor||'')!==fs)return false;if(fstation&&String(r.deployloc||'')!==fstation)return false;if(frank&&String(r.unitrank||'')!==frank)return false;if(fst&&normalizedStatus(r)!==fst)return false;
+        const d=String(r.doe||'').slice(0,10);if(from&&d&&d<from)return false;if(to&&d&&d>to)return false;return true;
+      });
+      const sortField=$('sortField')?.value||'sno',sortOrder=$('sortOrder')?.value||'asc';
+      filtered.sort((a,b)=>{const av=getSortValue(a,sortField),bv=getSortValue(b,sortField);let cmp=(typeof av==='number'&&typeof bv==='number')?av-bv:String(av).localeCompare(String(bv),undefined,{numeric:true,sensitivity:'base'});return sortOrder==='desc'?-cmp:cmp;});
+      try{updateRegisterDashboard(filtered);}catch(e){}
+      const size=window.msmRegisterPageSize||100,pages=Math.max(1,Math.ceil(filtered.length/size));
+      window.msmRegisterPage=Math.min(Math.max(1,window.msmRegisterPage||1),pages);
+      const start=(window.msmRegisterPage-1)*size,pageRows=filtered.slice(start,start+size),selected=new Set(window.selectedRecordIds||[]);
+      tbody.innerHTML=pageRows.map(r=>{
+        const cells=COLUMNS.map(c=>'<td>'+escapeHtml(r[c.key]??'')+'</td>').join('');
+        const photo=r.photoData?'<a href="'+escapeHtml(r.photoData)+'" target="_blank" rel="noopener" title="View photo"><img src="'+escapeHtml(r.photoData)+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>':'';
+        const doc=r.policeVerifDoc||r.policeVerificationUrl||'';
+        const ver=doc?(String(doc).startsWith('data:image')?'<a href="'+escapeHtml(doc)+'" target="_blank" rel="noopener" title="View police verification document"><img src="'+escapeHtml(doc)+'" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--line);vertical-align:middle;"></a>':'<a class="btn btn-sm" href="'+escapeHtml(doc)+'" target="_blank" rel="noopener">🛡 Verif Doc</a>'):'';
+        const rid=escapeHtml(r.id);
+        return '<tr><td><input class="row-check record-check" type="checkbox" value="'+rid+'" '+(selected.has(r.id)?'checked':'')+' onchange="toggleRecordSelection(this.value,this.checked)"></td>'+cells+'<td class="row-actions"><button class="btn btn-sm" data-id="'+rid+'" onclick="editRecord(this.dataset.id)">Edit</button><button class="btn btn-sm" data-id="'+rid+'" onclick="printRecordForm(this.dataset.id)">🖨 Print</button>'+photo+ver+'<button class="btn btn-sm btn-danger" data-id="'+rid+'" onclick="deleteRecord(this.dataset.id)">Delete</button></td></tr>';
+      }).join('');
+      $('rowCountPill').textContent=filtered.length.toLocaleString()+' of '+records.length.toLocaleString()+' entries · showing '+pageRows.length;
+      $('emptyState').style.display=records.length?'none':'block'; $('registerTable').style.display=records.length?'table':'none';
+      try{updateSelectionUI();}catch(e){}
+      let pager=$('msmPagination');if(!pager){pager=document.createElement('div');pager.id='msmPagination';const table=$('registerTable');(table?.parentNode||tbody.parentNode).insertBefore(pager,table||null);}
+      pager.innerHTML='<span>'+filtered.length.toLocaleString()+' matching records</span><button '+(window.msmRegisterPage<=1?'disabled':'')+' onclick="msmSetRegisterPage('+(window.msmRegisterPage-1)+')">‹ Prev</button><span>Page '+window.msmRegisterPage+' / '+pages+'</span><button '+(window.msmRegisterPage>=pages?'disabled':'')+' onclick="msmSetRegisterPage('+(window.msmRegisterPage+1)+')">Next ›</button><label>Rows <select onchange="msmSetRegisterPageSize(this.value)"><option '+(size===50?'selected':'')+'>50</option><option '+(size===100?'selected':'')+'>100</option><option '+(size===250?'selected':'')+'>250</option><option '+(size===500?'selected':'')+'>500</option></select></label>';
+    };
+  }
+  function debounceRegister(){clearTimeout(filterTimer);filterTimer=setTimeout(()=>{window.msmRegisterPage=1;window.renderTable?.();},180)}
+  ['searchBox','filterClient','filterLocation','filterSupervisor','filterStation','filterRank','filterStatus','filterDateFrom','filterDateTo','sortField','sortOrder'].forEach(id=>{
+    const el=$(id); if(el&&!el.dataset.msmPaginated){el.dataset.msmPaginated='1';el.addEventListener('input',debounceRegister);el.addEventListener('change',debounceRegister);}
+  });
+
+  // Manual Police Verification print adjustment panel.
+  let pendingPrint=null;
+  function ensurePrintPanel(){
+    if($('msmPrintAdjustOverlay')) return;
+    const box=document.createElement('div');box.id='msmPrintAdjustOverlay';box.className='msm-print-adjust-overlay';
+    box.innerHTML='<div class="msm-print-adjust-card" role="dialog" aria-modal="true"><h3>Police Verification Print Adjustment</h3><p>Adjust the verification page before the browser print preview opens. Default settings print the document on one full Letter page.</p><div class="msm-print-adjust-grid"><label>Scale / Zoom</label><span id="pvScaleValue" class="msm-print-adjust-value">100%</span><input id="pvScale" type="range" min="70" max="130" value="100"><span></span><label>Page Margin</label><span id="pvMarginValue" class="msm-print-adjust-value">0 mm</span><input id="pvMargin" type="range" min="0" max="20" value="0"><span></span><label>Horizontal Position</label><span id="pvXValue" class="msm-print-adjust-value">0 mm</span><input id="pvX" type="range" min="-20" max="20" value="0"><span></span><label>Vertical Position</label><span id="pvYValue" class="msm-print-adjust-value">0 mm</span><input id="pvY" type="range" min="-20" max="20" value="0"><span></span></div><div class="msm-print-adjust-actions"><button class="reset" id="pvReset">Reset</button><button id="pvCancel">Cancel</button><button class="primary" id="pvPrintNow">Open Print Preview</button></div></div>';
+    document.body.appendChild(box);
+    const update=()=>{
+      const sc=Number($('pvScale').value)/100, m=$('pvMargin').value, x=$('pvX').value, y=$('pvY').value;
+      $('pvScaleValue').textContent=Math.round(sc*100)+'%';$('pvMarginValue').textContent=m+' mm';$('pvXValue').textContent=x+' mm';$('pvYValue').textContent=y+' mm';
+      document.querySelectorAll('.pf-police-page').forEach(p=>{p.style.setProperty('--pv-scale',sc);p.style.setProperty('--pv-margin',m+'mm');p.style.setProperty('--pv-x',x+'mm');p.style.setProperty('--pv-y',y+'mm');});
+    };
+    ['pvScale','pvMargin','pvX','pvY'].forEach(id=>$(id).addEventListener('input',update));
+    $('pvReset').onclick=()=>{$('pvScale').value=100;$('pvMargin').value=0;$('pvX').value=0;$('pvY').value=0;update()};
+    $('pvCancel').onclick=()=>{box.style.display='none';pendingPrint=null};
+    $('pvPrintNow').onclick=async()=>{box.style.display='none';const fn=pendingPrint;pendingPrint=null;if(fn) await fn();};
+  }
+  const baseDoPrint=window.doPrint;
+  if(typeof baseDoPrint==='function'){
+    window.doPrint=async function(){
+      try{ if(typeof window.populatePrintTemplate==='function') await window.populatePrintTemplate(); }catch(e){console.warn('Print preview preparation:',e);}
+      ensurePrintPanel();pendingPrint=()=>baseDoPrint();$('msmPrintAdjustOverlay').style.display='flex';
+    };
+  }
+})();
+</script>
 </body>
 </html>
