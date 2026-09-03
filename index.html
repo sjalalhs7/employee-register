@@ -1418,7 +1418,7 @@ body{overflow-x:hidden!important}
     <button class="active" onclick="msmHomeGo('top')">⌂ Home</button><button onclick="msmHomeGo('regions')">◉ Regions / Sectors</button><button onclick="msmHomeGo('database')">▦ Full Database</button><button onclick="msmHomeInfo('about')">? About</button><button onclick="msmHomeInfo('services')">▤ Services</button><button onclick="msmHomeInfo('contact')">✉ Contact</button><button onclick="msmHomeGo('instructions')">▣ Instructions</button><div class="msm-account"><span id="msmHomeUser">Authorized User</span><br><small id="msmHomeRole">Loading access…</small></div>
   </div>
   <div class="msm-shell msm-quick">
-    <button onclick="msmHomeAddRegion()">＋ Add Region</button><button onclick="msmHomeAddSector()">＋ Add Sector</button><button onclick="msmHomeTransferMenu()">⇅ Import / Export</button><button onclick="msmOpenRecycle()">♜ Recycle Bin</button><button onclick="msmHomeGo('audit')">◉ Audit Logs</button><button onclick="msmHomeGo('admin')">♙ Manage Users</button><button onclick="msmInstallApp()">▣ Install App</button><button class="danger" onclick="doSignOut()">↩ Sign Out</button>
+    <button onclick="msmHomeAddRegion()">＋ Add Region</button><button onclick="msmHomeAddSector()">＋ Add Sector</button><button onclick="msmHomeTransferMenu()">⇅ Import / Export</button><button onclick="msmFixDuplicateSno()">🔢 Fix Duplicate S No</button><button onclick="msmOpenRecycle()">♜ Recycle Bin</button><button onclick="msmHomeGo('audit')">◉ Audit Logs</button><button onclick="msmHomeGo('admin')">♙ Manage Users</button><button onclick="msmInstallApp()">▣ Install App</button><button class="danger" onclick="doSignOut()">↩ Sign Out</button>
   </div>
   <section class="msm-shell msm-screensaver" id="msmScreensaver" aria-label="MSM Longroll Database welcome screensaver">
   <div class="msm-screen-scene sunshine active" data-scene="sunshine"><div class="msm-screen-title"><span>MSM Security • Pakistan • Clear Blue Sky</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Faisal Mosque</div></div>
@@ -3421,7 +3421,10 @@ async function confirmLongRollImport(){
         const clean={...rec}; delete clean.__row; delete clean.__ok; delete clean.__reason;
         clean.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
         if(existing){batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id),clean);updated++;}
-        else{const ref=db.collection(RECORDS_COLLECTION).doc();batch.set(ref,{sno:clean.sno?(Number(clean.sno)||nextSno):nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),...clean});nextSno++;added++;}
+        // Always assign a fresh, globally-unique serial number on import — never trust the
+        // source Excel's own "S No" column, since every sector file naturally restarts at 1
+        // and reusing it here creates duplicate S No values across the combined database.
+        else{const ref=db.collection(RECORDS_COLLECTION).doc();batch.set(ref,{sno:nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),...clean});nextSno++;added++;}
       });
       await withTimeout(batch.commit(),25000,`Batch ${batchNo} of ${totalBatches}`);
     }
@@ -3897,7 +3900,26 @@ async function msmLoadSectorCatalog(){
   }finally{window.msmSectorLoading=false;window.msmSectorUnsub=true;msmPopulateSectorFilter();msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();}
 }
 
-async function msmAddRegion(){
+async function msmFixDuplicateSno(){
+  if(!isParent())return showToast('Parent/Admin access is required to renumber S No.');
+  if(!confirm('This will renumber the S No column for every record, in current sort order, so every number is unique (1,2,3…). Continue?'))return;
+  try{
+    const sorted=[...records].sort((a,b)=>(Number(a.sno)||0)-(Number(b.sno)||0)||String(a.createdAt||'').localeCompare(String(b.createdAt||'')));
+    let n=1,changed=0;
+    for(let i=0;i<sorted.length;i+=400){
+      const batch=db.batch();
+      sorted.slice(i,i+400).forEach(r=>{
+        if(Number(r.sno)!==n){batch.update(db.collection(RECORDS_COLLECTION).doc(r.id),{sno:n});changed++;}
+        n++;
+      });
+      await batch.commit();
+    }
+    await writeAuditLog('RENUMBER_SNO','all',{count:sorted.length,changed});
+    showToast(`S No renumbered: ${changed} record(s) updated, ${sorted.length} total.`);
+    renderTable();
+  }catch(e){console.error(e);showToast('Renumber failed: '+e.message);}
+}
+window.msmFixDuplicateSno=msmFixDuplicateSno;
   if(!isParent())return;const input=document.getElementById('msmNewRegionName'),name=msmNormRegionName(input?.value);if(!name)return showToast('Enter a region name.');if((window.msmRegionCatalog||[]).some(r=>r.name.toLowerCase()===name.toLowerCase()))return showToast('That region already exists.');
   try{await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(name)).set({name,regionId:msmRegionKeyFromName(name),sectors:[],createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});window.msmRegionCatalog.push({name,sectors:[]});window.msmRegionCatalog.sort((a,b)=>a.name.localeCompare(b.name));input.value='';msmRenderSectorManager();msmRenderRegionPanel();await writeAuditLog('ADD_REGION',name,{region:name});showToast(`${name} added.`);}catch(e){showToast('Could not add region: '+e.message);}
 }
