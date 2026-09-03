@@ -3395,14 +3395,23 @@ function importLongRoll(file){
     }catch(err){console.error(err);showToast('Could not read this Long Roll file: '+err.message);}finally{const input=document.getElementById('longRollImport');if(input)input.value='';}
   }; reader.readAsArrayBuffer(file);
 }
+function withTimeout(promise,ms,label){
+  return Promise.race([
+    promise,
+    new Promise((_,reject)=>setTimeout(()=>reject(new Error(`${label} timed out after ${Math.round(ms/1000)}s — check your internet connection and try again`)),ms))
+  ]);
+}
 async function confirmLongRollImport(){
   if(!currentAccess||!pendingImport)return;
   const rows=pendingImport.rows.filter(r=>r.__ok); if(!rows.length)return;
-  const btn=document.getElementById('confirmImportBtn'); btn.disabled=true; btn.textContent='Importing…';
+  const btn=document.getElementById('confirmImportBtn'); btn.disabled=true;
+  if(navigator.onLine===false){ showToast('You appear to be offline. Reconnect to the internet and try again.'); btn.disabled=false; btn.textContent=`Confirm ${rows.length} Valid Row(s)`; return; }
   try{
     const existingByMsm=new Map(records.map(r=>[importKey(r.msmno),r])); const existingByCnic=new Map(records.map(r=>[importKey(r.cnic),r]));
     let nextSno=records.length?Math.max(...records.map(r=>Number(r.sno)||0))+1:1,added=0,updated=0;
-    for(let i=0;i<rows.length;i+=400){
+    const totalBatches=Math.ceil(rows.length/400);
+    for(let i=0,batchNo=1;i<rows.length;i+=400,batchNo++){
+      btn.textContent=`Importing batch ${batchNo} of ${totalBatches}…`;
       const batch=db.batch();
       rows.slice(i,i+400).forEach(rec=>{
         const m=importKey(rec.msmno),c=importKey(rec.cnic); const existing=(m&&existingByMsm.get(m))||(c&&existingByCnic.get(c));
@@ -3411,11 +3420,11 @@ async function confirmLongRollImport(){
         if(existing){batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id),clean);updated++;}
         else{const ref=db.collection(RECORDS_COLLECTION).doc();batch.set(ref,{sno:clean.sno?(Number(clean.sno)||nextSno):nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),...clean});nextSno++;added++;}
       });
-      await batch.commit();
+      await withTimeout(batch.commit(),25000,`Batch ${batchNo} of ${totalBatches}`);
     }
-    try{await writeAuditLog('BULK_IMPORT',rows.length,{count:rows.length,added,updated,sourceFile:pendingImport.fileName||''});}catch(e){console.warn('Import succeeded; audit write failed:',e);}
+    try{await withTimeout(writeAuditLog('BULK_IMPORT',rows.length,{count:rows.length,added,updated,sourceFile:pendingImport.fileName||''}),15000,'Audit log write');}catch(e){console.warn('Import succeeded; audit write failed:',e);}
     closeImportPreview(); showToast(`Import complete: ${added} added, ${updated} updated, ${rows.length} valid rows.`); renderTable();
-  }catch(err){console.error(err);showToast('Import failed before completion: '+err.message);}finally{btn.disabled=false;}
+  }catch(err){console.error(err);showToast('Import failed: '+err.message);btn.textContent=`Confirm ${rows.length} Valid Row(s)`;}finally{btn.disabled=false;}
 }
 
 function getFilteredRecordsForExport(){
