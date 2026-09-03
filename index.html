@@ -3385,6 +3385,9 @@ function importLongRoll(file){
       }
       if(!imported.length){showToast('No employee rows were found. Check the Long Roll headers.');return;}
       const scopeSector = (isParent() && window.msmActiveSector && window.msmActiveSector!=='full') ? (msmSectorByKey(window.msmActiveSector)||'') : '';
+      if(isParent() && window.msmActiveSector && window.msmActiveSector!=='full' && !scopeSector){
+        showToast('⚠ This Sector is not registered yet — go to the Region page and click "+ Add Sector" first, then re-import, or these rows will save without a Sector tag and that Sector\'s login will not see them.');
+      }
       imported.forEach(rec=>{
         rec.clientproject=rec.clientproject||myClientProject();
         if(!isParent() && mySector()) rec.sector=rec.sector||mySector();
