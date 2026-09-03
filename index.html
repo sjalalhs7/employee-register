@@ -3920,6 +3920,7 @@ async function msmFixDuplicateSno(){
   }catch(e){console.error(e);showToast('Renumber failed: '+e.message);}
 }
 window.msmFixDuplicateSno=msmFixDuplicateSno;
+async function msmAddRegion(){
   if(!isParent())return;const input=document.getElementById('msmNewRegionName'),name=msmNormRegionName(input?.value);if(!name)return showToast('Enter a region name.');if((window.msmRegionCatalog||[]).some(r=>r.name.toLowerCase()===name.toLowerCase()))return showToast('That region already exists.');
   try{await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(name)).set({name,regionId:msmRegionKeyFromName(name),sectors:[],createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});window.msmRegionCatalog.push({name,sectors:[]});window.msmRegionCatalog.sort((a,b)=>a.name.localeCompare(b.name));input.value='';msmRenderSectorManager();msmRenderRegionPanel();await writeAuditLog('ADD_REGION',name,{region:name});showToast(`${name} added.`);}catch(e){showToast('Could not add region: '+e.message);}
 }
