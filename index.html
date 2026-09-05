@@ -807,7 +807,14 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 :root{--msmNavy:#06152f;--msmPanel:#0b1d3c;--msmLine:#2b5ea5;--msmGold:#f6c94f;--msmBlue:#2388ff;--msmGreen:#20c879;--msmOrange:#ff9b27;--msmPurple:#8b5cf6;--msmRed:#e53955;}
 #sectorPortal{display:none!important}
 #publicSeoInfo{display:none!important}
-#appRoot{background:radial-gradient(circle at 15% -5%,rgba(35,136,255,.55),transparent 42%),radial-gradient(circle at 92% 8%,rgba(229,57,85,.48),transparent 40%),radial-gradient(circle at 50% 100%,rgba(35,136,255,.30),transparent 55%),linear-gradient(160deg,#123061 0%,#1a2f57 45%,#33123a 100%);color:#f4f7ff;min-height:100vh}
+#appRoot{background:
+  linear-gradient(115deg,transparent 42%,rgba(255,255,255,.10) 44%,rgba(255,255,255,.03) 46%,transparent 48%),
+  linear-gradient(112deg,transparent 58%,rgba(120,190,255,.16) 60%,transparent 63%),
+  radial-gradient(circle at 12% -8%,rgba(35,136,255,.60),transparent 42%),
+  radial-gradient(circle at 95% 6%,rgba(229,57,85,.52),transparent 40%),
+  radial-gradient(circle at 50% 105%,rgba(35,136,255,.32),transparent 55%),
+  linear-gradient(160deg,#0f2a5c 0%,#1a2f57 42%,#5c1440 78%,#33123a 100%);
+  color:#f4f7ff;min-height:100vh}
 #msmLoginPage{min-height:100vh;display:grid;place-items:center;padding:24px;background:radial-gradient(circle at 20% 15%,rgba(30,102,205,.25),transparent 30%),radial-gradient(circle at 85% 85%,rgba(179,27,52,.18),transparent 35%),linear-gradient(135deg,#030a18,#071a38 55%,#12091b)}
 .msm-login-card{width:min(520px,100%);padding:30px 28px!important;border:1px solid rgba(246,201,79,.48)!important;border-radius:24px!important;background:linear-gradient(155deg,rgba(8,24,52,.98),rgba(4,12,28,.98))!important;box-shadow:0 28px 90px rgba(0,0,0,.55),inset 0 1px rgba(255,255,255,.08)!important;color:#fff!important;overflow:hidden}
 .msm-login-card:before{content:""!important;position:absolute!important;inset:auto 8% 0!important;height:4px!important;background:linear-gradient(90deg,#0c5fff,#f5c44a,#d92c48)!important;opacity:1!important;transform:none!important}
@@ -1425,15 +1432,15 @@ body{overflow-x:hidden!important}
     <button onclick="msmHomeAddRegion()">＋ Add Region</button><button onclick="msmHomeAddSector()">＋ Add Sector</button><button onclick="msmHomeTransferMenu()">⇅ Import / Export</button><button onclick="msmFixDuplicateSno()">🔢 Fix Duplicate S No</button><button onclick="msmOpenRecycle()">♜ Recycle Bin</button><button onclick="msmHomeGo('audit')">◉ Audit Logs</button><button onclick="msmHomeGo('admin')">♙ Manage Users</button><button onclick="msmInstallApp()">▣ Install App</button><button class="danger" onclick="doSignOut()">↩ Sign Out</button>
   </div>
   <section class="msm-shell msm-screensaver" id="msmScreensaver" aria-label="MSM Longroll Database welcome screensaver">
-  <div class="msm-screen-scene sunshine active" data-scene="sunshine"><div class="msm-screen-title"><span>MSM Security • Pakistan • Clear Blue Sky</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Faisal Mosque</div></div>
-  <div class="msm-screen-scene snow" data-scene="snow"><div class="msm-screen-title"><span>MSM Security • Pakistan • Snowy Night</span></div><div class="msm-weather"><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Snowfall</div></div>
-  <div class="msm-screen-scene autumn" data-scene="autumn"><div class="msm-screen-title"><span>MSM Security • Pakistan • Autumn Breeze</span></div><div class="msm-weather"><span class="msm-leaf">🍂</span><span class="msm-leaf">🍁</span><span class="msm-leaf">🍂</span><span class="msm-leaf">🍁</span><span class="msm-leaf">🍂</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">Original MSM Guards Salute • Autumn Breeze</div></div>
-  <div class="msm-screen-scene summer" data-scene="summer"><div class="msm-screen-title"><span>MSM Security • Pakistan • Summer Duty</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">On Duty • Every Season, Every Hour</div></div>
-  <div class="msm-screen-scene spring" data-scene="spring"><div class="msm-screen-title"><span>MSM Security • Pakistan • Spring Watch</span></div><div class="msm-weather"><span class="msm-petal">🌸</span><span class="msm-petal">🌸</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span><span class="msm-petal">🌼</span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">On Duty • Every Season, Every Hour</div></div>
-  <div class="msm-screen-scene night" data-scene="night"><div class="msm-screen-title"><span>MSM Security • Pakistan • Night Watch</span></div><div class="msm-weather"><span class="msm-star"></span><span class="msm-star"></span><span class="msm-star"></span><span class="msm-star"></span><span class="msm-star"></span><span class="msm-star"></span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">On Guard 24/7 • Day &amp; Night</div></div>
-  <div class="msm-screen-scene rain" data-scene="rain"><div class="msm-screen-title"><span>MSM Security • Pakistan • Monsoon Duty</span></div><div class="msm-weather"><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span></div><div class="msm-screen-overlay"></div><div class="msm-screen-caption">On Duty in Every Weather Condition</div></div>
+  <div class="msm-screen-scene sunshine active" data-scene="sunshine"><div class="msm-screen-overlay"></div></div>
+  <div class="msm-screen-scene snow" data-scene="snow"><div class="msm-weather"><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span><span class="msm-snowflake">❄</span></div><div class="msm-screen-overlay"></div></div>
+  <div class="msm-screen-scene autumn" data-scene="autumn"><div class="msm-weather"><span class="msm-leaf">🍂</span><span class="msm-leaf">🍁</span><span class="msm-leaf">🍂</span><span class="msm-leaf">🍁</span><span class="msm-leaf">🍂</span></div><div class="msm-screen-overlay"></div></div>
+  <div class="msm-screen-scene summer" data-scene="summer"><div class="msm-screen-overlay"></div></div>
+  <div class="msm-screen-scene spring" data-scene="spring"><div class="msm-weather"><span class="msm-petal">🌸</span><span class="msm-petal">🌸</span><span class="msm-petal">🌼</span><span class="msm-petal">🌸</span><span class="msm-petal">🌼</span></div><div class="msm-screen-overlay"></div></div>
+  <div class="msm-screen-scene night" data-scene="night"><div class="msm-weather"><span class="msm-star"></span><span class="msm-star"></span><span class="msm-star"></span><span class="msm-star"></span><span class="msm-star"></span><span class="msm-star"></span></div><div class="msm-screen-overlay"></div></div>
+  <div class="msm-screen-scene rain" data-scene="rain"><div class="msm-weather"><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span><span class="msm-raindrop"></span></div><div class="msm-screen-overlay"></div></div>
   <div class="msm-screen-dots"><button class="msm-screen-dot active" data-screen="0" aria-label="Sunshine scene"></button><button class="msm-screen-dot" data-screen="1" aria-label="Snow scene"></button><button class="msm-screen-dot" data-screen="2" aria-label="Autumn scene"></button><button class="msm-screen-dot" data-screen="3" aria-label="Summer scene"></button><button class="msm-screen-dot" data-screen="4" aria-label="Spring scene"></button><button class="msm-screen-dot" data-screen="5" aria-label="Night scene"></button><button class="msm-screen-dot" data-screen="6" aria-label="Rain scene"></button></div>
-  <div class="msm-screen-welcome" id="msmHeroWelcome" style="position:relative"><div class="msm-rainbow-glow"></div><div class="quote">“Your Safety… Our Priority”</div><h2 id="msmHeroHeadline">WELCOME TO<br><span class="msm-rainbow-text">MSM LONGROLL DATABASE</span></h2><p id="msmHeroTagline">PARENT / ADMIN CONTROL — REGIONS • SECTORS • LOCATIONS • CLIENTS</p><button class="msm-primary" onclick="msmHomeGo('database')">Open Longroll Database →</button><div class="msm-motto">Organized • Digital • Secure</div><button id="msmHeroEditBtn" style="display:none;position:absolute;top:0;right:0;pointer-events:auto;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.45);color:#fff;border-radius:8px;padding:6px 10px;font-size:11px" onclick="msmHomeEditHero()">✎ Edit Welcome Text</button></div>
+  <div class="msm-screen-welcome" id="msmHeroWelcome" style="position:relative"><div class="msm-rainbow-glow"></div><h2 id="msmHeroHeadline" style="font-size:clamp(22px,4vw,40px)">“Your Safety… Our Priority”</h2><button class="msm-primary" onclick="msmHomeGo('database')">Open Database →</button><button id="msmHeroEditBtn" style="display:none;position:absolute;top:0;right:0;pointer-events:auto;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.45);color:#fff;border-radius:8px;padding:6px 10px;font-size:11px" onclick="msmHomeEditHero()">✎ Edit Welcome Text</button></div>
 </section>
   <main class="msm-shell" id="msmHomeTop">
     <section class="msm-stats"><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">👥<small>ALL RECORDS</small><b id="msmStatRecords">0</b><small>Total Guards</small></div></div><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">▥<small>TOTAL REGIONS</small><b id="msmStatRegions">0</b><small>Active Regions</small></div></div><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">♙<small>TOTAL SECTORS</small><b id="msmStatSectors">0</b><small>All Sectors</small></div></div><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">🛡<small>ACTIVE USERS</small><b id="msmStatUsers">—</b><small>Authorized Users</small></div></div><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">♜<small>RECYCLE BIN</small><b id="msmStatRecycle">0</b><small>Deleted Records</small></div></div></section>
@@ -1475,6 +1482,7 @@ body{overflow-x:hidden!important}
     <button class="tab-btn" data-tab="audit" id="auditTabBtn" style="display:none;" onclick="switchTab('audit')">Audit Trail</button>
   </div>
   <div class="actions">
+    <button class="btn btn-sm" onclick="msmHomeGo('top')">⌂ Back to Dashboard</button>
     <span class="count-pill" id="userBadge" style="margin-right:4px;"></span>
     <button class="btn btn-sm" onclick="doSignOut()">Sign out</button>
     <button class="btn" onclick="printLiveForm()">🖨 Print Enrollment Form (2 + Verification)</button>
@@ -4917,13 +4925,21 @@ if ('serviceWorker' in navigator) {
  function sectorsFor(r){ if(typeof window.msmSectorsForRegion==='function') return window.msmSectorsForRegion(r)||[]; const id=ridOf(r); return (window.msmSectorCatalog||[]).filter(s=>norm(s.regionId||'')===id).map(s=>s.name||s); }
  function homeRole(){const role=getAccess()?.role||''; return role==='parent'?'Parent Master':role==='regional'?'Regional Office':role==='client'?'Client / Sector':'Authorized User';}
  window.msmHomeGo=function(target){
-  if(target==='top'){window.scrollTo({top:0,behavior:'smooth'});return;}
+  const dash=document.getElementById('msmHome');
+  if(target==='top'){if(dash)dash.style.display='';document.querySelector('main')?.style && (document.querySelector('main').style.display='none');window.scrollTo({top:0,behavior:'smooth'});return;}
   if(target==='regions'){document.getElementById('msmHomeRegions')?.scrollIntoView({behavior:'smooth'});return;}
-  if(target==='database'){if(typeof window.switchTab==='function')window.switchTab('register');document.querySelector('.cover')?.scrollIntoView({behavior:'smooth'});return;}
-  if(target==='form'){if(typeof window.switchTab==='function')window.switchTab('form');document.querySelector('.cover')?.scrollIntoView({behavior:'smooth'});return;}
-  if(target==='instructions'){if(typeof window.switchTab==='function')window.switchTab('instructions');document.querySelector('.tabbar')?.scrollIntoView({behavior:'smooth'});return;}
-  if(target==='admin'){if(typeof window.switchTab==='function')window.switchTab('admin');document.querySelector('.tabbar')?.scrollIntoView({behavior:'smooth'});return;}
-  if(target==='audit'){if(typeof window.switchTab==='function')window.switchTab('audit');document.querySelector('.tabbar')?.scrollIntoView({behavior:'smooth'});return;}
+  const openTool=(tab,scrollSel)=>{
+    if(dash) dash.style.display='none';
+    const mainEl=document.querySelector('main'); if(mainEl) mainEl.style.display='block';
+    if(typeof window.switchTab==='function') window.switchTab(tab);
+    const target=document.querySelector(scrollSel)||mainEl;
+    target?.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  if(target==='database'){openTool('register','.tabbar');return;}
+  if(target==='form'){openTool('form','.tabbar');return;}
+  if(target==='instructions'){openTool('instructions','.tabbar');return;}
+  if(target==='admin'){openTool('admin','.tabbar');return;}
+  if(target==='audit'){openTool('audit','.tabbar');return;}
  };
  const msmSiteDefaults={
    about:{title:'About MSM SECURITY GUARDS PVT LTD',en:'MSM SECURITY GUARDS PVT LTD provides structured security workforce management through the MSM Longroll Database. The system organizes employee enrollment, regions, sectors, locations, clients, records, audit history and controlled access.',ur:'MSM SECURITY GUARDS PVT LTD کے لیے MSM Longroll Database ایک منظم نظام ہے جس کے ذریعے ملازمین کا اندراج، Regions، Sectors، Locations، Clients، Records، Audit History اور محدود User Access محفوظ اور منظم کیا جاتا ہے۔'},
@@ -4967,24 +4983,20 @@ if ('serviceWorker' in navigator) {
  window.msmApplyHeroContent=function(){
   const h=window.msmSiteContentCache['hero'];if(!h)return;
   const headline=document.getElementById('msmHeroHeadline');
-  const tagline=document.getElementById('msmHeroTagline');
-  if(headline&&h.line1&&h.line2) headline.innerHTML=`${esc(h.line1)}<br><span class="msm-rainbow-text">${esc(h.line2)}</span>`;
-  if(tagline&&h.tagline) tagline.textContent=h.tagline;
+  if(headline&&h.line1) headline.textContent=h.line1;
  };
  window.msmHomeEditHero=function(){
   if(!(getAccess()?.role==='parent'))return window.showToast?.('Only Parent/Admin can edit the homepage welcome text.');
-  const cur=window.msmSiteContentCache['hero']||{line1:'WELCOME TO',line2:'MSM LONGROLL DATABASE',tagline:'PARENT / ADMIN CONTROL — REGIONS • SECTORS • LOCATIONS • CLIENTS'};
+  const cur=window.msmSiteContentCache['hero']||{line1:'“Your Safety… Our Priority”'};
   document.getElementById('msmHomeModal')?.remove(); const m=document.createElement('div');m.id='msmHomeModal';m.className='msm-modal';
-  m.innerHTML=`<div class="msm-modal-card"><button class="msm-modal-close" onclick="document.getElementById('msmHomeModal').remove()">✕</button><h2>Edit Homepage Welcome Text</h2><label style="display:block;margin-top:10px">Line 1<br><input id="msmHeroEdit_l1" value="${esc(cur.line1)}" style="width:100%"></label><label style="display:block;margin-top:10px">Line 2 (rainbow highlight)<br><input id="msmHeroEdit_l2" value="${esc(cur.line2)}" style="width:100%"></label><label style="display:block;margin-top:10px">Tagline<br><input id="msmHeroEdit_tag" value="${esc(cur.tagline)}" style="width:100%"></label><div class="msm-region-tools" style="margin-top:14px"><button onclick="msmHomeSaveHero()">💾 Save</button><button onclick="document.getElementById('msmHomeModal').remove()">Cancel</button></div></div>`;
+  m.innerHTML=`<div class="msm-modal-card"><button class="msm-modal-close" onclick="document.getElementById('msmHomeModal').remove()">✕</button><h2>Edit Homepage Welcome Text</h2><label style="display:block;margin-top:10px">Welcome line (single line shown over the photo)<br><input id="msmHeroEdit_l1" value="${esc(cur.line1)}" style="width:100%"></label><div class="msm-region-tools" style="margin-top:14px"><button onclick="msmHomeSaveHero()">💾 Save</button><button onclick="document.getElementById('msmHomeModal').remove()">Cancel</button></div></div>`;
   document.body.appendChild(m);
  };
  window.msmHomeSaveHero=async function(){
   if(!(getAccess()?.role==='parent'))return window.showToast?.('Only Parent/Admin can edit the homepage welcome text.');
   const line1=(document.getElementById('msmHeroEdit_l1')?.value||'').trim();
-  const line2=(document.getElementById('msmHeroEdit_l2')?.value||'').trim();
-  const tagline=(document.getElementById('msmHeroEdit_tag')?.value||'').trim();
-  if(!line1||!line2) return window.showToast?.('Both headline lines are required.');
-  const payload={line1,line2,tagline,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:(getUser()?.email||'').toLowerCase()};
+  if(!line1) return window.showToast?.('The welcome line is required.');
+  const payload={line1,updatedAt:firebase.firestore.FieldValue.serverTimestamp(),updatedBy:(getUser()?.email||'').toLowerCase()};
   try{
    await db.collection(window.msmSiteContentCollection()).doc('hero').set(payload,{merge:true});
    window.msmSiteContentCache['hero']=payload;
