@@ -4208,8 +4208,22 @@ async function msmFetchRecycleRowsOnce(){
     return s.docs.map(d=>({id:d.id,...d.data()}));
   }
   if(isRegional()){
-    const s=await db.collection(MSM_RECYCLE_COLLECTION).where('region','==',myRegion()).get();
-    return s.docs.map(d=>({id:d.id,...d.data()}));
+    /* Kept consistent with the fixed window.msmLoadRecycle: merge by regionId AND by
+       legacy region name so "Delete All Deleted Data" always matches what's on screen.
+       NOTE: myRegionIdFinal() is scoped inside a different inline-script IIFE and is not
+       reachable from here, so regionId is read directly off currentAccess instead. */
+    const rid=String(currentAccess?.regionId||'').trim();
+    const regionName=myRegion();
+    const bucket=new Map();
+    if(rid){
+      const s1=await db.collection(MSM_RECYCLE_COLLECTION).where('regionId','==',rid).get();
+      s1.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));
+    }
+    if(regionName){
+      const s2=await db.collection(MSM_RECYCLE_COLLECTION).where('region','==',regionName).get();
+      s2.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));
+    }
+    return [...bucket.values()];
   }
   const client=myClientProject(), sector=mySector();
   const s1=await db.collection(MSM_RECYCLE_COLLECTION).where('clientproject','==',client).get();
@@ -4372,18 +4386,9 @@ if ('serviceWorker' in navigator) {
     showToast('Install option not shown yet. In Chrome use ⋮ > Add to Home screen / Install app.');
   };
 
-  window.msmInfo=function(type){
-    const data={
-      about:{title:'About MSM Longroll',body:'MSM SECURITY GUARDS PVT LTD — MSM Longroll Database. A controlled employee enrollment, long-roll, region/sector and audit system designed for authorized users.'},
-      services:{title:'Services',body:'Employee enrollment • Long Roll register • Region/Sector management • Excel import/export • Print forms • Audit trail • Recycle Bin • Authorized Gmail access.'},
-      contact:{title:'Contact / Account',body:'MSM SECURITY GUARDS PVT LTD\nDesigned by Syed Jalal Hussain Shah\nDatabase access is restricted to authorized accounts. After login, your authorized Gmail, role and sector/client scope are shown in the upper menu.'}
-    }[type]||null;
-    if(!data)return;
-    const old=document.getElementById('msmInfoModal');if(old)old.remove();
-    const modal=document.createElement('div');modal.id='msmInfoModal';modal.className='msm-info-modal';
-    modal.innerHTML='<div class="msm-info-card"><button class="msm-info-close" onclick="document.getElementById(\'msmInfoModal\')?.remove()">✕</button><h2>'+escapeHtml(data.title)+'</h2><p>'+escapeHtml(data.body).replace(/\n/g,'<br>')+'</p><button class="btn btn-primary" onclick="document.getElementById(\'msmInfoModal\')?.remove()">Close</button></div>';
-    modal.addEventListener('click',e=>{if(e.target===modal)modal.remove();});document.body.appendChild(modal);
-  };
+  /* NOTE (audit): the original msmInfo (plain About/Services/Contact modal) was
+     superseded by richInfo() further down (nicer structured HTML cards) and was
+     dead code — removed. */
 
   function makePublicNav(){
     const page=document.getElementById('msmLoginPage');if(!page||document.getElementById('msmPublicNav'))return;
@@ -4409,44 +4414,21 @@ if ('serviceWorker' in navigator) {
       '<span class="account" title="Authorized account">'+escapeHtml(email)+' · '+role+'</span>';
   };
 
-  window.msmAddRegion=async function(){
-    if(!isParent())return showToast('Parent access is required to add a region.');
-    const input=document.getElementById('msmNewRegionName'),name=msmNormRegionName(input?.value); if(!name)return showToast('Enter a region name.');
-    if((window.msmRegionCatalog||[]).some(r=>r.name.toLowerCase()===name.toLowerCase()))return showToast('That region already exists.');
-    try{ await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(name)).set({name,sectors:[],locations:[],createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()}); window.msmRegionCatalog.push({name,sectors:[],locations:[]}); window.msmRegionCatalog.sort((a,b)=>a.name.localeCompare(b.name)); if(input)input.value=''; msmRenderSectorManager();msmRenderRegionPanel();msmRenderTopMenu();showToast(name+' added successfully.'); }catch(e){console.error(e);showToast('Could not add region: '+e.message);}
-  };
-  window.msmAddSector=async function(){
-    if(!(isParent()||isRegional()))return showToast('Parent or Regional Office access is required.');
-    const input=document.getElementById('msmNewSectorName'),name=msmNormSectorName(input?.value); const selected=msmNormRegionName(document.getElementById('msmNewSectorRegion')?.value);
-    const region=isRegional()?myRegion():selected; if(!name)return showToast('Enter a sector name.'); if(!region)return showToast('Select a Region first.');
-    if(isRegional()&&region.toLowerCase()!==myRegion().toLowerCase())return showToast('You can only manage your assigned Region.');
-    if((window.msmSectorCatalog||[]).some(n=>n.toLowerCase()===name.toLowerCase()))return showToast('That sector already exists. Use Assign to move it.');
-    try{ await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).set({name,region,createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()}); let r=msmRegionByKey(msmRegionKeyFromName(region)); if(!r){r={name:region,sectors:[],locations:[]};window.msmRegionCatalog.push(r);} if(!r.sectors.some(s=>s.toLowerCase()===name.toLowerCase()))r.sectors.push(name); await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(region)).set({name:r.name,sectors:r.sectors,locations:r.locations||[],updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); window.msmSectorCatalog=[...(window.msmSectorCatalog||[]),name].sort((a,b)=>a.localeCompare(b)); if(input)input.value='';msmPopulateSectorFilter();msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();showToast(name+' Sector added to '+region+'.'); }catch(e){console.error(e);showToast('Could not add sector: '+e.message);}
-  };
-  window.msmAssignSectorToRegion=async function(encodedRegion){
-    if(!(isParent()||isRegional()))return showToast('Parent or Regional Office access is required.');
-    const regionName=decodeURIComponent(encodedRegion||''); if(isRegional()&&regionName.toLowerCase()!==myRegion().toLowerCase())return showToast('You can only manage your assigned Region.');
-    const sel=document.getElementById('regionMove_'+msmRegionKeyFromName(regionName)),sector=msmNormSectorName(sel?.value),target=msmRegionByKey(msmRegionKeyFromName(regionName)); if(!target)return showToast('Region not found.'); if(!sector)return showToast('Select a sector first.');
-    try{ for(const r of window.msmRegionCatalog||[]){ if(r.sectors.some(s=>s.toLowerCase()===sector.toLowerCase()) && r.name.toLowerCase()!==regionName.toLowerCase()){ if(isRegional())return showToast('Regional Office can only arrange sectors inside its own Region.'); r.sectors=r.sectors.filter(s=>s.toLowerCase()!==sector.toLowerCase()); await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors},{merge:true}); } }
-      if(!target.sectors.some(s=>s.toLowerCase()===sector.toLowerCase()))target.sectors.push(sector); await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(target.name)).set({name:target.name,sectors:target.sectors,locations:target.locations||[],updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(sector)).set({name:sector,region:target.name,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true}); msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();showToast(sector+' assigned to '+target.name+'.');
-    }catch(e){console.error(e);showToast('Could not assign sector: '+e.message);}
-  };
+  /* NOTE (audit): the original msmAddRegion / msmAddSector / msmAssignSectorToRegion
+     defined here were superseded by later "permanent regionId/sectorId" versions
+     further down this file and were dead code (verified: never called, their captured
+     "original" references were never invoked either) — removed to stop future edits
+     from wasting time on functions that don't run. msmUnassignSectorFromRegion and
+     msmAddLocation below have no later override, so they were left in place. */
   window.msmUnassignSectorFromRegion=async function(encodedRegion,encodedSector){
     if(!(isParent()||isRegional()))return; const regionName=decodeURIComponent(encodedRegion||''),sector=decodeURIComponent(encodedSector||''); if(isRegional()&&regionName.toLowerCase()!==myRegion().toLowerCase())return showToast('You can only manage your assigned Region.'); const r=msmRegionByKey(msmRegionKeyFromName(regionName)); if(!r)return; try{r.sectors=r.sectors.filter(s=>s.toLowerCase()!==sector.toLowerCase());await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors,locations:r.locations||[]},{merge:true});await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(sector)).set({name:sector,region:'',regionId:''},{merge:true});msmRenderSectorManager();msmRenderRegionPanel();msmRenderSectorNav();showToast(sector+' removed from '+regionName+'.');}catch(e){showToast('Could not remove sector: '+e.message);}
   };
   window.msmAddLocation=async function(encodedRegion){
     if(!(isParent()||isRegional()))return showToast('Parent or Regional Office access is required.'); const regionName=decodeURIComponent(encodedRegion||''); if(isRegional()&&regionName.toLowerCase()!==myRegion().toLowerCase())return showToast('You can only update your assigned Region.'); const r=msmRegionByKey(msmRegionKeyFromName(regionName)); if(!r)return; const input=document.getElementById('locationInput_'+msmRegionKeyFromName(regionName)); const text=String(input?.value||'').trim(); if(!text)return showToast('Enter the Regional Office location.'); r.locations=Array.isArray(r.locations)?r.locations:[]; r.locations.push(text); try{await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(r.name)).set({name:r.name,sectors:r.sectors||[],locations:r.locations,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});if(input)input.value='';msmRenderSectorManager();msmRenderRegionPanel();showToast('Regional Office location added.');}catch(e){showToast('Could not save location: '+e.message);}
   };
-  window.msmRenderSectorManager=function(){
-    const box=document.getElementById('msmSectorManager'); if(!box || !(isParent()||isRegional())){if(box)box.innerHTML='';return;}
-    const regions=isParent()?(window.msmRegionCatalog||[]):(msmRegionByKey(msmRegionKeyFromName(myRegion()))?[msmRegionByKey(msmRegionKeyFromName(myRegion()))]:[]);
-    const canAddRegion=isParent();
-    box.innerHTML=`<div class="helper-note"><strong>REGION / SECTOR MANAGER</strong><br><span>English:</span> ${isParent()?'Parent can create unlimited Regions and Sectors.':'Regional Office can manage only its assigned Region.'}<br><span dir="rtl">اردو:</span> ${isParent()?'Parent جتنے چاہے Regions اور Sectors بنا اور منتقل کر سکتا ہے۔':'Regional Office صرف اپنے مقررہ Region میں Sector شامل اور ترتیب دے سکتا ہے۔'}</div>
-      ${canAddRegion?`<div class="sector-manager-row"><input id="msmNewRegionName" class="search-input" placeholder="New Region e.g. North Region"><button type="button" class="btn btn-sm btn-primary" onclick="msmAddRegion()">＋ Add Region</button></div>`:''}
-      <div class="sector-manager-row" style="margin-top:8px"><input id="msmNewSectorName" class="search-input" placeholder="New Sector e.g. Peshawar Sector"><select id="msmNewSectorRegion">${isParent()?'<option value="">Select Region</option>':''}${regions.map(r=>`<option value="${escapeHtml(r.name)}">${escapeHtml(r.name)}</option>`).join('')}</select><button type="button" class="btn btn-sm btn-primary" onclick="msmAddSector()">＋ Add Sector</button></div>
-      <div class="region-manager-grid">${regions.map(r=>{const sectors=msmSectorsForRegion(r),locations=Array.isArray(r.locations)?r.locations:[];return `<div class="region-manager-card"><strong>${escapeHtml(r.name)}</strong><small>${sectors.length} sector${sectors.length===1?'':'s'} assigned</small><div class="mini-row"><select id="regionMove_${msmRegionKeyFromName(r.name)}"><option value="">Select sector to add / move</option>${(window.msmSectorCatalog||[]).filter(s=>!sectors.some(x=>x.toLowerCase()===s.toLowerCase())).map(s=>`<option value="${escapeHtml(s)}">${escapeHtml(s)}</option>`).join('')}</select><button type="button" class="btn btn-sm" onclick="msmAssignSectorToRegion('${encodeURIComponent(r.name)}')">Assign</button></div><div class="sector-list">${sectors.map(s=>`<span class="sector-chip">${escapeHtml(s)} <button type="button" title="Remove" onclick="msmUnassignSectorFromRegion('${encodeURIComponent(r.name)}','${encodeURIComponent(s)}')">×</button></span>`).join('')||'<span class="msm-region-sub">No sectors yet.</span>'}</div><div class="region-location-list"><strong>Regional Office / Locations</strong>${locations.map(x=>`<div>📍 ${escapeHtml(x)}</div>`).join('')||'<div class="msm-region-sub">No location added yet.</div>'}<div class="mini-row"><input id="locationInput_${msmRegionKeyFromName(r.name)}" placeholder="Add regional office location"><button type="button" class="btn btn-sm" onclick="msmAddLocation('${encodeURIComponent(r.name)}')">Add Location</button></div></div></div>`}).join('')}</div>`;
-    document.getElementById('msmNewSectorName')?.addEventListener('keydown',e=>{if(e.key==='Enter')msmAddSector();});
-  };
+  /* NOTE (audit): the original msmRenderSectorManager defined here was superseded by
+     a later version further down (which adds populateRegionalSectorField() for
+     Regional Office users) and was dead code — removed for the same reason as above. */
 
   function bootPublic(){makePublicNav();msmRenderTopMenu();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bootPublic);else bootPublic();
@@ -4556,30 +4538,11 @@ if ('serviceWorker' in navigator) {
     }
   };
 
-  const originalAddSector=window.msmAddSector;
-  window.msmAddSector=async function(){
-    if(!(isParent()||isRegional())) return showToast('Parent or Regional Office access is required.');
-    const input=document.getElementById('msmNewSectorName');
-    const name=msmNormSectorName(input?.value);
-    const selected=msmNormRegionName(document.getElementById('msmNewSectorRegion')?.value);
-    const region=isRegional()?myRegion():selected;
-    if(!name) return showToast('Enter a sector name.');
-    if(!region) return showToast('Select a Region first.');
-    if(isRegional() && region.toLowerCase()!==myRegion().toLowerCase()) return showToast('You can only manage your assigned Region.');
-    if((window.msmSectorCatalog||[]).some(n=>n.toLowerCase()===name.toLowerCase())) return showToast('That Sector already exists. Use the Assign option to add/move it.');
-    try{
-      await db.collection(MSM_SECTOR_COLLECTION).doc(msmSectorKeyFromName(name)).set({name,region,createdBy:(currentUser.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()});
-      let r=msmRegionByKey(msmRegionKeyFromName(region));
-      if(!r){ r={name:region,sectors:[],locations:[]}; window.msmRegionCatalog.push(r); }
-      if(!r.sectors.some(s=>s.toLowerCase()===name.toLowerCase())) r.sectors.push(name);
-      await db.collection(MSM_REGION_COLLECTION).doc(msmRegionKeyFromName(region)).set({name:r.name,sectors:r.sectors,locations:r.locations||[],updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
-      window.msmSectorCatalog=[...(window.msmSectorCatalog||[]),name].sort((a,b)=>a.localeCompare(b));
-      if(input) input.value='';
-      msmPopulateSectorFilter(); window.msmRenderSectorManager(); msmRenderRegionPanel(); msmRenderSectorNav();
-      await writeAuditLog('ADD_SECTOR',name,{sector:name,region});
-      showToast(`${name} Sector added to ${region}.`);
-    }catch(e){ console.error(e); showToast('Could not add sector: '+e.message); }
-  };
+  /* NOTE (audit): this name-key-based msmAddSector (with an ADD_SECTOR audit log entry)
+     was itself superseded by a third, permanent-sectorId version further down the file
+     ("MSM PROFESSIONAL FINAL STABILITY LAYER"), which also writes an ADD_SECTOR audit
+     entry — so nothing was lost by removing this dead middle layer. originalAddSector
+     above was captured but never called by this function, confirmed by search. */
 
   const originalAssign=window.msmAssignSectorToRegion;
   window.msmAssignSectorToRegion=async function(encodedRegion){
@@ -4970,12 +4933,35 @@ if ('serviceWorker' in navigator) {
       return;
     }
     if(isRegional()){
+      /* BUG FOUND IN AUDIT: this final layer used to query ONLY where('regionId','==',rid).
+         Any record created before the permanent regionId system existed (only has the old
+         'region'/'sector'/'clientproject' text fields, no regionId) was invisible to Regional
+         Office users — even though an earlier patch in this same file ("Regional record
+         visibility: query both modern sector tags and legacy Client/Project tags") fixed
+         exactly this, before being silently overwritten by this final layer. Fixed by
+         merging the modern regionId query with the legacy per-sector fallback queries. */
       const rid=myRegionIdFinal();
-      if(!rid){ apply([]); return; }
-      recordsUnsub=db.collection(RECORDS_COLLECTION).where('regionId','==',rid).onSnapshot(
-        s=>apply(s.docs.map(d=>({id:d.id,...d.data()}))),
-        e=>showToast('Could not load regional records: '+e.message)
-      );
+      const legacySectors=[...new Set((typeof myRegionSectors==='function'?myRegionSectors():[]))];
+      if(!rid && !legacySectors.length){ apply([]); return; }
+      const unsubs=[]; const bucket=new Map();
+      const mergeAndApply=()=>apply([...bucket.values()]);
+      if(rid){
+        unsubs.push(db.collection(RECORDS_COLLECTION).where('regionId','==',rid).onSnapshot(
+          s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));mergeAndApply();},
+          e=>showToast('Could not load regional records: '+e.message)
+        ));
+      }
+      legacySectors.forEach(sec=>{
+        unsubs.push(db.collection(RECORDS_COLLECTION).where('sector','==',sec).onSnapshot(
+          s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));mergeAndApply();},
+          e=>console.warn('Legacy sector query failed:',sec,e.message)
+        ));
+        unsubs.push(db.collection(RECORDS_COLLECTION).where('clientproject','==',sec).onSnapshot(
+          s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));mergeAndApply();},
+          e=>console.warn('Legacy client-project query failed:',sec,e.message)
+        ));
+      });
+      recordsUnsub=()=>unsubs.forEach(u=>{try{u();}catch(e){}});
       return;
     }
     const client=myClientProject(), sid=mySectorIdFinal(), sectorName=mySector();
@@ -4999,12 +4985,26 @@ if ('serviceWorker' in navigator) {
       return;
     }
     if(isRegional()){
+      /* Same audit finding as subscribeRecords: regionId-only query hides legacy
+         deleted records (region name only, no regionId yet). Merge both. */
       const rid=myRegionIdFinal();
-      if(!rid){ render([]); return; }
-      window.msmRecycleUnsub=db.collection(MSM_RECYCLE_COLLECTION).where('regionId','==',rid).onSnapshot(
-        s=>render(s.docs.map(d=>({id:d.id,...d.data()}))),
-        e=>showToast('Could not load Regional Recycle Bin: '+e.message)
-      );
+      const regionName=myRegion();
+      if(!rid && !regionName){ render([]); return; }
+      const unsubs=[]; const bucket=new Map();
+      const mergeAndRender=()=>render([...bucket.values()]);
+      if(rid){
+        unsubs.push(db.collection(MSM_RECYCLE_COLLECTION).where('regionId','==',rid).onSnapshot(
+          s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));mergeAndRender();},
+          e=>showToast('Could not load Regional Recycle Bin: '+e.message)
+        ));
+      }
+      if(regionName){
+        unsubs.push(db.collection(MSM_RECYCLE_COLLECTION).where('region','==',regionName).onSnapshot(
+          s=>{s.docs.forEach(d=>bucket.set(d.id,{id:d.id,...d.data()}));mergeAndRender();},
+          e=>console.warn('Legacy regional recycle query failed:',e.message)
+        ));
+      }
+      window.msmRecycleUnsub=()=>unsubs.forEach(u=>{try{u();}catch(e){}});
       return;
     }
     const client=myClientProject(), sid=mySectorIdFinal(), sectorName=mySector();
