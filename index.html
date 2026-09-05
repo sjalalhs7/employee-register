@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script>/* Theme must be set before first paint to avoid a flash of the wrong theme. */
+(function(){try{document.documentElement.setAttribute('data-theme', localStorage.getItem('msmTheme')||'dark');}catch(e){}})();
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>MSM SECURITY GUARDS PVT LTD — Long Roll Database | Stable Regional Manager</title>
@@ -804,7 +807,10 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 }
 
 /* ===== FINAL MSM PROFESSIONAL HOME + REGION EXPERIENCE ===== */
-:root{--msmNavy:#06152f;--msmPanel:#0b1d3c;--msmLine:#2b5ea5;--msmGold:#f6c94f;--msmBlue:#2388ff;--msmGreen:#20c879;--msmOrange:#ff9b27;--msmPurple:#8b5cf6;--msmRed:#e53955;}
+/* NOTE: a dead, unused ":root{--msmNavy...}" variable block was removed here during the audit —
+   it was defined but never referenced by any rule in this file (verified: zero usages).
+   All real theming now lives in the single :root block at the top of <head> plus the
+   [data-theme] override block just before </head>. */
 #sectorPortal{display:none!important}
 #publicSeoInfo{display:none!important}
 #appRoot{background:
@@ -1247,7 +1253,10 @@ button,input,select,textarea{font:inherit;}
 
 <!-- AUDIT-BASED UI/UX POLISH OVERRIDE -->
 <style id="auditDesignPatch">
-:root{--msm-navy:#071b33;--msm-navy2:#0d2d52;--msm-gold:#c9a253;--msm-cream:#f7f3ea;--msm-ink:#142131}
+/* NOTE: a second dead, unused ":root{--msm-navy...}" variable block (note the different
+   naming — hyphenated vs the removed camelCase one) was removed here during the audit.
+   It was never referenced anywhere either. Two abandoned variable systems sitting next
+   to a live one is exactly why previous colour edits appeared to do nothing. */
 html{scroll-behavior:smooth}
 body{overflow-x:hidden!important}
 #msmLoginPage{min-height:100svh!important;padding:92px 16px 34px!important;overflow:visible!important;background:linear-gradient(135deg,#061426 0%,#0d2d52 48%,#10213a 100%)!important}
@@ -1266,8 +1275,113 @@ body{overflow-x:hidden!important}
 .msm-info-card .audit-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin:18px 0}.msm-info-card .audit-item{padding:16px;border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.05)}.msm-info-card .audit-item strong{display:block;color:#f5d58d;margin-bottom:6px}.msm-info-card .audit-note{margin-top:16px;padding:14px;border-left:3px solid #c9a253;background:rgba(201,162,83,.08);border-radius:10px}
 @media(max-width:760px){#msmLoginPage{padding:148px 10px 28px!important}#msmLoginPage>.msm-public-nav{top:8px!important;width:calc(100% - 16px)!important;justify-content:center!important}.msm-public-nav .nav-brand{width:100%!important;justify-content:center!important;margin-right:0!important;font-size:10px!important}.msm-public-nav button{font-size:9px!important;padding:7px 8px!important;min-height:34px!important}.msm-info-modal{padding-top:118px!important}.msm-info-card .audit-grid{grid-template-columns:1fr!important}}
 </style>
+
+<!-- ===================================================================
+     RED + BLUE THEME SYSTEM (light / dark), added during audit.
+     Kept as one separate override layer on purpose: the CSS above has
+     ~15 different blocks that hard-code colours with !important, added
+     over many past edits. Rewriting all of them in place is high-risk.
+     Every rule below targets html[data-theme="..."], which is MORE
+     specific than a bare class selector, so it wins the cascade
+     regardless of source order — this is what makes the toggle actually
+     work everywhere, including parts of the page that don't use CSS
+     variables at all.
+     ==================================================================== -->
+<style id="msmRedBlueTheme">
+  /* Base app (.sheet / register / audit / admin screens) already uses
+     --paper/--navy/--ink variables correctly — re-pointing those two
+     variables per theme reskins that whole part of the app for free. */
+  html[data-theme="dark"]{
+    --paper:#0b1626; --paper-dark:#0f1e33; --ink:#eaf1ff; --ink-soft:#a9bbdb;
+    --navy:#dfe8ff; --navy-soft:#8fb3ff; --steel:#4c7fb0;
+    --brass:#3f7bff; --brass-soft:#e5324a; --line:#1e3252;
+    --danger:#e5324a; --success:#2fbb73; --white:#101d33;
+  }
+  html[data-theme="light"]{
+    --paper:#f5f7fc; --paper-dark:#e9eefb; --ink:#182238; --ink-soft:#4c5b7a;
+    --navy:#16233c; --navy-soft:#1f5fd6; --steel:#3a5f96;
+    --brass:#1f5fd6; --brass-soft:#d6273f; --line:#d7deee;
+    --danger:#c8283f; --success:#1f8a52; --white:#ffffff;
+  }
+
+  /* ---- MSM Home dashboard: hard-coded-hex section, overridden directly ---- */
+  html[data-theme="light"] body,
+  html[data-theme="light"] #appRoot,
+  html[data-theme="light"] .msm-home{background:#eef2fb!important;color:#182238!important;}
+  html[data-theme="light"] .msm-brandbar{background:#ffffff!important;color:#182238!important;border-bottom:1px solid #d7deee!important;}
+  html[data-theme="light"] .msm-topline{background:#16233c!important;color:#eaf1ff!important;}
+  html[data-theme="light"] .msm-nav,html[data-theme="light"] .msm-quick{background:#ffffff!important;border-color:#d7deee!important;}
+  html[data-theme="light"] .msm-nav button,html[data-theme="light"] .msm-quick button{background:#eaf1ff!important;color:#16233c!important;border:1px solid #c9d8f2!important;}
+  html[data-theme="light"] .msm-nav button.active{background:linear-gradient(90deg,#1f5fd6,#3f7bff)!important;color:#fff!important;}
+  html[data-theme="light"] .msm-quick button.danger{background:#d6273f!important;color:#fff!important;}
+  html[data-theme="light"] .msm-regions-wrap,html[data-theme="light"] .msm-widget,html[data-theme="light"] .msm-region-page{
+    background:#ffffff!important;border:1px solid #d7deee!important;color:#182238!important;box-shadow:0 8px 22px rgba(30,60,120,.08)!important;
+  }
+  html[data-theme="light"] .msm-section-head p,html[data-theme="light"] .msm-widget h3,html[data-theme="light"] .msm-bar{color:#3a4867!important;}
+  html[data-theme="light"] .msm-region-card{background:#ffffff!important;border:1px solid #d7deee!important;}
+  html[data-theme="light"] .msm-region-body p{color:#3a4867!important;}
+  html[data-theme="light"] .msm-access{background:#eaf1ff!important;color:#16233c!important;border-color:#c9d8f2!important;}
+  html[data-theme="light"] .msm-region-hero:before{background:linear-gradient(90deg,rgba(255,255,255,.92),rgba(255,255,255,.55),rgba(255,255,255,.15))!important;}
+  html[data-theme="light"] .msm-region-hero,html[data-theme="light"] .msm-region-hero h2,html[data-theme="light"] .msm-region-hero p{color:#16233c!important;}
+  html[data-theme="light"] .msm-sector-card{background:#ffffff!important;border:1px solid #d7deee!important;color:#16233c!important;}
+  html[data-theme="light"] .msm-sector-card small{color:#4c5b7a!important;}
+  html[data-theme="light"] .msm-sector-card button{background:#1f5fd6!important;}
+  html[data-theme="light"] .msm-location-box{background:#f5f8ff!important;border-color:#c9d8f2!important;}
+  html[data-theme="light"] .msm-location-chip{background:#eaf1ff!important;border-color:#c9d8f2!important;color:#16233c!important;}
+  html[data-theme="light"] .msm-modal-card{background:#ffffff!important;color:#182238!important;border-color:#d6273f!important;}
+  html[data-theme="light"] .msm-modal-card h2{color:#c8283f!important;}
+  html[data-theme="light"] .msm-modal-close{background:#d6273f!important;}
+  html[data-theme="light"] .msm-footer{color:#4c5b7a!important;border-top-color:#d7deee!important;}
+  html[data-theme="light"] .msm-footer strong{color:#1f5fd6!important;}
+
+  /* ---- Top nav bars (login page + inside-app), both themes get the red+blue accent ---- */
+  html[data-theme="dark"] .msm-final-topnav,html[data-theme="dark"] .msm-public-nav{
+    background:linear-gradient(90deg,rgba(9,20,38,.97),rgba(70,10,30,.9),rgba(10,28,52,.97))!important;
+    border-color:rgba(62,127,255,.55)!important;
+  }
+  html[data-theme="dark"] .msm-final-topnav button,html[data-theme="dark"] .msm-public-nav button:last-child{
+    background:linear-gradient(135deg,#1f5fd6,#e5324a)!important;border-color:transparent!important;color:#fff!important;
+  }
+  html[data-theme="light"] .msm-final-topnav,html[data-theme="light"] .msm-public-nav{
+    background:linear-gradient(90deg,#eef2fb,#ffe9ec)!important;border-color:#d6273f!important;box-shadow:0 8px 20px rgba(30,60,120,.10)!important;
+  }
+  html[data-theme="light"] .msm-final-topnav .nav-brand,html[data-theme="light"] .msm-public-nav .nav-brand{color:#16233c!important;}
+  html[data-theme="light"] .msm-final-topnav button{background:linear-gradient(135deg,#1f5fd6,#d6273f)!important;color:#fff!important;border-color:transparent!important;}
+  html[data-theme="light"] .msm-final-topnav .account{color:#4c5b7a!important;border-left-color:#d7deee!important;}
+  html[data-theme="light"] .msm-public-nav button{background:#ffffff!important;color:#16233c!important;border-color:#c9d8f2!important;}
+  html[data-theme="light"] .msm-public-nav button:last-child{background:linear-gradient(135deg,#1f5fd6,#d6273f)!important;color:#fff!important;}
+
+  /* ---- Buttons that already use var()-based classes: nudge to red/blue ---- */
+  html[data-theme="dark"] .btn-primary,html[data-theme="light"] .btn-primary{background:#1f5fd6!important;color:#fff!important;border-color:transparent!important;}
+  html[data-theme="dark"] .btn-danger,html[data-theme="light"] .btn-danger{background:#d6273f!important;color:#fff!important;border-color:transparent!important;}
+
+  /* ---- Floating theme toggle ---- */
+  #msmThemeToggle{
+    position:fixed;top:10px;right:10px;z-index:100000;
+    border:1px solid rgba(255,255,255,.35);border-radius:999px;
+    padding:8px 14px;font-size:11px;font-weight:800;letter-spacing:.4px;
+    background:linear-gradient(135deg,#1f5fd6,#d6273f);color:#fff;cursor:pointer;
+    box-shadow:0 6px 18px rgba(0,0,0,.25);
+  }
+  html[data-theme="light"] #msmThemeToggle{border-color:rgba(20,40,80,.15);}
+  @media(max-width:650px){#msmThemeToggle{top:6px;right:6px;padding:7px 10px;font-size:10px;}}
+</style>
 </head>
 <body>
+<button id="msmThemeToggle" onclick="msmToggleTheme()" type="button" title="Switch light / dark theme">☀ Light</button>
+<script>
+function msmApplyTheme(t){
+  document.documentElement.setAttribute('data-theme', t);
+  try{localStorage.setItem('msmTheme', t);}catch(e){}
+  var b=document.getElementById('msmThemeToggle');
+  if(b) b.textContent = t==='light' ? '🌙 Dark' : '☀ Light';
+}
+function msmToggleTheme(){
+  var cur=document.documentElement.getAttribute('data-theme')||'dark';
+  msmApplyTheme(cur==='light' ? 'dark' : 'light');
+}
+msmApplyTheme(document.documentElement.getAttribute('data-theme')||'dark');
+</script>
 
 <!-- ============ SETUP NEEDED (firebaseConfig not filled in yet) ============ -->
 <div id="setupGate" style="display:none; max-width:640px; margin:60px auto; padding:0 20px; font-family:Georgia,serif; color:#22241F;">
@@ -1811,6 +1925,13 @@ body{overflow-x:hidden!important}
     <div id="view-audit" style="display:none;">
       <div class="helper-note">
         <strong>Unified Activity Log:</strong> Parent/Admin only. Create, Update, Delete, Bulk Delete, Transfer, Import, Export, Sign-In and access-management actions are kept in <strong>one activity log</strong>. Nothing is split into a separate delete-log file. Use the filters below to view activity by date/time, client/sector, action or user.
+      </div>
+      <div class="helper-note" style="border-color:var(--danger);display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;">
+        <span><strong style="color:var(--danger);">Danger Zone:</strong> Records already moved to the Recycle Bin, within your access scope — <strong id="auditRecycleCount">…</strong> deleted record(s) currently waiting there.</span>
+        <span style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-sm" onclick="msmOpenRecycle()">♻ Open Recycle Bin</button>
+          <button class="btn btn-sm btn-danger" onclick="msmEmptyRecycle()">🗑 Delete All Deleted Data</button>
+        </span>
       </div>
       <div class="audit-toolbar" style="display:grid;grid-template-columns:repeat(4,minmax(150px,1fr));gap:8px;">
         <input id="auditSearch" placeholder="Search guard, CNIC, Gmail, client, location..." oninput="renderAuditLogs()">
@@ -2421,7 +2542,7 @@ function switchTab(tab){
     if(el) el.style.display = tab===v ? 'block' : 'none';
   });
   if(tab==='register') renderTable();
-  if(tab==='audit'){ renderAuditLogs(); renderTransferHistory(); }
+  if(tab==='audit'){ renderAuditLogs(); renderTransferHistory(); msmRefreshAuditRecycleCount(); }
 }
 
 /* ===================== Photo / document uploads ===================== */
@@ -4074,8 +4195,61 @@ async function msmPermanent(id){
 async function msmRecoverAll(){
   if(!currentAccess)return; const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`Recover ${rows.length} record(s)?`))return;let n=0;for(const x of rows){try{const oid=x.originalRecordId,r=x.recordData||{};if(!oid)continue;const ex=await db.collection(RECORDS_COLLECTION).doc(oid).get();if(ex.exists)continue;const b=db.batch();b.set(db.collection(RECORDS_COLLECTION).doc(oid),{...r,recoveredAt:firebase.firestore.FieldValue.serverTimestamp(),recoveredBy:(currentUser.email||'').toLowerCase()});b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id));await b.commit();n++;}catch(e){console.warn(e);}}await writeAuditLog('RECOVER_ALL','recycleBin',{requested:rows.length,recovered:n});showToast(`Recovered ${n} record(s).`);
 }
+/* Fetches the current user's scope of the Recycle Bin directly from Firestore
+   (one-off .get(), not the cached UI listener). Used by msmEmptyRecycle so that
+   "Delete All Deleted Data" is correct even when called from the Audit tab
+   before the Recycle Bin tab has ever been opened this session — previously
+   msmEmptyRecycle only looked at window.msmRecycleRows, which stayed undefined
+   until msmLoadRecycle() had run, so it could silently report "empty" when it
+   was not. */
+async function msmFetchRecycleRowsOnce(){
+  if(isParent()){
+    const s=await db.collection(MSM_RECYCLE_COLLECTION).limit(2000).get();
+    return s.docs.map(d=>({id:d.id,...d.data()}));
+  }
+  if(isRegional()){
+    const s=await db.collection(MSM_RECYCLE_COLLECTION).where('region','==',myRegion()).get();
+    return s.docs.map(d=>({id:d.id,...d.data()}));
+  }
+  const client=myClientProject(), sector=mySector();
+  const s1=await db.collection(MSM_RECYCLE_COLLECTION).where('clientproject','==',client).get();
+  let a=s1.docs.map(d=>({id:d.id,...d.data()})), b=[];
+  if(sector){
+    const s2=await db.collection(MSM_RECYCLE_COLLECTION).where('sector','==',sector).get();
+    b=s2.docs.map(d=>({id:d.id,...d.data()}));
+  }
+  const m=new Map([...a,...b].map(x=>[x.id,x]));
+  return [...m.values()].filter(x=>{const r=x.recordData||{};const rp=String(r.clientproject||x.clientproject||'').trim();const rs=String(r.sector||x.sector||'').trim();return sector ? (rs===sector || rp===sector || (!rs&&rp===client)) : rp===client;});
+}
 async function msmEmptyRecycle(){
-  if(!currentAccess)return; const rows=window.msmRecycleRows||[];if(!rows.length)return showToast('Recycle Bin is empty.');if(!confirm(`PERMANENTLY DELETE all ${rows.length} Recycle Bin records?`))return;try{for(let i=0;i<rows.length;i+=400){const b=db.batch();rows.slice(i,i+400).forEach(x=>b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id)));await b.commit();}await writeAuditLog('EMPTY_RECYCLE_BIN','recycleBin',{count:rows.length});showToast('Recycle Bin emptied.');}catch(e){showToast('Empty Recycle Bin failed: '+e.message);}
+  if(!currentAccess)return;
+  let rows;
+  try{ rows = await msmFetchRecycleRowsOnce(); }
+  catch(e){ return showToast('Could not read Recycle Bin: '+e.message); }
+  if(!rows.length) return showToast('Recycle Bin is empty — nothing to delete.');
+  if(!confirm(`PERMANENTLY DELETE all ${rows.length} Recycle Bin record(s)? This cannot be undone.`)) return;
+  try{
+    for(let i=0;i<rows.length;i+=400){
+      const b=db.batch();
+      rows.slice(i,i+400).forEach(x=>b.delete(db.collection(MSM_RECYCLE_COLLECTION).doc(x.id)));
+      await b.commit();
+    }
+    await writeAuditLog('EMPTY_RECYCLE_BIN','recycleBin',{count:rows.length});
+    showToast(`Recycle Bin emptied — ${rows.length} record(s) permanently deleted.`);
+    window.msmRecycleRows=[];
+    const rc=document.getElementById('msmRecycleCount'); if(rc) rc.textContent='0';
+    const arc=document.getElementById('auditRecycleCount'); if(arc) arc.textContent='0';
+    const rt=document.getElementById('msmRecycleTbody'); if(rt) rt.innerHTML='<tr><td colspan="9">Recycle Bin is empty.</td></tr>';
+  }catch(e){ showToast('Empty Recycle Bin failed: '+e.message); }
+}
+/* Keeps the small counter shown in the Audit Trail tab in sync. Cheap read —
+   only runs when the Audit tab is opened. */
+async function msmRefreshAuditRecycleCount(){
+  const el=document.getElementById('auditRecycleCount');
+  if(!el || !currentAccess) return;
+  el.textContent='…';
+  try{ const rows=await msmFetchRecycleRowsOnce(); el.textContent=rows.length; }
+  catch(e){ el.textContent='—'; }
 }
 
 const msmBaseSwitchTab = switchTab;
