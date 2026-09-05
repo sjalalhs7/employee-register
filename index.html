@@ -1334,6 +1334,42 @@ body{overflow-x:hidden!important}
   html[data-theme="light"] .msm-footer{color:#4c5b7a!important;border-top-color:#d7deee!important;}
   html[data-theme="light"] .msm-footer strong{color:#1f5fd6!important;}
 
+  /* ---- FIX: the login screen itself was missed in the first pass, so light mode
+     still showed a dark login page — the very first thing every user sees.
+     #msmLoginPage and .msm-login-card are each redefined 5-7 times elsewhere in
+     this file (classic stacked-patch pattern); the LAST one always wins and it's
+     a plain #id / .class selector with !important. These rules beat that on
+     specificity (html[data-theme] + id/class), not just on source order, so they
+     hold regardless of which old patch is "last" above. ---- */
+  html[data-theme="light"] #msmLoginPage{
+    background:
+      radial-gradient(circle at 50% 8%, rgba(31,95,214,.14), transparent 34%),
+      radial-gradient(circle at 8% 88%, rgba(214,39,63,.10), transparent 32%),
+      linear-gradient(135deg,#eef2fb 0%,#f7f9ff 52%,#fdeef1 100%) !important;
+  }
+  html[data-theme="light"] #msmLoginPage::before{opacity:.35!important;}
+  html[data-theme="light"] #msmLoginPage::after{opacity:.5!important;}
+  html[data-theme="light"] .msm-login-card{
+    background:linear-gradient(155deg,#ffffff,#fbfbff)!important;
+    border:1px solid #d7deee!important;
+    box-shadow:0 28px 70px rgba(30,60,120,.16),inset 0 1px rgba(255,255,255,.6)!important;
+    color:#182238!important;
+  }
+  html[data-theme="light"] .msm-login-card:before,
+  html[data-theme="light"] .msm-login-card::before{background:linear-gradient(90deg,#1f5fd6,#f4c64d,#d6273f)!important;}
+  html[data-theme="light"] .msm-login-kicker{color:#b98a1f!important;}
+  html[data-theme="light"] .msm-login-title{color:#182238!important;text-shadow:none!important;}
+  html[data-theme="light"] .msm-login-designer,
+  html[data-theme="light"] .msm-login-note,
+  html[data-theme="light"] .msm-login-security,
+  html[data-theme="light"] .msm-login-footer{color:#4c5b7a!important;}
+  html[data-theme="light"] .msm-login-divider{background:linear-gradient(90deg,transparent,#c9a253,transparent)!important;}
+  html[data-theme="light"] .msm-google-btn,html[data-theme="light"] .tj-login-btn{
+    background:linear-gradient(135deg,#eaf1ff,#ffffff)!important;
+    border:1px solid #c9d8f2!important;color:#16233c!important;
+  }
+  html[data-theme="light"] #msmLoginPage>.msm-public-nav{background:rgba(255,255,255,.92)!important;border-color:#d7deee!important;}
+
   /* ---- Top nav bars (login page + inside-app), both themes get the red+blue accent ---- */
   html[data-theme="dark"] .msm-final-topnav,html[data-theme="dark"] .msm-public-nav{
     background:linear-gradient(90deg,rgba(9,20,38,.97),rgba(70,10,30,.9),rgba(10,28,52,.97))!important;
