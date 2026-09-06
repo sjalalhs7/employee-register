@@ -1400,6 +1400,24 @@ body{overflow-x:hidden!important}
     box-shadow:0 6px 18px rgba(0,0,0,.25);
   }
   html[data-theme="light"] #msmThemeToggle{border-color:rgba(20,40,80,.15);}
+
+  /* ---- FIX: pale blue-grey caption/secondary text (#aebed5, #bfc8d0,
+     #b9c8dc) was tuned for dark navy cards and never re-pointed when
+     those same cards (region cards, region-contact labels, widget/
+     location captions) switch to a white/light background in Light
+     mode — making the text almost invisible. Some instances are plain
+     CSS classes, others are inline styles built inside JS template
+     strings, so both are matched here. All confirmed to sit on light
+     backgrounds once the theme switches (verified against surrounding
+     markup, not guessed). ---- */
+  html[data-theme="light"] .msm-region-sub,
+  html[data-theme="light"] .msm-region-card span,
+  html[data-theme="light"] .msm-region-contact-grid label,
+  html[data-theme="light"] [style*="aebed5"],
+  html[data-theme="light"] [style*="bfc8d0"],
+  html[data-theme="light"] [style*="b9c8dc"]{
+    color:#3a4867!important;
+  }
   @media(max-width:650px){#msmThemeToggle{top:6px;right:6px;padding:7px 10px;font-size:10px;}}
 </style>
 </head>
