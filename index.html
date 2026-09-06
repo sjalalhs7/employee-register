@@ -810,7 +810,29 @@ body.sector-other #sectorPortal{background:linear-gradient(135deg,#101b2a 0%,#28
 /* NOTE: a dead, unused ":root{--msmNavy...}" variable block was removed here during the audit —
    it was defined but never referenced by any rule in this file (verified: zero usages).
    All real theming now lives in the single :root block at the top of <head> plus the
-   [data-theme] override block just before </head>. */
+   [data-theme] override block just before 
+<style id="msm-character-dashboard-cards">
+/* Character-vignette replacement for the former diamond dashboard buttons.
+   Data IDs and dashboard update logic are intentionally unchanged. */
+.msm-character-stats .msm-stat{min-height:220px;padding:8px 6px;transform-style:preserve-3d;}
+.msm-character-stats .msm-stat-shape{inset:8px 0 0;background:radial-gradient(circle at 50% 30%,rgba(255,255,255,.28),transparent 38%),linear-gradient(145deg,currentColor,rgba(3,9,24,.98));border-radius:50%;width:170px;height:170px;justify-self:center;align-self:start;overflow:visible;-webkit-mask-image:none;mask-image:none;box-shadow:0 12px 22px rgba(0,0,0,.35),0 0 22px currentColor,0 0 48px currentColor,inset 0 0 26px rgba(255,255,255,.12);}
+.msm-character-stats .msm-stat-shape:after{content:"";position:absolute;left:50%;bottom:-7px;width:112px;height:20px;transform:translateX(-50%);border-radius:50%;background:rgba(0,0,0,.42);filter:blur(7px);z-index:-1;}
+.msm-character{position:absolute;inset:10px;display:flex;align-items:center;justify-content:center;font-size:62px;filter:drop-shadow(0 9px 7px rgba(0,0,0,.42));transform:translateZ(20px);}
+.msm-character .head{position:relative;z-index:3;line-height:1;}
+.msm-character .prop{position:absolute;z-index:4;font-size:31px;line-height:1;filter:drop-shadow(0 4px 4px rgba(0,0,0,.5));}
+.msm-cat .shield{left:5px;bottom:27px}.msm-cat .clipboard{right:2px;bottom:21px}
+.msm-jerry .compass{left:2px;bottom:20px}.msm-jerry .marker{right:7px;bottom:31px}
+.msm-tuffy .flag{right:17px;bottom:24px}
+.msm-droid .badge{right:13px;bottom:25px}
+.msm-bulldog .stop{right:8px;bottom:22px}
+.msm-character-stats .msm-stat-content{margin-top:-4px;max-width:90%;}
+.msm-character-stats .msm-stat-content b{font-size:34px;line-height:1.05;margin:3px 0;}
+.msm-character-stats .msm-stat-content small{font-size:10px;}
+.msm-character-stats .msm-stat:hover{transform:translateY(-5px) scale(1.04)!important;}
+@media(max-width:760px){.msm-character-stats .msm-stat{min-height:160px}.msm-character-stats .msm-stat-shape{width:122px;height:122px}.msm-character{font-size:45px}.msm-character .prop{font-size:23px}.msm-character-stats .msm-stat-content b{font-size:27px}.msm-character-stats .msm-stat-content small{font-size:8.5px;letter-spacing:.6px}}
+@media(prefers-reduced-motion:reduce){.msm-character-stats .msm-stat{transform:none!important}}
+</style>
+</head>. */
 #sectorPortal{display:none!important}
 #publicSeoInfo{display:none!important}
 #appRoot{background:
@@ -1395,6 +1417,57 @@ body{overflow-x:hidden!important}
   html[data-theme="dark"] .btn-primary,html[data-theme="light"] .btn-primary{background:#1f5fd6!important;color:#fff!important;border-color:transparent!important;}
   html[data-theme="dark"] .btn-danger,html[data-theme="light"] .btn-danger{background:#d6273f!important;color:#fff!important;border-color:transparent!important;}
 
+  /* ==================================================================
+     CARTOON BUTTON SKIN — chunky, rounded, bouncy "toon" buttons.
+     Applied on top of every existing button class so nothing else in
+     the app has to change; colors/logic stay exactly as before.
+     ==================================================================== */
+  .msm-home button, .btn, .tab-btn, .msm-primary, .msm-back-btn,
+  .msm-modal-close, .msm-google-btn, .tj-login-btn{
+    border-radius:22px!important;
+    border-width:3px!important;
+    border-style:solid!important;
+    font-weight:900!important;
+    letter-spacing:.3px!important;
+    transform:translateY(0) scale(1);
+    transition:transform .15s cubic-bezier(.34,1.56,.64,1), box-shadow .15s ease, filter .15s ease!important;
+    box-shadow:0 4px 0 rgba(0,0,0,.28), 0 6px 14px rgba(0,0,0,.18)!important;
+  }
+  html[data-theme="dark"] .msm-home button, html[data-theme="dark"] .btn,
+  html[data-theme="dark"] .tab-btn, html[data-theme="dark"] .msm-primary{
+    border-color:rgba(255,255,255,.55)!important;
+  }
+  html[data-theme="light"] .msm-home button, html[data-theme="light"] .btn,
+  html[data-theme="light"] .tab-btn, html[data-theme="light"] .msm-primary{
+    border-color:rgba(20,30,55,.18)!important;
+  }
+  .msm-home button:hover, .btn:hover, .tab-btn:hover, .msm-primary:hover,
+  .msm-back-btn:hover, .msm-google-btn:hover, .tj-login-btn:hover{
+    transform:translateY(-3px) scale(1.04) rotate(-1deg);
+    box-shadow:0 7px 0 rgba(0,0,0,.28), 0 12px 20px rgba(0,0,0,.22)!important;
+    filter:brightness(1.08);
+  }
+  .msm-home button:active, .btn:active, .tab-btn:active, .msm-primary:active{
+    transform:translateY(1px) scale(.97) rotate(0deg);
+    box-shadow:0 1px 0 rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.18)!important;
+  }
+  /* Region / sector cards keep pill buttons too, plus a gentle "pop" */
+  .msm-region-body button, .msm-sector-card button, .msm-region-tools button{
+    border-radius:18px!important;border:3px solid rgba(255,255,255,.5)!important;
+    box-shadow:0 4px 0 rgba(0,0,0,.25)!important;
+    transition:transform .15s cubic-bezier(.34,1.56,.64,1)!important;
+  }
+  .msm-region-body button:hover, .msm-sector-card button:hover, .msm-region-tools button:hover{
+    transform:translateY(-2px) scale(1.05);
+  }
+  /* Stat cards: a tiny cartoon wobble on hover, on top of existing glow */
+  .msm-stat{transition:transform .2s cubic-bezier(.34,1.56,.64,1)!important;}
+  .msm-stat:hover{transform:scale(1.06) rotate(-2deg);}
+  @media(prefers-reduced-motion:reduce){
+    .msm-home button, .btn, .tab-btn, .msm-primary, .msm-stat,
+    .msm-region-body button, .msm-sector-card button, .msm-region-tools button{transition:none!important;transform:none!important;}
+  }
+
   /* ---- Floating theme toggle ---- */
   #msmThemeToggle{
     position:fixed;top:10px;right:10px;z-index:100000;
@@ -1615,7 +1688,7 @@ msmApplyTheme(document.documentElement.getAttribute('data-theme')||'dark');
   <div class="msm-screen-welcome" id="msmHeroWelcome" style="position:relative"><div class="msm-rainbow-glow"></div><h2 id="msmHeroHeadline" style="font-size:clamp(22px,4vw,40px)">“Your Safety… Our Priority”</h2><button class="msm-primary" onclick="msmHomeGo('database')">Open Database →</button><button id="msmHeroEditBtn" style="display:none;position:absolute;top:0;right:0;pointer-events:auto;border:1px solid rgba(255,255,255,.4);background:rgba(0,0,0,.45);color:#fff;border-radius:8px;padding:6px 10px;font-size:11px" onclick="msmHomeEditHero()">✎ Edit Welcome Text</button></div>
 </section>
   <main class="msm-shell" id="msmHomeTop">
-    <section class="msm-stats"><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">👥<small>ALL RECORDS</small><b id="msmStatRecords">0</b><small>Total Guards</small></div></div><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">▥<small>TOTAL REGIONS</small><b id="msmStatRegions">0</b><small>Active Regions</small></div></div><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">♙<small>TOTAL SECTORS</small><b id="msmStatSectors">0</b><small>All Sectors</small></div></div><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">🛡<small>ACTIVE USERS</small><b id="msmStatUsers">—</b><small>Authorized Users</small></div></div><div class="msm-stat"><div class="msm-stat-shape"></div><div class="msm-stat-content">♜<small>RECYCLE BIN</small><b id="msmStatRecycle">0</b><small>Deleted Records</small></div></div></section>
+    <section class="msm-stats msm-character-stats"><div class="msm-stat"><div class="msm-stat-shape"><div class="msm-character msm-cat" aria-hidden="true"><span class="ear left"></span><span class="ear right"></span><span class="head">🐱</span><span class="prop shield">🛡️</span><span class="prop clipboard">📋</span></div></div><div class="msm-stat-content"><small>ALL RECORDS</small><b id="msmStatRecords">0</b><small>Total Guards</small></div></div><div class="msm-stat"><div class="msm-stat-shape"><div class="msm-character msm-jerry" aria-hidden="true"><span class="head">🐭</span><span class="prop compass">🧭</span><span class="prop marker">📍</span></div></div><div class="msm-stat-content"><small>TOTAL REGIONS</small><b id="msmStatRegions">0</b><small>Active Regions</small></div></div><div class="msm-stat"><div class="msm-stat-shape"><div class="msm-character msm-tuffy" aria-hidden="true"><span class="head">🐹</span><span class="prop flag">🚩</span></div></div><div class="msm-stat-content"><small>TOTAL SECTORS</small><b id="msmStatSectors">0</b><small>All Sectors</small></div></div><div class="msm-stat"><div class="msm-stat-shape"><div class="msm-character msm-droid" aria-hidden="true"><span class="head">🤖</span><span class="prop badge">🎫</span></div></div><div class="msm-stat-content"><small>ACTIVE USERS</small><b id="msmStatUsers">—</b><small>Authorized Users</small></div></div><div class="msm-stat"><div class="msm-stat-shape"><div class="msm-character msm-bulldog" aria-hidden="true"><span class="head">🐶</span><span class="prop stop">🛑</span></div></div><div class="msm-stat-content"><small>RECYCLE BIN</small><b id="msmStatRecycle">0</b><small>Deleted Records</small></div></div></section>
     <div class="msm-access">🛡 Parent/Admin Access — controlled access over Regions, Sectors, Locations, Clients &amp; Records</div>
     <section id="msmHomeRegions" class="msm-regions-wrap"><div class="msm-section-head"><div><h2>✧ REGIONS &amp; SECTORS</h2><p>Select a Region → view its home page → select a Sector → manage Locations / Clients.</p></div><button class="msm-primary" onclick="msmHomeRender()">Refresh</button></div><div id="msmHomeRegionGrid" class="msm-region-grid"></div></section>
     <section id="msmRegionHomePage" class="msm-region-page"></section>
