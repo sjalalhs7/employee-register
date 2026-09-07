@@ -2321,6 +2321,15 @@ function showOnly(id){
 
 function initFirebase(){
   if(!FIREBASE_READY){ showOnly('setupGate'); return; }
+  if(typeof firebase==='undefined'){
+    // Firebase SDK scripts (gstatic.com) failed to load — no internet, blocked CDN,
+    // or the file was opened as file:// instead of being served over http(s).
+    // Show the login screen anyway (with a visible warning) instead of a blank page.
+    showOnly('loginGate');
+    const errBox=document.getElementById('msmLoginError');
+    if(errBox) errBox.innerHTML='<div style="background:#4a0d1a;border:1px solid #df4d67;color:#fff;padding:10px 12px;border-radius:8px;font-size:12px;margin:10px 0;text-align:center;">⚠️ Could not load Google/Firebase services. Check your internet connection, or open this page over http(s) (e.g. its hosted URL) instead of double-clicking the file.</div>';
+    return;
+  }
   firebase.initializeApp(firebaseConfig);
   auth = firebase.auth();
   db = firebase.firestore();
