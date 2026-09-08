@@ -1147,15 +1147,6 @@ button,input,select,textarea{font:inherit;}
   animation:msmLogoFloat 5s ease-in-out infinite;
 }
 
-.msm-nav button,.msm-account,.msm-quick button{
-  transition:transform .28s ease,box-shadow .28s ease,border-color .28s ease!important;
-}
-
-.msm-nav button:hover,.msm-nav button.active,.msm-quick button:hover{
-  transform:translateY(-4px) translateZ(10px)!important;
-  box-shadow:0 14px 28px rgba(0,0,0,.28),0 0 18px rgba(70,154,255,.13)!important;
-}
-
 .msm-hero{
   transform:translateZ(0) rotateX(0deg);
   animation:msmHeroFloat 7s ease-in-out infinite;
@@ -1189,13 +1180,12 @@ button,input,select,textarea{font:inherit;}
 .msm-stat:hover .msm-stat-shape{box-shadow:0 0 30px currentColor,0 0 55px currentColor,0 0 90px currentColor,inset 0 0 32px rgba(255,255,255,.16)}
 @media(prefers-reduced-motion:reduce){.msm-stat,.msm-stat-shape{animation:none}}
 
-.msm-stat:hover,.msm-widget:hover,
 .msm-regions-wrap:hover{
-  transform:translateY(-6px) translateZ(12px)!important;
-  box-shadow:0 24px 46px rgba(0,0,0,.34),0 0 24px rgba(55,141,255,.10)!important;
+  transform:translateY(-3px);
+  box-shadow:0 24px 46px rgba(0,0,0,.34),0 0 24px rgba(55,141,255,.10);
 }
-.msm-region-card:hover,.msm-region-page:hover{
-  box-shadow:0 24px 46px rgba(0,0,0,.34),0 0 24px rgba(55,141,255,.10)!important;
+.msm-region-page:hover{
+  box-shadow:0 24px 46px rgba(0,0,0,.34),0 0 24px rgba(55,141,255,.10);
 }
 
 .msm-stat,.msm-region-card,.msm-widget,.msm-regions-wrap,.msm-region-page{
@@ -1473,6 +1463,44 @@ body{overflow-x:hidden!important}
   @media(prefers-reduced-motion:reduce){
     .btn,.msm-primary,.msm-google-btn,.msm-nav button,.msm-cta-3d,.msm-feature-card-3d,.msm-feature-card-3d .icon-3d{animation:none!important;transition:none!important;}
     .btn:hover,.msm-primary:hover,.msm-google-btn:hover,.msm-cta-3d:hover,.msm-feature-card-3d:hover{transform:none!important;}
+  }
+
+  /* ============ HOMEPAGE (post-login dashboard) 3D upgrade ============
+     Applies to #msmHome: stat tiles, region cards, sector cards, widgets.
+     CSS-only — no JS/logic touched, so onclick handlers and data rendering
+     are completely unaffected. */
+  .msm-stats,.msm-region-grid,.msm-widget-grid,.msm-sector-list{perspective:1200px;}
+  .msm-stat,.msm-widget,.msm-region-card,.msm-sector-card{
+    transform-style:preserve-3d;
+    transition:transform .3s cubic-bezier(.2,.8,.2,1),box-shadow .3s ease,border-color .3s ease;
+  }
+  .msm-stat:hover{
+    animation-play-state:paused;
+    transform:perspective(800px) rotateX(7deg) translateY(-6px) scale(1.04);
+    box-shadow:0 22px 40px rgba(0,0,0,.4);
+    z-index:2;
+  }
+  .msm-widget:hover{
+    transform:perspective(1000px) rotateX(4deg) rotateY(-3deg) translateY(-6px);
+    box-shadow:0 24px 44px rgba(0,0,0,.4);
+    border-color:rgba(244,198,77,.5);
+  }
+  .msm-region-card{will-change:transform;}
+  .msm-region-card:hover{
+    transform:perspective(900px) rotateX(6deg) rotateY(-6deg) translateY(-8px) scale(1.02);
+    box-shadow:0 26px 48px rgba(0,0,0,.45);
+    z-index:2;
+  }
+  .msm-region-card img{transition:transform .4s ease;}
+  .msm-region-card:hover img{transform:scale(1.08) translateZ(10px);}
+  .msm-sector-card:hover{
+    transform:perspective(800px) rotateX(5deg) translateY(-5px) scale(1.02);
+    box-shadow:0 18px 34px rgba(0,0,0,.4);
+    border-color:rgba(244,198,77,.45);
+  }
+  @media(prefers-reduced-motion:reduce){
+    .msm-stat,.msm-widget,.msm-region-card,.msm-sector-card,.msm-region-card img{transition:none!important;}
+    .msm-stat:hover,.msm-widget:hover,.msm-region-card:hover,.msm-sector-card:hover,.msm-region-card:hover img{transform:none!important;}
   }
 </style>
 </head>
