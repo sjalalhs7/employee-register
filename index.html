@@ -2540,6 +2540,7 @@ document.getElementById('companyName').addEventListener('change', persistMeta);
    For a 'client' role user, every record they can see/write is locked to their own clientproject. */
 function isParent(){ return currentAccess && (currentAccess.role === 'parent' || currentAccess.role === 'admin'); }
 function isRegional(){ return !!(currentAccess && String(currentAccess.role||'').toLowerCase() === 'regional'); }
+function isClient(){ return !!(currentAccess && String(currentAccess.role||'').toLowerCase() === 'client'); }
 function myRegion(){ return currentAccess ? String(currentAccess.region||'').trim() : ''; }
 function myRegionId(){ return currentAccess ? String(currentAccess.regionId||'').trim() : ''; }
 function myClientProject(){ return currentAccess ? (currentAccess.clientproject||'') : ''; }
