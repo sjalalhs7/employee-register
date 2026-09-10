@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <script>/* Theme must be set before first paint to avoid a flash of the wrong theme. */
-(function(){try{document.documentElement.setAttribute('data-theme', localStorage.getItem('msmTheme')||'dark');}catch(e){}})();
+(function(){try{document.documentElement.setAttribute('data-theme','dark');localStorage.removeItem('msmTheme');}catch(e){}})();
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1545,23 +1545,39 @@ body{overflow-x:hidden!important}
     .msm-primary{animation:none;}
     .msm-stat-shape{animation:none!important;}
   }
+
+  /* ============ ROSE THEME — LIGHT MODE PARITY ============
+     The pre-existing theme system (#msmRedBlueTheme, above) repaints
+     .msm-nav / .msm-nav button / .msm-quick button with !important for
+     html[data-theme="light"]. !important always beats a normal rule
+     regardless of source order, so the rose styling above was being
+     silently erased any time the site was switched to Light Mode —
+     which is the theme in the screenshot. These rules match that same
+     selector + !important so they take over correctly in light mode too. */
+  html[data-theme="light"] .msm-nav{
+    background:linear-gradient(180deg,rgba(255,241,244,.92),rgba(255,228,233,.85))!important;
+    border-bottom:1px solid rgba(225,29,72,.28)!important;
+    backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important;
+  }
+  html[data-theme="light"] .msm-nav button,html[data-theme="light"] .msm-quick button{
+    background:linear-gradient(180deg,#ffe4e9,#ffc4cf)!important;
+    color:#7a1130!important;border:1px solid rgba(225,29,72,.35)!important;
+  }
+  html[data-theme="light"] .msm-nav button:hover,html[data-theme="light"] .msm-nav button.active,
+  html[data-theme="light"] .msm-quick button:hover{
+    background:linear-gradient(180deg,#e11d48,#9f0d34)!important;color:#fff!important;
+    border-color:#e11d48!important;
+    box-shadow:0 0 0 1px rgba(225,29,72,.4),0 10px 24px rgba(225,29,72,.35)!important;
+  }
+  html[data-theme="light"] .msm-brand h1{
+    background:linear-gradient(90deg,#e11d48,#fb7185,#be123c,#e11d48)!important;
+    background-size:300% auto!important;-webkit-background-clip:text!important;background-clip:text!important;
+    color:transparent!important;animation:msmRoseTextShift 6s linear infinite!important;
+  }
+  @media(prefers-reduced-motion:reduce){ html[data-theme="light"] .msm-brand h1{animation:none!important;} }
 </style>
 </head>
 <body>
-<button id="msmThemeToggle" onclick="msmToggleTheme()" type="button" title="Switch light / dark theme">☀ Light</button>
-<script>
-function msmApplyTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  try{localStorage.setItem('msmTheme', t);}catch(e){}
-  var b=document.getElementById('msmThemeToggle');
-  if(b) b.textContent = t==='light' ? '🌙 Dark' : '☀ Light';
-}
-function msmToggleTheme(){
-  var cur=document.documentElement.getAttribute('data-theme')||'dark';
-  msmApplyTheme(cur==='light' ? 'dark' : 'light');
-}
-msmApplyTheme(document.documentElement.getAttribute('data-theme')||'dark');
-</script>
 
 <!-- ============ SETUP NEEDED (firebaseConfig not filled in yet) ============ -->
 <div id="setupGate" style="display:none; max-width:640px; margin:60px auto; padding:0 20px; font-family:Georgia,serif; color:#22241F;">
