@@ -1,8 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<script>/* Theme must be set before first paint to avoid a flash of the wrong theme. */
-(function(){try{document.documentElement.setAttribute('data-theme','dark');localStorage.removeItem('msmTheme');}catch(e){}})();
+<script>/* Theme must be set before first paint to avoid a flash of the wrong theme.
+   FIX (2026-09-24): this used to force 'dark' and DELETE the saved
+   preference on every single page load — that is why the app was
+   stuck in dark mode with no way out. Now it reads the saved choice
+   (msmTheme in localStorage) and defaults to 'light' the first time. */
+(function(){try{var t=localStorage.getItem('msmTheme')||'light';document.documentElement.setAttribute('data-theme',t);}catch(e){document.documentElement.setAttribute('data-theme','light');}})();
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -1578,6 +1582,20 @@ body{overflow-x:hidden!important}
 </style>
 </head>
 <body>
+<button type="button" id="msmThemeToggle" onclick="msmToggleTheme()">☀ / 🌙 Theme</button>
+<script>
+/* FIX (2026-09-24): the toggle button markup and its click handler never
+   existed — only its CSS did — so there was no way to leave dark mode.
+   This wires it up and remembers the choice in localStorage. */
+function msmToggleTheme(){
+  try{
+    var cur=document.documentElement.getAttribute('data-theme')||'light';
+    var next=cur==='dark'?'light':'dark';
+    document.documentElement.setAttribute('data-theme',next);
+    localStorage.setItem('msmTheme',next);
+  }catch(e){}
+}
+</script>
 
 <!-- ============ SETUP NEEDED (firebaseConfig not filled in yet) ============ -->
 <div id="setupGate" style="display:none; max-width:640px; margin:60px auto; padding:0 20px; font-family:Georgia,serif; color:#22241F;">
@@ -1788,7 +1806,7 @@ body{overflow-x:hidden!important}
     <button class="active" onclick="msmHomeGo('top')">⌂ Home</button><button onclick="msmHomeGo('regions')">◉ Regions / Sectors</button><button onclick="msmHomeGo('database')">▦ Full Database</button><button onclick="msmHomeInfo('about')">? About</button><button onclick="msmHomeInfo('services')">▤ Services</button><button onclick="msmHomeInfo('contact')">✉ Contact</button><button onclick="msmHomeGo('instructions')">▣ Instructions</button><div class="msm-account"><span id="msmHomeUser">Authorized User</span><br><small id="msmHomeRole">Loading access…</small></div>
   </div>
   <div class="msm-shell msm-quick">
-    <button onclick="msmHomeAddRegion()">＋ Add Region</button><button onclick="msmHomeAddSector()">＋ Add Sector</button><button onclick="msmHomeTransferMenu()">⇅ Import / Export</button><button onclick="msmFixDuplicateSno()">🔢 Fix Duplicate S No</button><button onclick="msmOpenRecycle()">♜ Recycle Bin</button><button onclick="msmHomeGo('audit')">◉ Audit Logs</button><button onclick="msmHomeGo('admin')">♙ Manage Users</button><button onclick="msmInstallApp()">▣ Install App</button><button class="danger" onclick="doSignOut()">↩ Sign Out</button>
+    <button onclick="msmHomeAddRegion()">＋ Add Region</button><button onclick="msmHomeAddSector()">＋ Add Sector</button><button onclick="msmHomeTransferMenu()">⇅ Import / Export</button><button onclick="msmFixDuplicateSno()">🔢 Fix Duplicate S No</button><button onclick="msmBackfillRegionTags()">🧩 Repair Region Tags</button><button onclick="msmOpenRecycle()">♜ Recycle Bin</button><button onclick="msmHomeGo('audit')">◉ Audit Logs</button><button onclick="msmHomeGo('admin')">♙ Manage Users</button><button onclick="msmInstallApp()">▣ Install App</button><button class="danger" onclick="doSignOut()">↩ Sign Out</button>
   </div>
   <section class="msm-shell msm-screensaver" id="msmScreensaver" aria-label="MSM Longroll Database welcome screensaver">
   <div class="msm-screen-scene sunshine active" data-scene="sunshine"><div class="msm-screen-overlay"></div></div>
@@ -1813,6 +1831,7 @@ body{overflow-x:hidden!important}
   </main>
 </section>
 
+<div id="msmToolsWrap" style="display:none">
 <div class="cover">
   <div class="cover-inner">
     <div class="cover-title">
@@ -2228,6 +2247,7 @@ body{overflow-x:hidden!important}
 
   </div>
 </main>
+</div><!-- /msmToolsWrap -->
 
 <!-- ============ PARENT BULK TRANSFER MODAL ============ -->
 <div id="importPreviewModal" class="modal-backdrop" role="dialog" aria-modal="true" style="display:none;z-index:10001;">
@@ -2494,10 +2514,18 @@ window.msmShowLoginSplash=function(){
   const el=document.getElementById('msmLoginSplash'); if(!el) return;
   el.style.display='flex';
   requestAnimationFrame(()=>el.classList.add('msm-splash-show'));
-  setTimeout(()=>{
+  let closed=false;
+  const close=()=>{
+    if(closed) return; closed=true;
+    document.removeEventListener('keydown',onKey);
     el.classList.add('msm-splash-hide');
     setTimeout(()=>{ el.style.display='none'; el.classList.remove('msm-splash-show','msm-splash-hide'); },650);
-  },10000);
+  };
+  const onKey=()=>close();
+  el.addEventListener('click',close,{once:true});
+  el.addEventListener('touchstart',close,{once:true,passive:true});
+  document.addEventListener('keydown',onKey);
+  setTimeout(close,3500);   /* was 10 s and un-skippable: it blocked every button after login */
 };
 
 /* ===== Live "user just logged in" pulse notification for Parent ===== */
@@ -2725,6 +2753,7 @@ function subscribeAdminUsers(){
   adminUsersUnsub = db.collection(AUTHUSERS_COLLECTION).onSnapshot(snap=>{
     const rows = snap.docs.map(d=>({email:d.id, ...d.data()}));
     rows.sort((a,b)=>a.email.localeCompare(b.email));
+    window.msmAuthorizedUserCount=rows.length; window.msmHomeRenderSoon&&window.msmHomeRenderSoon();
     document.getElementById('adminUsersTbody').innerHTML = rows.map(r=>`
       <tr>
         <td>${escapeHtml(r.email)}</td>
@@ -3723,24 +3752,64 @@ function findImportColumn(headers, aliases){
 let pendingImport = null;
 function closeImportPreview(){ pendingImport=null; const m=document.getElementById('importPreviewModal'); if(m)m.style.display='none'; }
 function importKey(v){ return String(v||'').trim().toLowerCase().replace(/[^a-z0-9]/g,''); }
+const IMPORT_DATE_KEYS=['doe','dischargemsm','uniformdate','cnicexpiry','dob','cnicissue','enrolldate','dischargedate_army','joining'];
+/* Excel stores dates as serial numbers; the register stores ISO yyyy-mm-dd. Convert so imported dates work with filters/exports. */
+function importDate(v){
+  v=String(v??'').trim(); if(!v) return '';
+  if(/^\d{4}-\d{2}-\d{2}/.test(v)) return v.slice(0,10);
+  if(/^\d{5}(\.\d+)?$/.test(v)){ const n=Math.floor(Number(v)); if(n>20000&&n<80000) return new Date(Date.UTC(1899,11,30)+n*86400000).toISOString().slice(0,10); }
+  const m=v.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){ let y=m[3]; if(y.length===2) y=(Number(y)>50?'19':'20')+y; return y+'-'+m[2].padStart(2,'0')+'-'+m[1].padStart(2,'0'); }
+  return v;
+}
+/* Decide Region/Sector tags for one imported row so Regional/Client users can actually see it. */
+function importResolveScope(rec){
+  const out={};
+  const inCatalog=(name)=>{ const low=String(name||'').trim().toLowerCase(); return low?((window.msmSectorCatalog||[]).find(n=>String(n).toLowerCase()===low)||null):null; };
+  if(isClient()){
+    const sec=mySector(); out.clientproject=myClientProject()||sec; out.sector=sec;
+    const sid=String(currentAccess.sectorId||'').trim()||(sec?msmSectorKeyFromName(sec):''); if(sid) out.sectorId=sid;
+    const reg=sec?msmRegionForSector(sec):null; if(reg){ out.region=reg.name; out.regionId=String(reg.regionId||reg.id||''); }   /* so the Regional Office also sees it */
+    return out;
+  }
+  let secName='';
+  if(isParent() && window.msmActiveSector && !['full','other-sectors'].includes(window.msmActiveSector)) secName=msmSectorByKey(window.msmActiveSector)||'';
+  if(!secName) secName=inCatalog(rec.sector)||inCatalog(rec.clientproject)||'';
+  if(isRegional()){
+    if(!secName) return {error:'Sector is not registered in your Region (put the Sector name in Client/Project)'};
+    if(!myRegionSectors().some(x=>String(x).toLowerCase()===secName.toLowerCase())) return {error:'Sector is outside your Region'};
+  }
+  if(secName){
+    out.sector=secName; out.sectorId=msmSectorKeyFromName(secName);
+    const reg=msmRegionForSector(secName);
+    if(reg){ out.region=reg.name; out.regionId=String(reg.regionId||reg.id||''); }
+    else if(isRegional()){ out.region=myRegion(); out.regionId=myRegionId(); }
+    out.clientproject=rec.clientproject||secName;
+  }
+  return out;
+}
 function validateImportRows(imported){
   const byMsm=new Map(), byCnic=new Map();
   records.forEach(r=>{
     const m=importKey(r.msmno), c=importKey(r.cnic);
-    if(m) byMsm.set(m,r.id); if(c) byCnic.set(c,r.id);
+    if(m&&!byMsm.has(m)) byMsm.set(m,r.id); if(c&&!byCnic.has(c)) byCnic.set(c,r.id);
   });
   const seenMsm=new Set(), seenCnic=new Set();
   return imported.map((rec,idx)=>{
-    const reasons=[]; const m=importKey(rec.msmno), c=importKey(rec.cnic);
-    if(!rec.name) reasons.push('Guard name missing');
-    if(!rec.cnic) reasons.push('CNIC missing');
-    if(m && seenMsm.has(m)) reasons.push('Duplicate MSM No. inside file');
-    if(c && seenCnic.has(c)) reasons.push('Duplicate CNIC inside file');
-    if(m && byMsm.has(m)) reasons.push('MSM No. already exists — will update');
-    if(c && byCnic.has(c) && (!m || byCnic.get(c)!==byMsm.get(m))) reasons.push('CNIC belongs to another existing record');
+    const blockers=[], notes=[]; const m=importKey(rec.msmno), c=importKey(rec.cnic);
+    if(!rec.name) blockers.push('Guard name missing');
+    if(!rec.cnic) blockers.push('CNIC missing');
+    if(m && seenMsm.has(m)) blockers.push('Duplicate MSM No. inside file');
+    if(c && seenCnic.has(c)) blockers.push('Duplicate CNIC inside file');
+    const idM=m?byMsm.get(m):'', idC=c?byCnic.get(c):'';
+    if(idM && idC && idM!==idC) blockers.push('MSM No. and CNIC belong to two different existing records');
+    else if(idM) notes.push('MSM No. already exists — will update');
+    else if(idC) notes.push('CNIC already exists — will update');
+    if(rec.__scopeError) blockers.push(rec.__scopeError);
+    else if(!rec.sector && !isClient()) notes.push('⚠ no registered Sector — saved without Region/Sector tag');
     if(m) seenMsm.add(m); if(c) seenCnic.add(c);
-    const blocked=reasons.some(x=>/missing|another existing|duplicate/i.test(x));
-    return {...rec,__row:idx+1,__ok:!blocked,__reason:reasons.join('; ')||'Ready to add'};
+    const out={...rec,__row:idx+1,__ok:!blockers.length,__existingId:idM||idC||'',__reason:[...blockers,...notes].join('; ')||'Ready to add'};
+    delete out.__scopeError; return out;
   });
 }
 function showImportPreview(rows,fileName){
@@ -3752,39 +3821,50 @@ function showImportPreview(rows,fileName){
   const btn=document.getElementById('confirmImportBtn'); btn.disabled=valid===0; btn.textContent=valid?`Confirm ${valid} Valid Row(s)`:'Nothing to Import';
   document.getElementById('importPreviewModal').style.display='flex';
 }
-function importLongRoll(file){
+window.msmEnsureXLSX=async function(){
+  if(typeof XLSX!=='undefined') return XLSX;
+  const urls=['https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js','https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'];
+  for(const src of urls){
+    try{
+      await new Promise((res,rej)=>{const sc=document.createElement('script');sc.src=src;sc.async=true;sc.onload=res;sc.onerror=rej;document.head.appendChild(sc);setTimeout(()=>rej(new Error('timeout')),12000);});
+      if(typeof XLSX!=='undefined') return XLSX;
+    }catch(e){ console.warn('XLSX load failed',src,e); }
+  }
+  throw new Error('Excel library could not be loaded. Check the internet connection and reload.');
+};
+async function importLongRoll(file){
   if(!file) return;
   if(!currentAccess){ showToast('Please sign in first.'); return; }
-  if(typeof XLSX==='undefined'){ showToast('Excel library is not available.'); return; }
-  const reader=new FileReader();
-  reader.onload=function(e){
-    try{
-      const wb=XLSX.read(e.target.result,{type:'array',cellDates:false}); const ws=wb.Sheets[wb.SheetNames[0]];
-      const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}); if(!aoa.length){showToast('The selected file is empty.');return;}
-      let headerRow=0,bestScore=-1;
-      for(let r=0;r<Math.min(10,aoa.length);r++){const score=aoa[r].reduce((n,v)=>{const h=normalizeHeader(v);return n+(Object.values(IMPORT_ALIASES).some(list=>list.some(a=>normalizeHeader(a)===h))?1:0);},0);if(score>bestScore){bestScore=score;headerRow=r;}}
-      const headers=aoa[headerRow],colMap={}; for(const key of Object.keys(IMPORT_ALIASES)) colMap[key]=findImportColumn(headers,IMPORT_ALIASES[key]);
-      const imported=[];
-      for(let r=headerRow+1;r<aoa.length;r++){
-        const row=aoa[r]; if(!row||row.every(v=>String(v??'').trim()===''))continue;
-        const rec={}; for(const key of Object.keys(IMPORT_ALIASES)){const idx=colMap[key];rec[key]=idx>=0?String(row[idx]??'').trim():'';}
-        if(!rec.name&&!rec.cnic&&!rec.msmno)continue;
-        rec.clientproject=rec.clientproject||''; imported.push(rec);
-      }
-      if(!imported.length){showToast('No employee rows were found. Check the Long Roll headers.');return;}
-      const scopeSector = (isParent() && window.msmActiveSector && window.msmActiveSector!=='full') ? (msmSectorByKey(window.msmActiveSector)||'') : '';
-      if(isParent() && window.msmActiveSector && window.msmActiveSector!=='full' && !scopeSector){
-        showToast('⚠ This Sector is not registered yet — go to the Region page and click "+ Add Sector" first, then re-import, or these rows will save without a Sector tag and that Sector\'s login will not see them.');
-      }
-      imported.forEach(rec=>{
-        rec.clientproject=rec.clientproject||myClientProject();
-        if(!isParent() && mySector()) rec.sector=rec.sector||mySector();
-        // Parent importing while a Region/Sector is open: tag rows to that Sector unless the file already specified one.
-        if(isParent() && scopeSector) rec.sector=rec.sector||scopeSector;
-      });
-      showImportPreview(validateImportRows(imported),file.name||'Import file');
-    }catch(err){console.error(err);showToast('Could not read this Long Roll file: '+err.message);}finally{const input=document.getElementById('longRollImport');if(input)input.value='';}
-  }; reader.readAsArrayBuffer(file);
+  const input=document.getElementById('longRollImport');
+  try{
+    await window.msmEnsureXLSX();
+    const buf=await new Promise((res,rej)=>{const fr=new FileReader();fr.onload=()=>res(fr.result);fr.onerror=()=>rej(fr.error||new Error('Could not read the file'));fr.readAsArrayBuffer(file);});
+    const wb=XLSX.read(buf,{type:'array',cellDates:false}); const ws=wb.Sheets[wb.SheetNames[0]];
+    const aoa=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
+    if(!aoa.length){ showToast('The selected file is empty.'); return; }
+    let headerRow=0,bestScore=-1;
+    for(let r=0;r<Math.min(10,aoa.length);r++){
+      const score=aoa[r].reduce((n,v)=>{const h=normalizeHeader(v);return n+(h&&Object.values(IMPORT_ALIASES).some(list=>list.some(a=>normalizeHeader(a)===h))?1:0);},0);
+      if(score>bestScore){bestScore=score;headerRow=r;}
+    }
+    if(bestScore<2){ showToast('Long Roll headers were not found in the first 10 rows.'); return; }
+    const headers=aoa[headerRow], colMap={};
+    for(const key of Object.keys(IMPORT_ALIASES)) colMap[key]=findImportColumn(headers,IMPORT_ALIASES[key]);
+    const imported=[];
+    for(let r=headerRow+1;r<aoa.length;r++){
+      const row=aoa[r]; if(!row||row.every(v=>String(v??'').trim()==='')) continue;
+      const rec={};
+      for(const key of Object.keys(IMPORT_ALIASES)){ const idx=colMap[key]; let v=idx>=0?String(row[idx]??'').trim():''; if(IMPORT_DATE_KEYS.includes(key)) v=importDate(v); rec[key]=v; }
+      if(!rec.name&&!rec.cnic&&!rec.msmno) continue;
+      delete rec.sno;                       /* S No is always assigned by the system, never taken from the file */
+      const sc=importResolveScope(rec);
+      if(sc.error) rec.__scopeError=sc.error; else Object.assign(rec,sc);
+      imported.push(rec);
+    }
+    if(!imported.length){ showToast('No employee rows were found. Check the Long Roll headers.'); return; }
+    showImportPreview(validateImportRows(imported),file.name||'Import file');
+  }catch(err){ console.error(err); showToast('Could not read this Long Roll file: '+(err.message||err)); }
+  finally{ if(input) input.value=''; }
 }
 function withTimeout(promise,ms,label){
   return Promise.race([
@@ -3793,32 +3873,41 @@ function withTimeout(promise,ms,label){
   ]);
 }
 async function confirmLongRollImport(){
-  if(!currentAccess||!pendingImport)return;
-  const rows=pendingImport.rows.filter(r=>r.__ok); if(!rows.length)return;
+  if(!currentAccess||!pendingImport) return;
+  const rows=pendingImport.rows.filter(r=>r.__ok); if(!rows.length) return;
   const btn=document.getElementById('confirmImportBtn'); btn.disabled=true;
   if(navigator.onLine===false){ showToast('You appear to be offline. Reconnect to the internet and try again.'); btn.disabled=false; btn.textContent=`Confirm ${rows.length} Valid Row(s)`; return; }
   try{
-    const existingByMsm=new Map(records.map(r=>[importKey(r.msmno),r])); const existingByCnic=new Map(records.map(r=>[importKey(r.cnic),r]));
+    const byId=new Map(records.map(r=>[r.id,r]));
+    const existingByMsm=new Map(), existingByCnic=new Map();
+    records.forEach(r=>{const m=importKey(r.msmno),c=importKey(r.cnic); if(m&&!existingByMsm.has(m))existingByMsm.set(m,r); if(c&&!existingByCnic.has(c))existingByCnic.set(c,r);});
     let nextSno=records.length?Math.max(...records.map(r=>Number(r.sno)||0))+1:1,added=0,updated=0;
     const totalBatches=Math.ceil(rows.length/400);
     for(let i=0,batchNo=1;i<rows.length;i+=400,batchNo++){
       btn.textContent=`Importing batch ${batchNo} of ${totalBatches}…`;
       const batch=db.batch();
       rows.slice(i,i+400).forEach(rec=>{
-        const m=importKey(rec.msmno),c=importKey(rec.cnic); const existing=(m&&existingByMsm.get(m))||(c&&existingByCnic.get(c));
-        const clean={...rec}; delete clean.__row; delete clean.__ok; delete clean.__reason;
+        const m=importKey(rec.msmno),c=importKey(rec.cnic);
+        const existing=byId.get(rec.__existingId)||(m&&existingByMsm.get(m))||(c&&existingByCnic.get(c))||null;
+        const clean={}; Object.keys(rec).forEach(k=>{ if(!k.startsWith('__')) clean[k]=rec[k]; });
         clean.updatedAt=firebase.firestore.FieldValue.serverTimestamp();
-        if(existing){batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id),clean);updated++;}
-        // Always assign a fresh, globally-unique serial number on import — never trust the
-        // source Excel's own "S No" column, since every sector file naturally restarts at 1
-        // and reusing it here creates duplicate S No values across the combined database.
-        else{const ref=db.collection(RECORDS_COLLECTION).doc();batch.set(ref,{sno:nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp(),...clean});nextSno++;added++;}
+        if(existing){
+          /* Blank cells must never erase data that is already saved. */
+          Object.keys(clean).forEach(k=>{ if(clean[k]==='') delete clean[k]; });
+          /* An update must not move a guard to another Sector/Region; it only fills tags that are still missing. */
+          ['sector','sectorId','region','regionId','clientproject'].forEach(k=>{ if(existing[k]) delete clean[k]; });
+          batch.update(db.collection(RECORDS_COLLECTION).doc(existing.id),clean); updated++;
+        }else{
+          /* Fresh serial number always wins (placed AFTER the spread so nothing can overwrite it). */
+          batch.set(db.collection(RECORDS_COLLECTION).doc(),{...clean,sno:nextSno,createdAt:firebase.firestore.FieldValue.serverTimestamp()}); nextSno++; added++;
+        }
       });
       await withTimeout(batch.commit(),25000,`Batch ${batchNo} of ${totalBatches}`);
     }
-    try{await withTimeout(writeAuditLog('BULK_IMPORT',rows.length,{count:rows.length,added,updated,sourceFile:pendingImport.fileName||''}),15000,'Audit log write');}catch(e){console.warn('Import succeeded; audit write failed:',e);}
-    closeImportPreview(); showToast(`Import complete: ${added} added, ${updated} updated, ${rows.length} valid rows.`); renderTable();
-  }catch(err){console.error(err);showToast('Import failed: '+err.message);btn.textContent=`Confirm ${rows.length} Valid Row(s)`;}finally{btn.disabled=false;}
+    try{ await withTimeout(writeAuditLog('BULK_IMPORT',rows.length,{count:rows.length,added,updated,sourceFile:pendingImport.fileName||''}),15000,'Audit log write'); }catch(e){ console.warn('Import succeeded; audit write failed:',e); }
+    closeImportPreview(); showToast(`Import complete: ${added} added, ${updated} updated (${rows.length} valid rows).`); renderTable();
+  }catch(err){ console.error(err); showToast('Import failed: '+err.message); btn.textContent=`Confirm ${rows.length} Valid Row(s)`; }
+  finally{ btn.disabled=false; }
 }
 
 function getFilteredRecordsForExport(){
@@ -3836,11 +3925,12 @@ function getFilteredRecordsForExport(){
 }
 
 /* ===================== Export to Excel (matches Long_roll_Format.xlsx) ===================== */
-function exportExcel(){
+async function exportExcel(){
   if(!records.length){
     showToast('No records to export yet.');
     return;
   }
+  try{ await window.msmEnsureXLSX(); }catch(e){ showToast(e.message); return; }
   const company = document.getElementById('companyName').value.trim() || 'Company';
   const client = document.getElementById('filterClient').value.trim() || 'All Clients';
   const scopeSector = (isParent() && window.msmActiveSector && window.msmActiveSector!=='full') ? (msmSectorByKey(window.msmActiveSector)||'') : '';
@@ -3849,6 +3939,7 @@ function exportExcel(){
 
   const header = COLUMNS.map(c=>c.label);
   const visible = getFilteredRecordsForExport();
+  if(!visible.length){ showToast('No records match the current filters / Region / Sector.'); return; }
   const rows = visible.map(r => COLUMNS.map(c => r[c.key] ?? ''));
 
   const aoa = [titleRow, header, ...rows];
@@ -5303,6 +5394,7 @@ if ('serviceWorker' in navigator) {
         createdBy:(currentUser.email||'').toLowerCase(),
         createdAt:firebase.firestore.FieldValue.serverTimestamp()
       },{merge:true});
+      try{ await db.collection(MSM_REGION_COLLECTION).doc(norm(region.regionId||region.id)).set({sectors:firebase.firestore.FieldValue.arrayUnion(name)},{merge:true}); }catch(e){ console.warn('Region sector list not updated:',e.message); }
       await window.msmLoadSectorCatalog();
       await writeAuditLog('ADD_SECTOR',sectorId,{name,regionId:region.regionId});
       showToast(name+' Sector added.');
@@ -5353,22 +5445,20 @@ if ('serviceWorker' in navigator) {
  function allRegions(){return (window.msmRegionCatalog||[]).filter(r=>norm(r?.name));}
  function sectorsFor(r){ if(typeof window.msmSectorsForRegion==='function') return window.msmSectorsForRegion(r)||[]; const id=ridOf(r); return (window.msmSectorCatalog||[]).filter(s=>norm(s.regionId||'')===id).map(s=>s.name||s); }
  function homeRole(){const role=getAccess()?.role||''; return role==='parent'?'Parent Master':role==='regional'?'Regional Office':role==='client'?'Client / Sector':'Authorized User';}
+ /* Two real views: 'home' (dashboard) and 'tools' (enrollment / register / audit ...). */
+ window.msmSetView=function(v){
+  const dash=document.getElementById('msmHome'), wrap=document.getElementById('msmToolsWrap');
+  if(v==='tools'){ if(dash)dash.style.display='none'; if(wrap)wrap.style.display='block'; }
+  else { if(dash)dash.style.display=''; if(wrap)wrap.style.display='none'; }
+ };
  window.msmHomeGo=function(target){
-  const dash=document.getElementById('msmHome');
-  if(target==='top'){if(dash)dash.style.display='';document.querySelector('main')?.style && (document.querySelector('main').style.display='none');window.scrollTo({top:0,behavior:'smooth'});return;}
-  if(target==='regions'){document.getElementById('msmHomeRegions')?.scrollIntoView({behavior:'smooth'});return;}
-  const openTool=(tab,scrollSel)=>{
-    if(dash) dash.style.display='none';
-    const mainEl=document.querySelector('main'); if(mainEl) mainEl.style.display='block';
-    if(typeof window.switchTab==='function') window.switchTab(tab);
-    const target=document.querySelector(scrollSel)||mainEl;
-    target?.scrollIntoView({behavior:'smooth',block:'start'});
-  };
-  if(target==='database'){openTool('register','.tabbar');return;}
-  if(target==='form'){openTool('form','.tabbar');return;}
-  if(target==='instructions'){openTool('instructions','.tabbar');return;}
-  if(target==='admin'){openTool('admin','.tabbar');return;}
-  if(target==='audit'){openTool('audit','.tabbar');return;}
+  if(target==='top'){ window.msmSetView('home'); window.scrollTo({top:0,behavior:'smooth'}); return; }
+  if(target==='regions'){ window.msmSetView('home'); document.getElementById('msmHomeRegions')?.scrollIntoView({behavior:'smooth'}); return; }
+  const tab={database:'register',form:'form',instructions:'instructions',admin:'admin',audit:'audit'}[target];
+  if(!tab) return;
+  window.msmSetView('tools');
+  if(typeof window.switchTab==='function') window.switchTab(tab);
+  (document.querySelector('.tabbar')||document.getElementById('msmToolsWrap'))?.scrollIntoView({behavior:'smooth',block:'start'});
  };
  const msmSiteDefaults={
    about:{title:'About MSM SECURITY GUARDS PVT LTD',en:'MSM SECURITY GUARDS PVT LTD provides structured security workforce management through the MSM Longroll Database. The system organizes employee enrollment, regions, sectors, locations, clients, records, audit history and controlled access.',ur:'MSM SECURITY GUARDS PVT LTD کے لیے MSM Longroll Database ایک منظم نظام ہے جس کے ذریعے ملازمین کا اندراج، Regions، Sectors، Locations، Clients، Records، Audit History اور محدود User Access محفوظ اور منظم کیا جاتا ہے۔'},
@@ -5520,14 +5610,42 @@ if ('serviceWorker' in navigator) {
  };
  window.msmHomeAddSector=async function(preRegion){
   const allowed=getAccess()?.role==='parent'||getAccess()?.role==='regional';if(!allowed)return window.showToast?.('Parent/Admin or assigned Regional Office access is required.');const rows=allRegions();let rid=preRegion||window.msmHomeSelectedRegion||'';if(!rid){const opts=rows.map(r=>`${ridOf(r)} = ${r.name}`).join('\n');rid=prompt('Choose Region ID:\n'+opts)||'';}const region=rows.find(r=>ridOf(r)===rid);if(!region)return window.showToast?.('Select a valid Region.');const name=prompt('New Sector name for '+region.name+':');if(!norm(name))return;const sid=norm(name).toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
-  try{await db.collection(sectorCollection()).doc(sid).set({name:norm(name),sectorId:sid,regionId:ridOf(region),region:region.name,locations:[],createdBy:(getUser()?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});await window.msmLoadSectorCatalog?.();window.msmHomeRender();window.msmHomeOpenRegion(ridOf(region));window.showToast?.(norm(name)+' Sector added successfully.');}catch(e){console.error(e);window.showToast?.('Could not add Sector: '+e.message);}
+  try{await db.collection(sectorCollection()).doc(sid).set({name:norm(name),sectorId:sid,regionId:ridOf(region),region:region.name,locations:[],createdBy:(getUser()?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});try{await db.collection(regionCollection()).doc(ridOf(region)).set({sectors:firebase.firestore.FieldValue.arrayUnion(norm(name))},{merge:true});}catch(e){console.warn('Region sector list not updated:',e.message);}await window.msmLoadSectorCatalog?.();window.msmHomeRender();window.msmHomeOpenRegion(ridOf(region));window.showToast?.(norm(name)+' Sector added successfully.');}catch(e){console.error(e);window.showToast?.('Could not add Sector: '+e.message);}
  };
  window.msmHomeAddSectorLocation=async function(sid){const text=prompt('Enter Location or Client name:');if(!norm(text))return;try{const ref=db.collection(sectorCollection()).doc(sid);await ref.set({locations:firebase.firestore.FieldValue.arrayUnion({name:norm(text),createdAt:new Date().toISOString()}),updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});await window.msmLoadSectorCatalog?.();window.showToast?.('Location / Client added.');}catch(e){console.error(e);window.showToast?.('Could not save Location / Client: '+e.message);}};
  window.msmHomePickRegionPhoto=function(rid){if(getAccess()?.role!=='parent')return window.showToast?.('Only Parent/Admin can change Region background photos.');const old=document.getElementById('msmRegionPhotoInput');old?.remove();const input=document.createElement('input');input.id='msmRegionPhotoInput';input.type='file';input.accept='image/*';input.style.display='none';input.onchange=async()=>{const f=input.files?.[0];if(!f)return;try{if(!storage)throw new Error('Firebase Storage is not available.');const ref=storage.ref('regions/'+rid+'/background-'+Date.now()+'-'+f.name.replace(/[^a-zA-Z0-9._-]/g,'_'));await ref.put(f);const url=await ref.getDownloadURL();await db.collection(regionCollection()).doc(rid).set({imageUrl:url,updatedAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});await window.msmLoadRegionCatalog?.();window.msmHomeRender();window.msmHomeOpenRegion(rid);window.showToast?.('Region background photo updated.');}catch(e){console.error(e);window.showToast?.('Photo upload failed: '+e.message);}};document.body.appendChild(input);input.click();};
  function tick(){const d=new Date();const el=document.getElementById('msmHomeClock');if(el)el.textContent=d.toLocaleDateString(undefined,{weekday:'short',day:'2-digit',month:'short',year:'numeric'})+' | '+d.toLocaleTimeString();}
  setInterval(tick,1000);tick();
- setTimeout(window.msmHomeRender,1400);
- setTimeout(()=>window.msmLoadSiteContent?.(),1200);
+ /* ---- Event-driven start-up (replaces fixed 1.2 s / 1.4 s timers that ran BEFORE login finished) ---- */
+ let renderTimer=null;
+ const renderSoon=()=>{ clearTimeout(renderTimer); renderTimer=setTimeout(()=>{ if(getAccess()){ try{ window.msmHomeRender(); }catch(e){ console.warn('Home render:',e); } } },250); };
+ window.msmHomeRenderSoon=renderSoon;
+ ['updateStamp','msmRenderRegionPanel','msmRenderRecycle'].forEach(n=>{ const base=window[n]; if(typeof base==='function') window[n]=function(){ const r=base.apply(this,arguments); renderSoon(); return r; }; });
+ /* Any code that opens a tab (Open Sector, Recycle Bin, save -> Register ...) must show the tools view. */
+ ['switchTab','msmShowTab'].forEach(n=>{ const base=window[n]; if(typeof base==='function') window[n]=function(){ if(!window.__msmBooting) window.msmSetView('tools'); return base.apply(this,arguments); }; });
+ const baseStart=window.startApp;
+ window.startApp=function(){
+  window.__msmBooting=true;
+  try{ if(typeof baseStart==='function') baseStart.apply(this,arguments); } finally{ window.__msmBooting=false; }
+  window.msmSetView('home');
+  (async()=>{
+   try{ await window.msmLoadRegionCatalog?.(); await window.msmLoadSectorCatalog?.(); }catch(e){ console.warn('Catalog load:',e); }
+   try{ window.msmHomeRender(); }catch(e){ console.warn(e); }
+   window.msmLoadSiteContent?.();
+  })();
+ };
+ /* Parent tool: give old records (saved before Region tags existed) their regionId / sectorId / region. */
+ window.msmBackfillRegionTags=async function(){
+  if(!(getAccess()?.role==='parent')) return window.showToast?.('Parent/Admin access is required.');
+  const recs=getRecords(); const todo=[];
+  recs.forEach(r=>{ const name=norm(r.sector||r.clientproject); if(!name) return; const reg=(typeof msmRegionForSector==='function')?msmRegionForSector(name):null; if(!reg) return;
+   const patch={}; if(!norm(r.regionId)) patch.regionId=norm(reg.regionId||reg.id); if(!norm(r.region)) patch.region=reg.name; if(!norm(r.sector)) patch.sector=name; if(!norm(r.sectorId)) patch.sectorId=msmSectorKeyFromName(name);
+   if(Object.keys(patch).length) todo.push([r.id,patch]); });
+  if(!todo.length) return window.showToast?.('All records already carry Region/Sector tags.');
+  if(!confirm('Add Region/Sector tags to '+todo.length+' existing record(s)? Nothing is deleted.')) return;
+  try{ for(let i=0;i<todo.length;i+=400){ const b=db.batch(); todo.slice(i,i+400).forEach(([id,patch])=>b.update(db.collection('records').doc(id),patch)); await b.commit(); }
+   window.showToast?.('Region tags added to '+todo.length+' record(s).'); }catch(e){ console.error(e); window.showToast?.('Could not update records: '+e.message); }
+ };
 })();
 </script>
 
