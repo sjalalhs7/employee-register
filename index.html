@@ -3765,7 +3765,18 @@ function importDate(v){
 /* Decide Region/Sector tags for one imported row so Regional/Client users can actually see it. */
 function importResolveScope(rec){
   const out={};
-  const inCatalog=(name)=>{ const low=String(name||'').trim().toLowerCase(); return low?((window.msmSectorCatalog||[]).find(n=>String(n).toLowerCase()===low)||null):null; };
+  /* FIX: Long Roll files write the client as "113. Saudi Pak Tower" (serial prefix) and with odd spacing/punctuation.
+     Normalise both sides (drop leading serial number, punctuation, case, extra spaces) before matching the registered Sector. */
+  const secNorm=(v)=>String(v||'').trim().replace(/^\s*\d+\s*[.)\-:]\s*/,'').replace(/&/g,' and ').replace(/[^\p{L}\p{N}]+/gu,' ').trim().toLowerCase();
+  const inCatalog=(name)=>{
+    const raw=String(name||'').trim(); if(!raw) return null;
+    const key=secNorm(raw); if(!key) return null;
+    const cat=(window.msmSectorCatalog||[]).map(n=>String(n));
+    return cat.find(n=>n.toLowerCase()===raw.toLowerCase())      /* exact */
+        || cat.find(n=>secNorm(n)===key)                         /* exact after cleaning */
+        || cat.find(n=>{ const k=secNorm(n); return k&&key.length>=4&&(key.includes(k)||k.includes(key)); }) /* contains */
+        || null;
+  };
   if(isClient()){
     const sec=mySector(); out.clientproject=myClientProject()||sec; out.sector=sec;
     const sid=String(currentAccess.sectorId||'').trim()||(sec?msmSectorKeyFromName(sec):''); if(sid) out.sectorId=sid;
@@ -3776,7 +3787,7 @@ function importResolveScope(rec){
   if(isParent() && window.msmActiveSector && !['full','other-sectors'].includes(window.msmActiveSector)) secName=msmSectorByKey(window.msmActiveSector)||'';
   if(!secName) secName=inCatalog(rec.sector)||inCatalog(rec.clientproject)||'';
   if(isRegional()){
-    if(!secName) return {error:'Sector is not registered in your Region (put the Sector name in Client/Project)'};
+    if(!secName) return {error:(window.msmSectorCatalog||[]).length?'Sector "'+String(rec.clientproject||rec.sector||'').trim()+'" is not registered in your Region — add it in Sector Manager or correct Client/Project':'No Sectors are loaded for your Region yet — wait a few seconds, reload, or ask Admin to assign Sectors to your Region'};
     if(!myRegionSectors().some(x=>String(x).toLowerCase()===secName.toLowerCase())) return {error:'Sector is outside your Region'};
   }
   if(secName){
