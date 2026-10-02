@@ -6,8 +6,8 @@
   "scope": "/employee-register/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#071522",
-  "theme_color": "#071522",
+  "background_color": "#FFF6E8",
+  "theme_color": "#047857",
   "icons": [
     {
       "src": "./icon-192.png",
