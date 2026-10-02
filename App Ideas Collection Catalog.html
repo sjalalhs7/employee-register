@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevIdeas - Ultimate App Ideas Catalog</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            700: '#0369a1',
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .dark .glass {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.4);
+            border-radius: 9999px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-screen flex flex-col transition-colors duration-200 custom-scrollbar">
+
+    <!-- Navbar -->
+    <header class="sticky top-0 z-40 w-full glass border-b border-slate-200/80 dark:border-slate-800/80 transition-colors">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <!-- Brand Logo -->
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="resetFilters()">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-600 flex items-center justify-center text-white shadow-md shadow-sky-500/20">
+                    <i class="fa-solid fa-lightbulb text-xl"></i>
+                </div>
+                <span class="text-xl font-bold tracking-tight bg-gradient-to-r from-sky-600 to-indigo-600 dark:from-sky-400 dark:to-indigo-400 bg-clip-text text-transparent">
+                    DevIdeas
+                </span>
+            </div>
+
+            <!-- Quick Navigation & Controls -->
+            <div class="flex items-center space-x-2 sm:space-x-4">
+                <button id="bookmarksToggleBtn" onclick="toggleBookmarksOnly()" class="px-3 py-2 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition flex items-center gap-2">
+                    <i class="fa-regular fa-bookmark text-sky-500"></i>
+                    <span class="hidden sm:inline">Bookmarks</span>
+                    <span id="bookmarkCount" class="px-1.5 py-0.5 text-xs bg-sky-100 dark:bg-sky-900/50 text-sky-600 dark:text-sky-400 rounded-full font-bold">0</span>
+                </button>
+
+                <button id="themeToggleBtn" onclick="toggleTheme()" class="p-2.5 rounded-lg text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition" aria-label="Toggle Dark Mode">
+                    <i class="fa-solid fa-moon text-lg dark:hidden"></i>
+                    <i class="fa-solid fa-sun text-lg hidden dark:block text-amber-400"></i>
+                </button>
+
+                <button onclick="openSubmitModal()" class="px-4 py-2 rounded-xl text-sm font-semibold bg-sky-500 hover:bg-sky-600 active:scale-95 text-white shadow-md shadow-sky-500/20 transition flex items-center gap-2">
+                    <i class="fa-solid fa-plus"></i>
+                    <span class="hidden sm:inline">Submit Idea</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="relative overflow-hidden pt-12 pb-10 sm:pt-16 sm:pb-14 border-b border-slate-200 dark:border-slate-800 bg-gradient-to-b from-sky-50/50 dark:from-slate-900/50 to-transparent">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
+            <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-sky-100 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800/50 mb-4">
+                <i class="fa-solid fa-code"></i> Curated Developer Project Ideas
+            </span>
+            <h1 class="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white max-w-3xl mx-auto leading-tight">
+                Level Up Your Portfolio with Real-World Projects
+            </h1>
+            <p class="mt-4 text-base sm:text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+                Discover step-by-step app specs, complete user stories, bonus challenges, and curated learning resources sorted by difficulty.
+            </p>
+
+            <!-- Tier Stats Counter -->
+            <div class="mt-8 grid grid-cols-3 gap-3 sm:gap-6 max-w-xl mx-auto">
+                <div onclick="filterTier('Beginner')" class="p-3 sm:p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 shadow-sm cursor-pointer hover:border-emerald-500 dark:hover:border-emerald-500 transition group">
+                    <div class="text-2xl sm:text-3xl font-extrabold text-emerald-500 group-hover:scale-110 transition-transform inline-block" id="beginnerCount">0</div>
+                    <div class="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Beginner</div>
+                </div>
+                <div onclick="filterTier('Intermediate')" class="p-3 sm:p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 shadow-sm cursor-pointer hover:border-amber-500 dark:hover:border-amber-500 transition group">
+                    <div class="text-2xl sm:text-3xl font-extrabold text-amber-500 group-hover:scale-110 transition-transform inline-block" id="intermediateCount">0</div>
+                    <div class="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Intermediate</div>
+                </div>
+                <div onclick="filterTier('Advanced')" class="p-3 sm:p-4 rounded-2xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60 shadow-sm cursor-pointer hover:border-rose-500 dark:hover:border-rose-500 transition group">
+                    <div class="text-2xl sm:text-3xl font-extrabold text-rose-500 group-hover:scale-110 transition-transform inline-block" id="advancedCount">0</div>
+                    <div class="text-xs sm:text-sm font-medium text-slate-500 dark:text-slate-400 mt-1">Advanced</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Search & Filter Controls -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex-grow w-full">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+            
+            <!-- Tier Filter Pills -->
+            <div class="flex flex-wrap items-center gap-2">
+                <button onclick="filterTier('All')" id="btn-tier-All" class="tier-btn px-4 py-2 rounded-xl text-sm font-medium transition bg-sky-500 text-white shadow-sm">
+                    All Tiers
+                </button>
+                <button onclick="filterTier('Beginner')" id="btn-tier-Beginner" class="tier-btn px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/60 transition">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block mr-1.5"></span>Beginner
+                </button>
+                <button onclick="filterTier('Intermediate')" id="btn-tier-Intermediate" class="tier-btn px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/60 transition">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 inline-block mr-1.5"></span>Intermediate
+                </button>
+                <button onclick="filterTier('Advanced')" id="btn-tier-Advanced" class="tier-btn px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/60 transition">
+                    <span class="w-2 h-2 rounded-full bg-rose-500 inline-block mr-1.5"></span>Advanced
+                </button>
+            </div>
+
+            <!-- Search and Tag Dropdown -->
+            <div class="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+                <div class="relative w-full sm:w-64">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="Search project title or spec..." class="w-full pl-10 pr-4 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white transition">
+                </div>
+                
+                <select id="tagSelect" onchange="handleTagSelect()" class="w-full sm:w-auto px-3.5 py-2 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-sm text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-sky-500 cursor-pointer">
+                    <option value="">All Categories / Tags</option>
+                    <option value="Web">Web</option>
+                    <option value="Mobile">Mobile</option>
+                    <option value="API">API / Backend</option>
+                    <option value="Game">Game</option>
+                    <option value="Utility">Utility</option>
+                    <option value="Frontend">Frontend</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Active Filter Indicator Bar -->
+        <div id="filterStatus" class="hidden items-center justify-between px-4 py-2.5 rounded-xl bg-sky-50 dark:bg-sky-950/40 border border-sky-100 dark:border-sky-900/50 mb-6 text-xs text-sky-700 dark:text-sky-300">
+            <span id="filterStatusText">Showing filtered results</span>
+            <button onclick="resetFilters()" class="font-semibold underline hover:text-sky-900 dark:hover:text-sky-100">Clear Filters</button>
+        </div>
+
+        <!-- Projects Grid -->
+        <div id="projectsGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- Cards populated dynamically via JavaScript -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden text-center py-16 px-4">
+            <div class="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto text-slate-400 text-2xl mb-4">
+                <i class="fa-solid fa-folder-open"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 dark:text-slate-200">No project ideas found</h3>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mt-1 max-w-sm mx-auto">Try adjusting your keyword search, clearing filters, or switching difficulty tiers.</p>
+            <button onclick="resetFilters()" class="mt-4 px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white rounded-xl text-sm font-semibold transition">Reset All Filters</button>
+        </div>
+    </main>
+
+    <!-- Project Details Modal -->
+    <div id="projectModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <!-- Backdrop -->
+        <div class="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm transition-opacity" onclick="closeProjectModal()"></div>
+
+        <!-- Modal Dialog -->
+        <div class="relative w-full max-w-3xl bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-700 my-auto transform transition-all z-10 flex flex-col max-h-[90vh]">
+            
+            <!-- Modal Header -->
+            <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-700/80 flex items-start justify-between bg-slate-50/50 dark:bg-slate-800/50">
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span id="modalTierBadge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold">Tier</span>
+                        <span id="modalStatusBadge" class="px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Not Started</span>
+                    </div>
+                    <h2 id="modalTitle" class="text-2xl font-bold text-slate-900 dark:text-white leading-snug">Project Title</h2>
+                </div>
+                
+                <div class="flex items-center space-x-2">
+                    <button id="modalBookmarkBtn" onclick="toggleModalBookmark()" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-amber-500 transition text-lg" title="Bookmark project">
+                        <i class="fa-regular fa-bookmark"></i>
+                    </button>
+                    <button onclick="closeProjectModal()" class="p-2 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition text-lg">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="px-6 py-6 overflow-y-auto custom-scrollbar space-y-6 flex-grow">
+                
+                <!-- Status Control Bar -->
+                <div class="flex items-center justify-between p-3.5 rounded-xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200/80 dark:border-slate-700/60">
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Your Progress Status</span>
+                    <div class="flex gap-2">
+                        <button id="statusNotStarted" onclick="updateProjectStatus('Not Started')" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition">Not Started</button>
+                        <button id="statusInProgress" onclick="updateProjectStatus('In Progress')" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-amber-300 dark:border-amber-700/60 text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition">In Progress</button>
+                        <button id="statusCompleted" onclick="updateProjectStatus('Completed')" class="px-3 py-1.5 rounded-lg text-xs font-medium border border-emerald-300 dark:border-emerald-700/60 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 transition">Completed</button>
+                    </div>
+                </div>
+
+                <!-- Goal / Description -->
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Project Goal</h3>
+                    <p id="modalDescription" class="text-slate-700 dark:text-slate-300 leading-relaxed text-sm sm:text-base"></p>
+                </div>
+
+                <!-- Tech Stack Suggestions -->
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Recommended Tech Stack</h3>
+                    <div id="modalTechStack" class="flex flex-wrap gap-2"></div>
+                </div>
+
+                <!-- User Stories (Interactive Checklist) -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">User Stories (Requirements)</h3>
+                        <span id="userStoriesProgress" class="text-xs font-bold text-sky-600 dark:text-sky-400">0 / 0 Done</span>
+                    </div>
+                    <div id="modalUserStories" class="space-y-2 bg-slate-50 dark:bg-slate-900/40 p-4 rounded-xl border border-slate-100 dark:border-slate-800"></div>
+                </div>
+
+                <!-- Bonus Features -->
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Bonus Features & Ideas</h3>
+                    <ul id="modalBonusFeatures" class="list-disc list-inside space-y-1.5 text-slate-700 dark:text-slate-300 text-sm"></ul>
+                </div>
+
+                <!-- Helpful Resources -->
+                <div>
+                    <h3 class="text-sm font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500 mb-2">Helpful Docs & Guides</h3>
+                    <div id="modalResources" class="grid grid-cols-1 sm:grid-cols-2 gap-2"></div>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-slate-100 dark:border-slate-700/80 bg-slate-50/50 dark:bg-slate-800/50 flex items-center justify-between">
+                <span class="text-xs text-slate-400">Share or start building this spec today!</span>
+                <button onclick="closeProjectModal()" class="px-5 py-2 bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-medium rounded-xl text-sm transition">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Submit Idea Modal -->
+    <div id="submitModal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div class="fixed inset-0 bg-slate-900/60 dark:bg-slate-950/80 backdrop-blur-sm" onclick="closeSubmitModal()"></div>
+        <div class="relative w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 z-10 overflow-hidden my-auto">
+            <div class="px-6 py-5 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-slate-900 dark:text-white">Propose an App Idea</h3>
+                <button onclick="closeSubmitModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-lg"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="handleIdeaSubmit(event)" class="p-6 space-y-4">
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Project Title</label>
+                    <input type="text" id="submitTitle" required placeholder="e.g. Markdown Previewer" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white">
+                </div>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Tier Level</label>
+                        <select id="submitTier" required class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white">
+                            <option value="Beginner">Beginner</option>
+                            <option value="Intermediate">Intermediate</option>
+                            <option value="Advanced">Advanced</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Main Category</label>
+                        <select id="submitTag" required class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white">
+                            <option value="Web">Web</option>
+                            <option value="Mobile">Mobile</option>
+                            <option value="API">API</option>
+                            <option value="Game">Game</option>
+                            <option value="Utility">Utility</option>
+                        </select>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Goal / Description</label>
+                    <textarea id="submitDescription" required rows="3" placeholder="Brief explanation of what the user builds..." class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase mb-1">Key User Stories (Comma separated)</label>
+                    <input type="text" id="submitStories" required placeholder="User can see preview, User can copy HTML" class="w-full px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 dark:text-white">
+                </div>
+                <div class="pt-2 flex justify-end gap-3">
+                    <button type="button" onclick="closeSubmitModal()" class="px-4 py-2 rounded-xl text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700">Cancel</button>
+                    <button type="submit" class="px-5 py-2 rounded-xl text-sm font-semibold bg-sky-500 hover:bg-sky-600 text-white shadow-md shadow-sky-500/20 transition">Add Idea</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 px-4 py-3 rounded-xl shadow-xl text-sm font-medium flex items-center gap-3 translate-y-20 opacity-0 transition-all duration-300 pointer-events-none">
+        <i id="toastIcon" class="fa-solid fa-check-circle text-emerald-400 dark:text-emerald-600"></i>
+        <span id="toastMessage">Action completed successfully</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="mt-auto border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center text-slate-500 dark:text-slate-400 text-sm">
+            <p>DevIdeas App Catalog &bull; Inspired by open-source app specs for developers of all skill levels.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Sample Curated App Ideas Dataset
+        const initialProjects = [
+            {
+                id: 'p1',
+                title: 'Markdown Previewer',
+                tier: 'Beginner',
+                tags: ['Web', 'Frontend', 'Utility'],
+                summary: 'Real-time Markdown editor with side-by-side rendered HTML output and syntax support.',
+                description: 'Build a lightweight text editor that allows users to write raw Markdown text and instantly see the formatted output side by side. Perfect for practicing event handling, state updates, and external parsing libraries.',
+                techStack: ['HTML/CSS', 'JavaScript', 'Marked.js', 'Tailwind CSS'],
+                userStories: [
+                    'User can enter Markdown formatted text in a textarea',
+                    'User can view parsed HTML rendered in real-time as they type',
+                    'User can click a button to clear the input editor',
+                    'User can click a button to copy formatted HTML to clipboard'
+                ],
+                bonusFeatures: [
+                    'Add support for code syntax highlighting using Prism.js',
+                    'Persist typed Markdown in LocalStorage so progress is not lost on reload',
+                    'Export document as PDF or downloadable .md file'
+                ],
+                resources: [
+                    { title: 'Marked.js Documentation', url: 'https://marked.js.org/' },
+                    { title: 'Markdown Syntax Guide', url: 'https://www.markdownguide.org/basic-syntax/' }
+                ]
+            },
+            {
+                id: 'p2',
+                title: 'Interactive Quiz App',
+                tier: 'Beginner',
+                tags: ['Web', 'Frontend', 'Game'],
+                summary: 'Multiple-choice quiz app featuring timer countdowns, scoring, and animated result summaries.',
+                description: 'An engaging quiz game that challenges players with timed multiple-choice questions. Offers instant feedback, score calculation, and final performance analytics.',
+                techStack: ['JavaScript', 'HTML5', 'Tailwind CSS'],
+                userStories: [
+                    'User can start a quiz with a set number of questions',
+                    'User can select an answer and see if it is correct or incorrect instantly',
+                    'User can see a countdown timer for each question',
+                    'User receives a final score screen at the end with percentage'
+                ],
+                bonusFeatures: [
+                    'Fetch dynamic questions from Open Trivia Database API',
+                    'Allow user to choose difficulty category before starting',
+                    'Store user high scores locally'
+                ],
+                resources: [
+                    { title: 'Open Trivia API Docs', url: 'https://opentdb.com/api_config.php' },
+                    { title: 'JS Timer Tutorial', url: 'https://developer.mozilla.org/en-US/docs/Web/API/setInterval' }
+                ]
+            },
+            {
+                id: 'p3',
+                title: 'Weather & Forecast Dashboard',
+                tier: 'Intermediate',
+                tags: ['Web', 'API', 'Utility'],
+                summary: 'Search live weather conditions and 5-day forecasts with auto geolocation support.',
+                description: 'A responsive weather dashboard fetching real-time meteorological data using OpenWeatherMap API. Features temperature conversions, wind speed metrics, and dynamic background weather graphics.',
+                techStack: ['React / JS', 'OpenWeather API', 'Tailwind CSS'],
+                userStories: [
+                    'User can search for weather conditions by city name',
+                    'User can toggle between Celsius and Fahrenheit units',
+                    'User can view current temperature, humidity, wind speed, and UV index',
+                    'User can view a 5-day weather forecast breakdown'
+                ],
+                bonusFeatures: [
+                    'Auto-detect user location using Browser Geolocation API',
+                    'Dynamic dynamic background themes based on weather state (sunny, rainy, snow)'
+                ],
+                resources: [
+                    { title: 'OpenWeather API Guide', url: 'https://openweathermap.org/api' },
+                    { title: 'Geolocation API MDN', url: 'https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API' }
+                ]
+            },
+            {
+                id: 'p4',
+                title: 'E-Commerce Shopping Cart',
+                tier: 'Intermediate',
+                tags: ['Web', 'Frontend', 'Utility'],
+                summary: 'Full client-side shopping flow with product filters, cart management, and price calculations.',
+                description: 'Simulate a modern e-commerce storefront with product search, category filtering, cart sliding drawer, price total calculations, and mock checkout sequence.',
+                techStack: ['Vue.js / React', 'Tailwind CSS', 'LocalStorage'],
+                userStories: [
+                    'User can browse products in a grid with filters (Category, Price Range)',
+                    'User can add items to cart and adjust quantity',
+                    'User can view total cost with automatically calculated taxes and discounts',
+                    'User can clear cart or remove individual items'
+                ],
+                bonusFeatures: [
+                    'Persist cart state using LocalStorage',
+                    'Add discount promo code validator logic'
+                ],
+                resources: [
+                    { title: 'FakeStore API for Mock Data', url: 'https://fakestoreapi.com/' }
+                ]
+            },
+            {
+                id: 'p5',
+                title: 'Real-Time Chat Application',
+                tier: 'Advanced',
+                tags: ['Web', 'API', 'Mobile'],
+                summary: 'Multi-room real-time messaging web app powered by WebSockets and user presence tracking.',
+                description: 'Build a dynamic messaging application enabling multiple users to join public channels or private rooms, chat seamlessly with low latency, and see active member statuses.',
+                techStack: ['Node.js', 'Express', 'Socket.io', 'React / Vue'],
+                userStories: [
+                    'User can enter a custom display name and pick a chat channel',
+                    'User can send and receive real-time messages instantly without page refresh',
+                    'User can see when other users are currently typing',
+                    'User can view list of online members in current channel'
+                ],
+                bonusFeatures: [
+                    'Support message timestamps, emoji reactions, and image attachments',
+                    'Store chat message history in MongoDB or Firebase'
+                ],
+                resources: [
+                    { title: 'Socket.io Get Started', url: 'https://socket.io/get-started/chat' }
+                ]
+            },
+            {
+                id: 'p6',
+                title: 'Kanban Task Board (Trello Clone)',
+                tier: 'Advanced',
+                tags: ['Web', 'Utility', 'Frontend'],
+                summary: 'Drag-and-drop task management board with custom columns and state persistence.',
+                description: 'Construct a productivity board with draggable cards across custom status columns (To Do, In Progress, Review, Completed). Include labels, subtasks, and due dates.',
+                techStack: ['React / HTML5 Drag and Drop', 'Tailwind CSS', 'Redux / Context'],
+                userStories: [
+                    'User can create new columns and custom task cards',
+                    'User can drag and drop task cards between columns',
+                    'User can edit card details, add description, tags, and sub-checklists',
+                    'User can delete cards or columns'
+                ],
+                bonusFeatures: [
+                    'Search/Filter tasks on the board by tag or assignee',
+                    'Export and import board data via JSON file'
+                ],
+                resources: [
+                    { title: 'HTML Drag and Drop API', url: 'https://developer.mozilla.org/en-US/docs/Web/API/HTML_Drag_and_Drop_API' }
+                ]
+            }
+        ];
+
+        // State Management
+        let projects = [];
+        let activeTier = 'All';
+        let searchQuery = '';
+        let selectedTag = '';
+        let bookmarksOnly = false;
+        let activeProjectId = null;
+
+        // Local Storage Keys
+        const STORAGE_KEY_PROJECTS = 'devideas_projects_v1';
+        const STORAGE_KEY_BOOKMARKS = 'devideas_bookmarks_v1';
+        const STORAGE_KEY_STATUS = 'devideas_status_v1';
+        const STORAGE_KEY_CHECKLIST = 'devideas_checklist_v1';
+        const STORAGE_KEY_THEME = 'devideas_theme';
+
+        let bookmarks = JSON.parse(localStorage.getItem(STORAGE_KEY_BOOKMARKS)) || [];
+        let projectStatus = JSON.parse(localStorage.getItem(STORAGE_KEY_STATUS)) || {};
+        let storyChecklist = JSON.parse(localStorage.getItem(STORAGE_KEY_CHECKLIST)) || {};
+
+        // Initialization
+        window.addEventListener('DOMContentLoaded', () => {
+            initTheme();
+            loadProjectsData();
+            renderStats();
+            renderProjects();
+        });
+
+        function loadProjectsData() {
+            const stored = localStorage.getItem(STORAGE_KEY_PROJECTS);
+            if (stored) {
+                try {
+                    projects = JSON.parse(stored);
+                } catch (e) {
+                    projects = initialProjects;
+                }
+            } else {
+                projects = initialProjects;
+                saveProjectsLocally();
+            }
+        }
+
+        function saveProjectsLocally() {
+            localStorage.setItem(STORAGE_KEY_PROJECTS, JSON.stringify(projects));
+        }
+
+        // Theme Functions
+        function initTheme() {
+            const savedTheme = localStorage.getItem(STORAGE_KEY_THEME);
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            } else {
+                document.documentElement.classList.remove('dark');
+            }
+        }
+
+        function toggleTheme() {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                localStorage.setItem(STORAGE_KEY_THEME, 'light');
+                showToast('Switched to Light mode');
+            } else {
+                document.documentElement.classList.add('dark');
+                localStorage.setItem(STORAGE_KEY_THEME, 'dark');
+                showToast('Switched to Dark mode');
+            }
+        }
+
+        // Filter & Search Functions
+        function filterTier(tier) {
+            activeTier = tier;
+            bookmarksOnly = false;
+            
+            // Update active state on buttons
+            document.querySelectorAll('.tier-btn').forEach(btn => {
+                btn.className = "tier-btn px-4 py-2 rounded-xl text-sm font-medium bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700/60 border border-slate-200 dark:border-slate-700/60 transition";
+            });
+            const activeBtn = document.getElementById(`btn-tier-${tier}`);
+            if (activeBtn) {
+                activeBtn.className = "tier-btn px-4 py-2 rounded-xl text-sm font-medium transition bg-sky-500 text-white shadow-sm";
+            }
+
+            updateFilterStatus();
+            renderProjects();
+        }
+
+        function handleSearch() {
+            searchQuery = document.getElementById('searchInput').value.toLowerCase().trim();
+            updateFilterStatus();
+            renderProjects();
+        }
+
+        function handleTagSelect() {
+            selectedTag = document.getElementById('tagSelect').value;
+            updateFilterStatus();
+            renderProjects();
+        }
+
+        function toggleBookmarksOnly() {
+            bookmarksOnly = !bookmarksOnly;
+            const btn = document.getElementById('bookmarksToggleBtn');
+            if (bookmarksOnly) {
+                btn.classList.add('bg-sky-100', 'dark:bg-sky-900/40', 'text-sky-600', 'dark:text-sky-400');
+            } else {
+                btn.classList.remove('bg-sky-100', 'dark:bg-sky-900/40', 'text-sky-600', 'dark:text-sky-400');
+            }
+            updateFilterStatus();
+            renderProjects();
+        }
+
+        function resetFilters() {
+            activeTier = 'All';
+            searchQuery = '';
+            selectedTag = '';
+            bookmarksOnly = false;
+            
+            document.getElementById('searchInput').value = '';
+            document.getElementById('tagSelect').value = '';
+            filterTier('All');
+        }
+
+        function updateFilterStatus() {
+            const statusBox = document.getElementById('filterStatus');
+            const statusText = document.getElementById('filterStatusText');
+            
+            let filtersApplied = [];
+            if (activeTier !== 'All') filtersApplied.push(`Tier: ${activeTier}`);
+            if (selectedTag) filtersApplied.push(`Tag: ${selectedTag}`);
+            if (searchQuery) filtersApplied.push(`Search: "${searchQuery}"`);
+            if (bookmarksOnly) filtersApplied.push(`Bookmarked Only`);
+
+            if (filtersApplied.length > 0) {
+                statusBox.classList.remove('hidden');
+                statusBox.classList.add('flex');
+                statusText.textContent = `Active Filters: ${filtersApplied.join(' • ')}`;
+            } else {
+                statusBox.classList.add('hidden');
+                statusBox.classList.remove('flex');
+            }
+        }
+
+        // Stats Calculation
+        function renderStats() {
+            const beginner = projects.filter(p => p.tier === 'Beginner').length;
+            const intermediate = projects.filter(p => p.tier === 'Intermediate').length;
+            const advanced = projects.filter(p => p.tier === 'Advanced').length;
+
+            document.getElementById('beginnerCount').textContent = beginner;
+            document.getElementById('intermediateCount').textContent = intermediate;
+            document.getElementById('advancedCount').textContent = advanced;
+            
+            // Update Bookmark Badge
+            document.getElementById('bookmarkCount').textContent = bookmarks.length;
+        }
+
+        // Render Project Cards Grid
+        function renderProjects() {
+            const grid = document.getElementById('projectsGrid');
+            const emptyState = document.getElementById('emptyState');
+            grid.innerHTML = '';
+
+            const filtered = projects.filter(p => {
+                const matchesTier = activeTier === 'All' || p.tier === activeTier;
+                const matchesSearch = !searchQuery || 
+                    p.title.toLowerCase().includes(searchQuery) || 
+                    p.summary.toLowerCase().includes(searchQuery) ||
+                    p.description.toLowerCase().includes(searchQuery);
+                const matchesTag = !selectedTag || (p.tags && p.tags.includes(selectedTag));
+                const matchesBookmark = !bookmarksOnly || bookmarks.includes(p.id);
+
+                return matchesTier && matchesSearch && matchesTag && matchesBookmark;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(project => {
+                const isBookmarked = bookmarks.includes(project.id);
+                const status = projectStatus[project.id] || 'Not Started';
+
+                // Tier Styling Badges
+                let tierClass = 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/50';
+                if (project.tier === 'Intermediate') {
+                    tierClass = 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/50';
+                } else if (project.tier === 'Advanced') {
+                    tierClass = 'bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800/50';
+                }
+
+                // Status Badge Styling
+                let statusBadge = '';
+                if (status === 'In Progress') {
+                    statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300"><i class="fa-solid fa-spinner fa-spin mr-1"></i>In Progress</span>`;
+                } else if (status === 'Completed') {
+                    statusBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300"><i class="fa-solid fa-check mr-1"></i>Done</span>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-slate-800 rounded-2xl p-6 border border-slate-200 dark:border-slate-700/70 shadow-sm hover:shadow-md hover:border-sky-500/50 dark:hover:border-sky-500/50 transition-all duration-200 flex flex-col justify-between group";
+
+                card.innerHTML = `
+                    <div>
+                        <!-- Card Top Bar -->
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold border ${tierClass}">
+                                    ${project.tier}
+                                </span>
+                                ${statusBadge}
+                            </div>
+                            <button onclick="toggleBookmark(event, '${project.id}')" class="text-slate-400 hover:text-amber-500 transition p-1" title="Bookmark">
+                                <i class="${isBookmarked ? 'fa-solid text-amber-500' : 'fa-regular'} fa-bookmark"></i>
+                            </button>
+                        </div>
+
+                        <!-- Card Header -->
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-sky-500 dark:group-hover:text-sky-400 transition-colors line-clamp-1">
+                            ${project.title}
+                        </h3>
+                        <p class="mt-2 text-sm text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed">
+                            ${project.summary}
+                        </p>
+                    </div>
+
+                    <!-- Card Footer / Tags -->
+                    <div class="mt-6 pt-4 border-t border-slate-100 dark:border-slate-700/60 flex items-center justify-between">
+                        <div class="flex flex-wrap gap-1.5 max-w-[70%]">
+                            ${project.tags ? project.tags.map(t => `<span class="px-2 py-0.5 text-[11px] rounded-md bg-slate-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 font-medium">${t}</span>`).join('') : ''}
+                        </div>
+                        <button onclick="openProjectModal('${project.id}')" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-sky-50 dark:bg-sky-950/50 text-sky-600 dark:text-sky-400 hover:bg-sky-500 hover:text-white dark:hover:bg-sky-500 dark:hover:text-white transition flex items-center gap-1.5">
+                            View Spec <i class="fa-solid fa-arrow-right text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Open Detailed Project Modal
+        function openProjectModal(id) {
+            const project = projects.find(p => p.id === id);
+            if (!project) return;
+
+            activeProjectId = id;
+
+            document.getElementById('modalTitle').textContent = project.title;
+            document.getElementById('modalDescription').textContent = project.description;
+
+            // Tier styling badge
+            const tierBadge = document.getElementById('modalTierBadge');
+            tierBadge.textContent = project.tier;
+            if (project.tier === 'Beginner') {
+                tierBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300';
+            } else if (project.tier === 'Intermediate') {
+                tierBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300';
+            } else {
+                tierBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300';
+            }
+
+            // Tech Stack
+            const techContainer = document.getElementById('modalTechStack');
+            techContainer.innerHTML = project.techStack.map(tech => 
+                `<span class="px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-700/80 text-xs font-medium text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600">${tech}</span>`
+            ).join('');
+
+            // Render User Stories (Checklist)
+            renderModalUserStories(project);
+
+            // Bonus Features
+            const bonusContainer = document.getElementById('modalBonusFeatures');
+            if (project.bonusFeatures && project.bonusFeatures.length > 0) {
+                bonusContainer.innerHTML = project.bonusFeatures.map(item => `<li>${item}</li>`).join('');
+            } else {
+                bonusContainer.innerHTML = `<li class="text-slate-400 italic">No extra bonus features provided for this project spec.</li>`;
+            }
+
+            // Resources
+            const resourcesContainer = document.getElementById('modalResources');
+            if (project.resources && project.resources.length > 0) {
+                resourcesContainer.innerHTML = project.resources.map(res => 
+                    `<a href="${res.url}" target="_blank" rel="noopener noreferrer" class="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-sky-500 dark:hover:border-sky-500 bg-white dark:bg-slate-800 text-xs font-medium text-sky-600 dark:text-sky-400 flex items-center justify-between group transition">
+                        <span class="truncate">${res.title}</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px] text-slate-400 group-hover:text-sky-500"></i>
+                    </a>`
+                ).join('');
+            } else {
+                resourcesContainer.innerHTML = `<span class="text-xs text-slate-400">Refer to official documentation for modern Web standards.</span>`;
+            }
+
+            // Update Status Buttons & Bookmark in Modal
+            updateModalStatusUI();
+
+            // Show Modal
+            const modal = document.getElementById('projectModal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeProjectModal() {
+            document.getElementById('projectModal').classList.add('hidden');
+            document.body.style.overflow = '';
+            activeProjectId = null;
+        }
+
+        // Render Stories Checklist in Modal
+        function renderModalUserStories(project) {
+            const container = document.getElementById('modalUserStories');
+            container.innerHTML = '';
+
+            const projectChecklist = storyChecklist[project.id] || [];
+            let completedCount = 0;
+
+            project.userStories.forEach((story, idx) => {
+                const isChecked = projectChecklist.includes(idx);
+                if (isChecked) completedCount++;
+
+                const row = document.createElement('label');
+                row.className = "flex items-start gap-3 p-2.5 rounded-lg hover:bg-white dark:hover:bg-slate-800 transition cursor-pointer text-sm text-slate-700 dark:text-slate-300";
+                row.innerHTML = `
+                    <input type="checkbox" ${isChecked ? 'checked' : ''} onchange="toggleStoryCheck(${idx})" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-sky-600 focus:ring-sky-500 transition cursor-pointer">
+                    <span class="${isChecked ? 'line-through text-slate-400 dark:text-slate-500' : ''}">${story}</span>
+                `;
+                container.appendChild(row);
+            });
+
+            document.getElementById('userStoriesProgress').textContent = `${completedCount} / ${project.userStories.length} Done`;
+        }
+
+        function toggleStoryCheck(index) {
+            if (!activeProjectId) return;
+            if (!storyChecklist[activeProjectId]) storyChecklist[activeProjectId] = [];
+
+            const list = storyChecklist[activeProjectId];
+            const foundIndex = list.indexOf(index);
+
+            if (foundIndex > -1) {
+                list.splice(foundIndex, 1);
+            } else {
+                list.push(index);
+            }
+
+            localStorage.setItem(STORAGE_KEY_CHECKLIST, JSON.stringify(storyChecklist));
+            
+            const project = projects.find(p => p.id === activeProjectId);
+            if (project) renderModalUserStories(project);
+        }
+
+        // Project Status Controls
+        function updateProjectStatus(status) {
+            if (!activeProjectId) return;
+            projectStatus[activeProjectId] = status;
+            localStorage.setItem(STORAGE_KEY_STATUS, JSON.stringify(projectStatus));
+            updateModalStatusUI();
+            renderProjects();
+            showToast(`Status updated to "${status}"`);
+        }
+
+        function updateModalStatusUI() {
+            if (!activeProjectId) return;
+            const currentStatus = projectStatus[activeProjectId] || 'Not Started';
+
+            document.getElementById('modalStatusBadge').textContent = currentStatus;
+
+            // Reset button styles
+            const notStartedBtn = document.getElementById('statusNotStarted');
+            const inProgressBtn = document.getElementById('statusInProgress');
+            const completedBtn = document.getElementById('statusCompleted');
+
+            notStartedBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300 transition";
+            inProgressBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium border border-amber-300 dark:border-amber-700/60 text-amber-600 dark:text-amber-400 transition";
+            completedBtn.className = "px-3 py-1.5 rounded-lg text-xs font-medium border border-emerald-300 dark:border-emerald-700/60 text-emerald-600 dark:text-emerald-400 transition";
+
+            if (currentStatus === 'Not Started') {
+                notStartedBtn.classList.add('bg-slate-200', 'dark:bg-slate-700', 'font-bold');
+            } else if (currentStatus === 'In Progress') {
+                inProgressBtn.classList.add('bg-amber-100', 'dark:bg-amber-950/60', 'font-bold');
+            } else if (currentStatus === 'Completed') {
+                completedBtn.classList.add('bg-emerald-100', 'dark:bg-emerald-950/60', 'font-bold');
+            }
+
+            // Bookmark icon in modal
+            const isBookmarked = bookmarks.includes(activeProjectId);
+            const modalBookmarkBtn = document.getElementById('modalBookmarkBtn');
+            modalBookmarkBtn.innerHTML = `<i class="${isBookmarked ? 'fa-solid text-amber-500' : 'fa-regular'} fa-bookmark"></i>`;
+        }
+
+        // Bookmarks Toggle
+        function toggleBookmark(event, id) {
+            event.stopPropagation();
+            const index = bookmarks.indexOf(id);
+            if (index > -1) {
+                bookmarks.splice(index, 1);
+                showToast('Removed from bookmarks');
+            } else {
+                bookmarks.push(id);
+                showToast('Added to bookmarks');
+            }
+            localStorage.setItem(STORAGE_KEY_BOOKMARKS, JSON.stringify(bookmarks));
+            renderStats();
+            renderProjects();
+        }
+
+        function toggleModalBookmark() {
+            if (!activeProjectId) return;
+            const index = bookmarks.indexOf(activeProjectId);
+            if (index > -1) {
+                bookmarks.splice(index, 1);
+                showToast('Removed from bookmarks');
+            } else {
+                bookmarks.push(activeProjectId);
+                showToast('Added to bookmarks');
+            }
+            localStorage.setItem(STORAGE_KEY_BOOKMARKS, JSON.stringify(bookmarks));
+            renderStats();
+            updateModalStatusUI();
+            renderProjects();
+        }
+
+        // Submit Idea Modal Functions
+        function openSubmitModal() {
+            document.getElementById('submitModal').classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeSubmitModal() {
+            document.getElementById('submitModal').classList.add('hidden');
+            document.body.style.overflow = '';
+        }
+
+        function handleIdeaSubmit(e) {
+            e.preventDefault();
+            const title = document.getElementById('submitTitle').value.trim();
+            const tier = document.getElementById('submitTier').value;
+            const tag = document.getElementById('submitTag').value;
+            const description = document.getElementById('submitDescription').value.trim();
+            const storiesRaw = document.getElementById('submitStories').value.trim();
+
+            const storiesArray = storiesRaw.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+            const newProject = {
+                id: 'custom_' + Date.now(),
+                title: title,
+                tier: tier,
+                tags: [tag, 'Community'],
+                summary: description.slice(0, 110) + (description.length > 110 ? '...' : ''),
+                description: description,
+                techStack: ['HTML/CSS', 'JavaScript'],
+                userStories: storiesArray.length > 0 ? storiesArray : ['Build the core interface and logic'],
+                bonusFeatures: ['Extend functionality with custom animations'],
+                resources: [{ title: 'Developer Docs MDN', url: 'https://developer.mozilla.org/' }]
+            };
+
+            projects.unshift(newProject);
+            saveProjectsLocally();
+            renderStats();
+            renderProjects();
+            closeSubmitModal();
+
+            // Clear form
+            e.target.reset();
+            showToast('New project idea added successfully!');
+        }
+
+        // Toast Helper
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+            toastMsg.textContent = message;
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

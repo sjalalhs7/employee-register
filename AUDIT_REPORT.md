@@ -29,3 +29,18 @@ No missing local files or 404s, no case-mismatch (GitHub is case-sensitive), JS 
 
 ## NOT VERIFIED (could not test)
 Real Firebase login, real data screens (tables/forms/Sector Manager), live Firestore rules, phone/APK behaviour, printing/export.
+
+## Update 3 (Oct 2026) – Import/Export, Home forms, Navigation, CNIC uploads
+- **Why upload stopped after the update (fact):** the new Region/Sector security check blocked every row because the Excel has no Sector column. Fixed with Region + Sector pickers in the import preview.
+- **Add Region / Add Sector:** old code used `prompt()` pop-ups, which phones and installed apps often block. Replaced with proper forms (tested with simulated Firestore).
+- **Navigation:** real dropdown menus (Regions, Database, Company), touch-friendly, closes on outside tap / Esc.
+- **Police Verification Upload and Guard Photo Upload:** file names containing the guard's CNIC are matched automatically; preview first, then upload to Storage and attach to the record (5 MB limit).
+- **Not done:** Export Region/Sector scope selector; a full separate Data-Form page (Data Form menu item opens the existing form); latent bug: `msmHomeAddSectorLocation` treats sectors as objects but the catalog holds strings.
+- **Not tested:** real Firestore/Storage writes, real 450-row Excel, phones.
+
+## Update 4
+- Header title doubled: h1 text-shadow showed through transparent gradient text. Fixed (flat gold gradient, no 3D/blink).
+- Side navigation added (drawer on phone, fixed on PC ≥1100px) with quick CNIC/name search; top dropdown nav kept.
+- Glass + clay mix strengthened on cards/buttons in light and dark.
+- Uploaded V76 zip and App_Ideas catalog are separate projects: not merged.
+- Still not done: Export Region/Sector selector, separate Data-Form page, extra features beyond quick search. Not tested with real Firebase/Excel/phone.

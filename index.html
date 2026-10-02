@@ -6201,5 +6201,157 @@ html[data-theme] #msmThemeToggle{top:auto!important;bottom:14px!important;right:
 html[data-theme] .portal-client-value{background-image:none!important}
 </style>
 <style id="msmFontFallback">html[data-theme] body,html[data-theme] button,html[data-theme] input,html[data-theme] select,html[data-theme] td{font-family:Inter,-apple-system,'Segoe UI',Arial,sans-serif,'Segoe UI Emoji','Segoe UI Symbol','Apple Color Emoji','Noto Color Emoji'}</style>
+<style id="msmLayerCss">
+.ddx{display:flex;gap:8px;flex-wrap:wrap;align-items:center;position:relative;z-index:50}
+.ddx .dd{position:relative}.ddx .dd>button{min-height:44px;padding:0 16px}
+.ddx .dd-menu{display:none;position:absolute;top:calc(100% + 6px);left:0;min-width:230px;padding:8px;border-radius:18px;background:rgba(255,255,255,.96);backdrop-filter:blur(18px);border:1px solid rgba(255,255,255,.8);box-shadow:10px 14px 28px rgba(150,90,20,.28);z-index:60}
+.ddx .dd.open>.dd-menu{display:block}
+.ddx .dd-menu button{display:block;width:100%;text-align:left;min-height:44px;margin:2px 0;border-radius:12px!important;background:transparent!important;box-shadow:none!important;color:#064E3B!important;font-weight:700}
+.ddx .dd-menu button:hover,.ddx .dd-menu button:focus-visible{background:rgba(245,196,81,.35)!important;outline:none}
+@media(max-width:700px){.ddx{flex-direction:column;align-items:stretch}.ddx .dd-menu{position:static;box-shadow:none;margin-top:4px}}
+.mxm{position:fixed;inset:0;background:rgba(10,40,30,.45);display:flex;align-items:center;justify-content:center;z-index:10050;padding:12px}
+.mxm>div{width:min(720px,100%);max-height:92vh;overflow:auto;padding:20px;border-radius:26px;background:rgba(255,248,236,.97);border:1px solid #fff;box-shadow:10px 14px 30px rgba(0,0,0,.3);color:#1B2B24}
+.mxm h2{margin:0 0 10px}.mxm label{display:block;font-weight:700;margin:10px 0 4px}.mxm input,.mxm select{width:100%;min-height:44px;padding:0 12px}
+.mxm .row{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}.mxm table{width:100%;font-size:13px;border-collapse:collapse}.mxm td,.mxm th{padding:6px;border-bottom:1px solid #EBD3A8;text-align:left}
+</style>
+<script id="msmLayerJs">
+(function(){
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const acc=()=>{try{return currentAccess||{}}catch(e){return {}}}, role=()=>String(acc().role||'').toLowerCase();
+const toast=m=>(window.showToast?window.showToast(m):alert(m));
+const call=(fn,...a)=>{ if(typeof window[fn]==='function') return window[fn](...a); toast('This section is not available yet.'); };
+function modal(title,html,okText,onOk){
+  const m=document.createElement('div'); m.className='mxm'; m.innerHTML='<div role="dialog" aria-modal="true"><h2>'+esc(title)+'</h2>'+html+'<div class="row"><button type="button" class="btn" data-x>Cancel</button>'+(okText?'<button type="button" class="btn btn-primary" data-ok>'+esc(okText)+'</button>':'')+'</div></div>';
+  document.body.appendChild(m); const close=()=>m.remove();
+  m.addEventListener('click',e=>{ if(e.target===m||e.target.hasAttribute('data-x')) close(); });
+  const ok=m.querySelector('[data-ok]'); if(ok) ok.onclick=async()=>{ ok.disabled=true; try{ const r=await onOk(m); if(r!==false) close(); }catch(e){ console.error(e); toast('Error: '+(e.message||e)); } ok.disabled=false; };
+  return m;
+}
+const reload=async()=>{ try{ await window.msmLoadRegionCatalog?.(); await window.msmLoadSectorCatalog?.(); window.msmHomeRender?.(); }catch(e){console.warn(e);} };
+/* ---- Add Region / Add Sector: real forms instead of prompt() (prompt is blocked in many mobile/installed browsers) ---- */
+window.msmHomeAddRegion=function(){
+  if(!['parent','admin'].includes(role())) return toast('Only Parent/Admin can add a Region.');
+  modal('Add Region','<label for="mxRegName">Region name</label><input id="mxRegName" placeholder="e.g. North Region" autocomplete="off">','Add Region',async m=>{
+    const name=m.querySelector('#mxRegName').value.trim(); if(!name){toast('Enter a Region name.');return false;}
+    const id=msmRegionKeyFromName(name);
+    await db.collection('regionCatalog').doc(id).set({name,regionId:id,sectors:[],locations:[],createdBy:(currentUser?.email||'').toLowerCase(),createdAt:firebase.firestore.FieldValue.serverTimestamp()},{merge:true});
+    await reload(); toast(name+' added.'); });
+};
+window.msmHomeAddSector=function(pre){
+  if(!['parent','regional'].includes(role())) return toast('Parent or Regional Office access is required.');
+  const regs=(window.msmRegionCatalog||[]).filter(r=>role()!=='regional'||msmRegionKeyFromName(r.name)===msmRegionKeyFromName(acc().region));
+  if(!regs.length) return toast('Create a Region first (or ask Admin to assign your Region).');
+  modal('Add Sector','<label for="mxSecReg">Region</label><select id="mxSecReg">'+regs.map(r=>'<option value="'+esc(r.regionId||r.id||msmRegionKeyFromName(r.name))+'"'+((r.regionId||r.id)===pre?' selected':'')+'>'+esc(r.name)+'</option>').join('')+'</select><label for="mxSecName">Sector name</label><input id="mxSecName" placeholder="e.g. Islamabad Sector" autocomplete="off">','Add Sector',async m=>{
+    const name=m.querySelector('#mxSecName').value.trim(), rid=m.querySelector('#mxSecReg').value; if(!name){toast('Enter a Sector name.');return false;}
+    const reg=regs.find(r=>(r.regionId||r.id||msmRegionKeyFromName(r.name))===rid), sid=msmSectorKeyFromName(name), ts=firebase.firestore.FieldValue.serverTimestamp();
+    await db.collection('sectorCatalog').doc(sid).set({name,sectorId:sid,regionId:rid,region:reg.name,locations:[],createdBy:(currentUser?.email||'').toLowerCase(),createdAt:ts},{merge:true});
+    await db.collection('regionCatalog').doc(rid).set({sectors:firebase.firestore.FieldValue.arrayUnion(name),updatedAt:ts},{merge:true});
+    await reload(); toast(name+' added to '+reg.name+'.'); });
+};
+/* ---- Import: choose Region + Sector where the Long Roll must be uploaded ---- */
+window.importRenderSectorBar=function(){
+  const sum=document.getElementById('importPreviewSummary'); if(!sum||role()==='client') return;
+  let bar=document.getElementById('importSectorBar'); if(!bar){ bar=document.createElement('div'); bar.id='importSectorBar'; bar.style.cssText='margin:10px 0;padding:10px 12px;border-radius:14px;background:rgba(245,196,81,.22);font-weight:700;display:grid;gap:8px'; sum.parentNode.insertBefore(bar,sum); }
+  const regs=(window.msmRegionCatalog||[]).filter(r=>role()!=='regional'||msmRegionKeyFromName(r.name)===msmRegionKeyFromName(acc().region));
+  const rsel=window.__importRegionPick||(regs.length===1?(regs[0].regionId||regs[0].id):'');
+  const reg=regs.find(r=>(r.regionId||r.id)===rsel);
+  const secs=(reg?reg.sectors:(role()==='regional'?myRegionSectors():(window.msmSectorCatalog||[]))).map(String);
+  const used={}; (pendingImport?.rows||[]).forEach(r=>{ if(r.sector) used[r.sector]=(used[r.sector]||0)+1; });
+  const u=Object.keys(used).length?Object.entries(used).map(([k,v])=>esc(k)+' ('+v+')').join(', '):'<span style="color:#B42318">none assigned yet</span>';
+  bar.innerHTML='<label for="importRegionPick">1. Region</label><select id="importRegionPick" onchange="window.__importRegionPick=this.value;window.__importSectorPick=\'\';importBuildPreview(null,window.__importFileName,false)"><option value="">All / auto</option>'+regs.map(r=>{const v=r.regionId||r.id;return '<option value="'+esc(v)+'"'+(v===rsel?' selected':'')+'>'+esc(r.name)+'</option>';}).join('')+'</select><label for="importSectorPick">2. Sector</label><select id="importSectorPick" onchange="importSetSector(this.value)"><option value="">Auto-detect</option>'+secs.map(n=>'<option value="'+esc(n)+'"'+(n===window.__importSectorPick?' selected':'')+'>'+esc(n)+'</option>').join('')+'</select><span>Assigned: '+u+'</span>';
+};
+/* ---- CNIC Upload Center: Police Verification + Guard Photos, matched to the guard by CNIC ---- */
+const cnicOf=n=>{ const m=String(n||'').replace(/[-\s_.]/g,'').match(/\d{13}/); return m?m[0]:''; };
+window.msmCnicMatch=function(files,list){ const by=new Map((list||[]).map(r=>[String(r.cnic||'').replace(/\D/g,''),r]));
+  return files.map(f=>{ const c=cnicOf(f.name), rec=c&&by.get(c); return {file:f,cnic:c,rec:rec||null,ok:!!rec&&f.size<5*1024*1024,why:!c?'No 13-digit CNIC in file name':!rec?'No guard with this CNIC':f.size>=5*1024*1024?'File over 5 MB':'Will attach to '+(rec.name||'guard')}; }); };
+window.msmOpenUploadCenter=function(mode){
+  if(!acc().role) return toast('Please sign in first.');
+  const isP=mode==='police', label=isP?'Police Verification':'Guard Photos';
+  let rows=[];
+  const m=modal(label+' Upload','<p>Name each file with the guard\'s CNIC, e.g. <b>37301-1234567-1.pdf</b>. Files are matched to the guard automatically.</p><input id="mxFiles" type="file" multiple accept="'+(isP?'image/*,.pdf':'image/*')+'"><div id="mxOut" style="margin-top:10px"></div>','Upload matched files',async mm=>{
+    const ok=rows.filter(r=>r.ok); if(!ok.length){toast('Nothing matched.');return false;}
+    const uid=auth.currentUser.uid; let done=0; const out=mm.querySelector('#mxOut');
+    for(const r of ok){ const ext=(r.file.name.split('.').pop()||'bin').toLowerCase(); const ref=storage.ref('enrollment/'+uid+'/'+r.rec.id+'/'+(isP?'police-verification':'employee-photo')+'.'+ext);
+      await ref.put(r.file); const url=await ref.getDownloadURL();
+      await db.collection('records').doc(r.rec.id).update(isP?{policeVerifDoc:url,policeverif:'Done',updatedAt:firebase.firestore.FieldValue.serverTimestamp()}:{photo:url,photoData:url,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      done++; out.insertAdjacentHTML('afterbegin','<div>Uploaded '+done+' / '+ok.length+'</div>'); }
+    toast(done+' '+label+' file(s) attached.'); try{renderTable();}catch(e){} });
+  m.querySelector('#mxFiles').onchange=e=>{ rows=msmCnicMatch([...e.target.files],typeof records!=='undefined'?records:[]);
+    m.querySelector('#mxOut').innerHTML='<table><tr><th>File</th><th>CNIC</th><th>Result</th></tr>'+rows.map(r=>'<tr><td>'+esc(r.file.name)+'</td><td>'+esc(r.cnic||'—')+'</td><td style="color:'+(r.ok?'#047857':'#B42318')+'">'+esc(r.why)+'</td></tr>').join('')+'</table>'; };
+};
+/* ---- Real dropdown navigation ---- */
+function buildNav(){
+  const first=document.querySelector('button[onclick="msmHomeGo(\'top\')"]'); const bar=first&&first.parentElement; if(!bar||bar.querySelector('.ddx')) return !!(bar&&bar.querySelector('.ddx'));
+  const groups=[['⌂ Home',[['Home','msmHomeGo','top']]],
+   ['◉ Regions ▾',[['All Regions / Sectors','msmHomeGo','regions'],['＋ Add Region','msmHomeAddRegion'],['＋ Add Sector','msmHomeAddSector']]],
+   ['▦ Database ▾',[['Full Database','msmHomeGo','database'],['📝 Data Form','msmHomeGo','form'],['⇅ Import / Export','msmHomeTransferMenu'],['🛡 Police Verification Upload','msmOpenUploadCenter','police'],['📷 Guard Photo Upload','msmOpenUploadCenter','photo'],['◉ Audit Logs','msmHomeGo','audit']]],
+   ['ℹ Company ▾',[['About','msmHomeInfo','about'],['Services','msmHomeInfo','services'],['Contact','msmHomeInfo','contact'],['Instructions','msmHomeInfo','instructions']]]];
+  const nav=document.createElement('div'); nav.className='ddx'; nav.setAttribute('role','navigation');
+  groups.forEach(([t,items])=>{ const d=document.createElement('div'); d.className='dd'; const b=document.createElement('button'); b.type='button'; b.textContent=t; b.setAttribute('aria-haspopup','true'); b.setAttribute('aria-expanded','false'); d.appendChild(b);
+    const menu=document.createElement('div'); menu.className='dd-menu'; menu.setAttribute('role','menu');
+    items.forEach(([l,fn,arg])=>{ const x=document.createElement('button'); x.type='button'; x.setAttribute('role','menuitem'); x.textContent=l; x.onclick=()=>{ closeAll(); try{ call(fn,arg); }catch(e){ console.error(e); toast('Could not open: '+l); } }; menu.appendChild(x); });
+    if(items.length===1){ b.textContent=t; b.onclick=()=>{ closeAll(); call(items[0][1],items[0][2]); }; } else { d.appendChild(menu); b.onclick=e=>{ e.stopPropagation(); const o=d.classList.contains('open'); closeAll(); if(!o){ d.classList.add('open'); b.setAttribute('aria-expanded','true'); } }; }
+    nav.appendChild(d); });
+  const closeAll=()=>nav.querySelectorAll('.dd.open').forEach(d=>{d.classList.remove('open'); d.firstChild.setAttribute('aria-expanded','false');});
+  document.addEventListener('click',closeAll); document.addEventListener('keydown',e=>{ if(e.key==='Escape') closeAll(); });
+  [...bar.children].forEach(c=>c.style.display='none'); bar.prepend(nav); [...bar.children].forEach(c=>{ if(c===nav) c.style.display=''; }); return true;
+}
+let tries=0; const iv=setInterval(()=>{ if(buildNav()||++tries>60) clearInterval(iv); },500);
+})();
+</script>
+<style id="msmLayer2Css">
+/* 1 - doubled title: h1 text-shadow showed through the transparent gradient text. Flat clean gradient, no 3D/blink. */
+.msm-brand h1,.msm-login-title,.msm-brandbar h1{text-shadow:none!important;filter:none!important;animation:none!important}
+.msm-rainbow-text{animation:none!important;transform:none!important;filter:none!important;text-shadow:none!important;
+  background:linear-gradient(90deg,#FFF3CF,#F5C451 45%,#FFFFFF)!important;-webkit-background-clip:text!important;background-clip:text!important;-webkit-text-fill-color:transparent!important}
+.msm-login-card .msm-rainbow-text{background:linear-gradient(90deg,#B04A08,#D9A21B 50%,#047857)!important;-webkit-background-clip:text!important;background-clip:text!important}
+/* 2 - glass + clay mix, both themes */
+html[data-theme] .msm-region-card,html[data-theme] .transfer-card,html[data-theme] .msm-info-card,html[data-theme] .msm-quick button,html[data-theme] .msm-nav button{
+  background:linear-gradient(145deg,rgba(255,255,255,.62),rgba(255,236,205,.40))!important;backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);
+  border:1px solid rgba(255,255,255,.7)!important;box-shadow:9px 12px 24px rgba(120,70,10,.22),-7px -7px 16px rgba(255,255,255,.55),inset 2px 2px 5px rgba(255,255,255,.8),inset -3px -4px 8px rgba(150,80,10,.12)!important}
+html[data-theme="dark"] .msm-region-card,html[data-theme="dark"] .msm-info-card{background:linear-gradient(145deg,rgba(255,255,255,.16),rgba(255,255,255,.06))!important;color:#FFF3DF!important;
+  box-shadow:9px 12px 24px rgba(0,0,0,.35),-5px -5px 14px rgba(255,255,255,.07),inset 2px 2px 5px rgba(255,255,255,.18),inset -3px -4px 8px rgba(0,0,0,.25)!important}
+/* 3 - side navigation */
+#msmSide{position:fixed;left:0;top:0;bottom:0;width:244px;z-index:9000;padding:14px 10px;overflow:auto;background:linear-gradient(170deg,rgba(4,120,87,.93),rgba(6,78,59,.93) 60%,rgba(176,74,8,.88));
+  backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-right:2px solid #F5C451;box-shadow:10px 0 30px rgba(4,70,50,.35);transform:translateX(-102%);transition:transform .22s ease;color:#fff}
+#msmSide.open{transform:none}
+#msmSide .sb-h{font-weight:900;font-size:15px;padding:6px 8px 10px;color:#FFE9A8}
+#msmSide input{width:100%;min-height:42px;border-radius:14px;border:0;padding:0 12px;margin-bottom:10px;background:rgba(255,255,255,.92);color:#1B2B24}
+#msmSide .sb-i{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;margin:3px 0;padding:0 12px;border:0;border-radius:14px;cursor:pointer;font-weight:700;font-size:14px;text-align:left;
+  background:linear-gradient(145deg,rgba(255,255,255,.20),rgba(255,255,255,.06));color:#fff;box-shadow:4px 5px 10px rgba(0,0,0,.22),inset 1px 1px 2px rgba(255,255,255,.3)}
+#msmSide .sb-i:hover,#msmSide .sb-i:focus-visible{background:linear-gradient(145deg,#F2A33A,#C2570C);outline:none}
+#msmSide .sb-s{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#FFE9A8;margin:12px 8px 4px;opacity:.9}
+#msmSideBtn{position:fixed;left:12px;bottom:14px;z-index:9001;width:52px;height:52px;border-radius:18px;border:0;font-size:22px;cursor:pointer;color:#fff;background:linear-gradient(145deg,#CC5E0C,#A63A0A);box-shadow:6px 8px 16px rgba(120,40,5,.4),inset 2px 2px 4px rgba(255,255,255,.35)}
+#msmSideShade{display:none;position:fixed;inset:0;background:rgba(10,40,30,.4);z-index:8999}#msmSideShade.on{display:block}
+@media(min-width:1100px){body.msm-side-on #appRoot{margin-left:244px}body.msm-side-on #msmSide{transform:none}body.msm-side-on #msmSideBtn,body.msm-side-on #msmSideShade{display:none!important}}
+</style>
+<script id="msmLayer2Js">
+(function(){
+const acc=()=>{try{return currentAccess||{}}catch(e){return {}}}, role=()=>String(acc().role||'').toLowerCase();
+const go=(fn,...a)=>{ side(false); try{ if(typeof window[fn]==='function') window[fn](...a); else window.showToast?.('Not available yet.'); }catch(e){ console.error(e); window.showToast?.('Could not open this section.'); } };
+const items=[['Navigate'],['⌂ Dashboard','msmHomeGo','top'],['◉ Regions & Sectors','msmHomeGo','regions'],['▦ Full Database','msmHomeGo','database'],['📝 Data Form','msmHomeGo','form'],
+ ['Data tools'],['⇅ Import / Export','msmHomeTransferMenu'],['🛡 Police Verification Upload','msmOpenUploadCenter','police'],['📷 Guard Photo Upload','msmOpenUploadCenter','photo'],
+ ['Admin'],['＋ Add Region','msmHomeAddRegion'],['＋ Add Sector','msmHomeAddSector'],['◉ Audit Logs','msmHomeGo','audit'],['♜ Recycle Bin','msmOpenRecycle'],['♙ Manage Users','msmHomeGo','admin'],['🔢 Fix Duplicate S No','msmFixDuplicateSno'],
+ ['App'],['▣ Install App','msmInstallApp'],['↩ Sign Out','doSignOut']];
+let side=()=>{};
+function build(){
+  if(document.getElementById('msmSide')) return;
+  const el=document.createElement('nav'); el.id='msmSide'; el.setAttribute('aria-label','Side navigation');
+  el.innerHTML='<div class="sb-h">MSM Long Roll</div><input id="sbSearch" type="search" placeholder="Search name / CNIC / MSM no." aria-label="Quick search">';
+  items.forEach(it=>{ if(it.length===1){ const s=document.createElement('div'); s.className='sb-s'; s.textContent=it[0]; el.appendChild(s); return; }
+    if(it[1]==='msmHomeGo'&&it[2]==='admin'&&role()!=='parent'&&role()!=='admin') return;
+    const b=document.createElement('button'); b.type='button'; b.className='sb-i'; b.textContent=it[0]; b.onclick=()=>go(it[1],it[2]); el.appendChild(b); });
+  const shade=document.createElement('div'); shade.id='msmSideShade';
+  const btn=document.createElement('button'); btn.id='msmSideBtn'; btn.type='button'; btn.setAttribute('aria-label','Open menu'); btn.textContent='☰';
+  side=(o)=>{ const v=o===undefined?!el.classList.contains('open'):o; el.classList.toggle('open',v); shade.classList.toggle('on',v); };
+  btn.onclick=()=>side(); shade.onclick=()=>side(false); document.addEventListener('keydown',e=>{ if(e.key==='Escape') side(false); });
+  document.body.append(el,shade,btn); document.body.classList.add('msm-side-on');
+  el.querySelector('#sbSearch').addEventListener('keydown',e=>{ if(e.key!=='Enter') return; const q=e.target.value.trim(); if(!q) return;
+    side(false); window.msmHomeGo?.('database'); setTimeout(()=>{ const sb=document.getElementById('searchBox'); if(sb){ sb.value=q; sb.dispatchEvent(new Event('input',{bubbles:true})); try{renderTable();}catch(x){} } },350); });
+}
+const iv=setInterval(()=>{ const app=document.getElementById('appRoot'); if(app&&getComputedStyle(app).display!=='none'&&acc().role){ build(); } else { const s=document.getElementById('msmSide'); if(s&&!acc().role){ s.remove(); document.getElementById('msmSideBtn')?.remove(); document.getElementById('msmSideShade')?.remove(); document.body.classList.remove('msm-side-on'); } } },800);
+})();
+</script>
+<style id="msmTitleFix">html[data-theme] .msm-brandbar .msm-rainbow-text,html[data-theme] .msm-brand h1 .msm-rainbow-text{background:linear-gradient(90deg,#FFFFFF,#FFE9A8 55%,#F5C451)!important;-webkit-background-clip:text!important;background-clip:text!important;-webkit-text-fill-color:transparent!important}</style>
 </body>
 </html>
