@@ -5,7 +5,7 @@ Scope: every file in `employee-register-main.zip` (68 files). Method: static sca
 ## FIXED in this delivery
 | # | Problem | Evidence | Fix |
 |---|---------|----------|-----|
-| 1 | Import blocked all 450 rows | Exact sector-name match vs "113. Saudi Pak Tower" | Name cleaned before matching (already deployed) |
+| 1 | Import blocked all 450 rows | The Excel has only a Client/Project column (clients like "113. Saudi Pak Tower"), but the code looked for a SECTOR name there. My first fix (name cleaning) was based on a wrong assumption and was not enough. | Import preview now has an **"Import into Sector"** picker. Sector is taken from the picker, else the file name ("Islamabad Sector"), else the Region's only Sector. Tested: 5/5 rows Ready in both cases |
 | 2 | 341 blue/violet colour values in code | colour scan of index.html | Recoloured at source to emerald / orange / cream |
 | 3 | Browser bar + PWA colours still navy | `theme-color #0c1a2a`, manifest `#071522` | Changed to emerald `#047857` / cream |
 | 4 | hero image 31 % dark blue | pixel scan | Recoloured (`hero-reference.png`) |
