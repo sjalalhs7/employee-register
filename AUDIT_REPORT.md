@@ -44,3 +44,12 @@ Real Firebase login, real data screens (tables/forms/Sector Manager), live Fires
 - Glass + clay mix strengthened on cards/buttons in light and dark.
 - Uploaded V76 zip and App_Ideas catalog are separate projects: not merged.
 - Still not done: Export Region/Sector selector, separate Data-Form page, extra features beyond quick search. Not tested with real Firebase/Excel/phone.
+
+## Update 5 (hang fixes, light-mode text, finder, homepage sections)
+- **Hang / blockage (measured):** home page had 64 endless animations and 54 blur-effect elements; now 1 and 6. Falling petals/leaves/rain removed. Long tasks: none in test.
+- **Light-mode text:** white-on-light text on the login info card fixed; header bands made deeper emerald. Automated contrast scan: login 0 issues. Stat-star numbers sit on gradient shapes the scanner cannot read; checked by eye only.
+- **Logo:** sticky top bar with logo on every app screen; logo also in the side menu.
+- **Find data by CNIC / Name / MSM No.:** top bar button, side menu and homepage cards. Searches loaded records, and for a full 13-digit CNIC also queries the database.
+- **Homepage:** new service cards - Find by CNIC, Find by Name, Police Verification, Guard Photos, Data Form, Import/Export.
+- **Shared files:** V76 zip design blueprint (logo stage, service strip, side + top nav, performance rules) applied. App_Ideas catalog is a generic idea list; nothing in it fits this database, so nothing copied from it.
+- **Not done:** Export Region/Sector selector; separate full-page Data Form; two-column PC login layout; bottom nav on phone. Not tested on real Firebase, Excel or a phone.
