@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="glass">
+<head>
+<meta charset="utf-8">
+<title>MSM Security Guards Database</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+:root,:root[data-theme="glass"]{--bg:linear-gradient(135deg,#1b2a4a,#3a1f5c 60%,#0f4c5c);--card:rgba(255,255,255,.12);--sel:#1f2a48;--bd:rgba(255,255,255,.3);--tx:#f4f7ff;--mut:#b9c3dd;--ac:#7cc4ff;--acx:#0b1730;--blur:blur(16px)}
+:root[data-theme="fire"]{--bg:linear-gradient(160deg,#120505,#2b0a06 60%,#3d1304);--card:rgba(60,14,8,.9);--sel:#2b0a06;--bd:#ff5a1f;--tx:#fff1e8;--mut:#e0a58c;--ac:linear-gradient(90deg,#ff2d1a,#ff9b1a);--acx:#1a0502;--blur:none}
+:root[data-theme="diamond"]{--bg:linear-gradient(135deg,#eef4fa,#d7e2ee 60%,#f7fbff);--card:rgba(255,255,255,.88);--sel:#fff;--bd:#b4c3d4;--tx:#14202e;--mut:#4d5f73;--ac:linear-gradient(90deg,#5b7a99,#9fb6cc);--acx:#fff;--blur:none}
+:root[data-theme="rainbow"]{--bg:#0e0e16;--card:#181824;--sel:#181824;--bd:#3a3a55;--tx:#f5f5fb;--mut:#a9a9c2;--ac:linear-gradient(90deg,#ff3b6b,#ffb02e,#3be07a,#2ea8ff,#a45bff);--acx:#0e0e16;--blur:none}
+:root[data-theme="neon"]{--bg:radial-gradient(circle at 20% 0,#14275e,#060b22 70%);--card:rgba(8,16,48,.92);--sel:#0a1230;--bd:#2ea8ff;--tx:#eaf3ff;--mut:#8fb2e8;--ac:linear-gradient(90deg,#2ea8ff,#a45bff,#ffb02e);--acx:#050a1c;--blur:none}
+:root[data-lite]{--blur:none}
+:root[data-lite][data-theme="glass"]{--bg:#1b2a4a;--card:#27375c}
+body{margin:0;min-height:100vh;background:#111;background-image:var(--bg);background-attachment:fixed;color:var(--tx);font-family:Sora,system-ui,Arial,sans-serif;font-size:15px}
+.nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:10px 16px;background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border-bottom:1px solid var(--bd)}
+.brand{font-weight:700;margin-right:auto}
+.nav button,.btn{font:inherit;color:var(--tx);background:transparent;border:1px solid var(--bd);border-radius:10px;padding:8px 14px;cursor:pointer}
+.nav button.on,.btn.pri{background:var(--ac);color:var(--acx);border-color:transparent;font-weight:600}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+select,input[type=password],input[type=text]{font:inherit;background:var(--sel);color:var(--tx);border:1px solid var(--bd);border-radius:10px;padding:8px}
+option{background:var(--sel);color:var(--tx)}
+label.lite{font-size:13px;color:var(--mut);display:flex;gap:4px;align-items:center}
+main{max-width:1100px;margin:0 auto;padding:18px 16px 40px}
+.page{display:none}.page.on{display:block}
+.card{background:var(--card);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--bd);border-radius:16px;padding:18px;margin-bottom:16px}
+:root[data-theme="rainbow"] .card{border:2px solid transparent;background:linear-gradient(var(--card),var(--card)) padding-box,var(--ac) border-box}
+:root[data-theme="diamond"] .card{border-radius:4px;box-shadow:0 1px 0 #fff inset,0 6px 20px rgba(60,90,120,.15)}
+:root[data-theme="fire"] .card{box-shadow:0 0 18px rgba(255,90,31,.25)}
+:root[data-theme="neon"] .card{box-shadow:0 0 14px rgba(46,168,255,.4)}
+:root[data-lite] .card{box-shadow:none}
+h1{font-size:28px;margin:6px 0 6px}h2{font-size:18px;margin:0 0 10px}
+.mut{color:var(--mut)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.stat b{display:block;font-size:30px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:10px 0}
+.map{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.map label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--mut)}
+.tw{overflow-x:auto;max-height:340px;border:1px solid var(--bd);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:6px 10px;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
+th{position:sticky;top:0;background:var(--sel)}
+.bar{height:12px;border:1px solid var(--bd);border-radius:8px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:var(--ac);transition:width .15s}
+.drop{display:block;border:2px dashed var(--bd);border-radius:14px;padding:26px;text-align:center;cursor:pointer}
+.flow{display:flex;gap:8px;align-items:stretch;flex-wrap:wrap}
+.flow div{flex:1;min-width:140px;border:1px solid var(--bd);border-radius:12px;padding:12px}
+.flow span{align-self:center;color:var(--mut)}
+.badge{display:inline-block;padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600;border:1px solid currentColor}
+.b-g{color:#2fc77a}.b-a{color:#e0a020}.b-r{color:#e5484d}.b-b{color:#3b9eff}
+.err{color:#ff8a8a}.ok{color:#6ee7a0}
+:root[data-theme="diamond"] .err{color:#b00020}:root[data-theme="diamond"] .ok{color:#0a7a3b}
+@media (prefers-reduced-motion:no-preference){:root[data-theme="rainbow"]:not([data-lite]) .bar i{background-size:200% 100%;animation:fl 3s linear infinite}@keyframes fl{to{background-position:200% 0}}}
+:focus-visible{outline:2px solid var(--tx);outline-offset:2px}
+</style>
+</head>
+<body>
+<div class="nav">
+  <span class="brand">MSM Security Guards</span>
+  <button data-p="home" class="on">Home</button>
+  <button data-p="dash">Dashboard</button>
+  <button data-p="imp">Import</button>
+  <button data-p="reg">Regions</button>
+  <button data-p="sec">Sectors</button>
+  <button id="out" hidden>Log out</button>
+  <select id="theme" aria-label="Theme">
+    <option value="glass">Glass</option><option value="fire">Fire</option><option value="diamond">Diamond</option>
+    <option value="rainbow">Rainbow</option><option value="neon">Neon</option>
+  </select>
+  <label class="lite"><input type="checkbox" id="lite"> Low-power mode</label>
+</div>
+<main>
+<section class="page on" id="home">
+  <h1>Manage your guard roll in one place</h1>
+  <p class="mut">Import your Excel file, check every CNIC, and see guards by region and sector.</p>
+  <div class="card"><div class="flow">
+    <div><b>1. Import</b><br><span class="mut">Upload Excel or CSV, choose columns</span></div><span>→</span>
+    <div><b>2. Validate</b><br><span class="mut">CNIC and duplicate checks</span></div><span>→</span>
+    <div><b>3. Manage</b><br><span class="mut">Dashboard, regions, sectors</span></div>
+  </div><div class="row"><button class="btn pri" data-go="dash">Sign in to start</button></div></div>
+</section>
+
+<section class="page" id="login">
+  <h1 id="lTitle">Sign in</h1>
+  <div class="card" style="max-width:420px">
+    <p class="mut" id="lNote"></p>
+    <form id="lForm"><div class="row"><input type="password" id="pw" autocomplete="current-password" placeholder="Password" required></div>
+    <div class="row"><button class="btn pri" type="submit" id="lBtn">Sign in</button></div></form>
+    <p id="lMsg" class="err"></p>
+  </div>
+</section>
+
+<section class="page" id="dash">
+  <h1>Guards database</h1>
+  <div class="stats">
+    <div class="card stat"><b id="sTot">0</b><span class="mut">Total guards</span></div>
+    <div class="card stat"><b id="sReg">0</b><span class="mut">Regions</span></div>
+    <div class="card stat"><b id="sSec">0</b><span class="mut">Sectors</span></div>
+  </div>
+  <div class="card" id="stBox" hidden><h2>Status</h2><div class="row" id="stRow"></div></div>
+  <div class="card"><h2>Guards (first 200)</h2><div class="tw" id="gTbl"><p class="mut" style="padding:12px">No guards yet. Go to Import.</p></div></div>
+</section>
+
+<section class="page" id="imp">
+  <h1>Import guards</h1>
+  <div class="card">
+    <label class="drop" for="file" id="drop" tabindex="0" role="button"><b>Choose or drop an Excel / CSV file</b><br><span class="mut">.xlsx, .xls, .csv. The file is read in your browser.</span></label>
+    <input type="file" id="file" accept=".xlsx,.xls,.csv" hidden>
+    <div class="row" id="shRow" hidden><span>Sheet:</span><select id="sheet"></select><span class="mut" id="fInfo"></span></div>
+  </div>
+  <div class="card" id="prev" hidden>
+    <h2>1. Match your columns</h2>
+    <div class="map">
+      <label>CNIC column (for duplicate check)<select id="mK"></select></label>
+      <label>Region column<select id="mR"></select></label>
+      <label>Sector column<select id="mS"></select></label>
+      <label>Status column<select id="mT"></select></label>
+    </div>
+    <h2 style="margin-top:18px">2. Choose columns and rows</h2>
+    <p class="mut">Untick columns you don't want. Row ticks apply to the 50 preview rows only. To bring every row, use "Import full file".</p>
+    <div class="row"><button class="btn" id="allR">Tick all preview rows</button><button class="btn" id="noR">Clear preview rows</button><span class="mut" id="selInfo"></span></div>
+    <div class="tw"><table id="pt"></table></div>
+    <div class="row">
+      <button class="btn pri" id="impSel">Import ticked preview rows</button>
+      <button class="btn pri" id="impAll">Import full file</button>
+    </div>
+    <div class="bar" id="barW" hidden><i id="bar"></i></div>
+    <p id="msg"></p><div id="rej"></div>
+  </div>
+</section>
+<section class="page" id="reg"><h1>Regions</h1><div class="card" id="regBox"></div></section>
+<section class="page" id="sec"><h1>Sectors</h1><div class="card" id="secBox"></div></section>
+</main>
+
+<script>
+(function(){
+var $=function(i){return document.getElementById(i)};
+var guards=[],rows=[],cols=[],colOn=[],rowOn=[],wb=null,fname='',authed=false,CHUNK=500;
+var PROT={dash:1,imp:1,reg:1,sec:1};
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+
+/* theme + low power */
+function setTheme(t){document.documentElement.setAttribute('data-theme',t);$('theme').value=t;try{localStorage.setItem('msm-theme',t)}catch(e){}}
+function setLite(v){if(v)document.documentElement.setAttribute('data-lite','');else document.documentElement.removeAttribute('data-lite');$('lite').checked=v;try{localStorage.setItem('msm-lite',v?'1':'0')}catch(e){}}
+try{var st=localStorage.getItem('msm-theme');if(st)setTheme(st);if(localStorage.getItem('msm-lite')==='1')setLite(true)}catch(e){}
+$('theme').onchange=function(){setTheme(this.value)};
+$('lite').onchange=function(){setLite(this.checked)};
+
+/* navigation + login gate */
+function show(p){document.querySelectorAll('.page').forEach(function(x){x.classList.remove('on')});$(p).classList.add('on');
+  document.querySelectorAll('.nav button[data-p]').forEach(function(b){b.classList.toggle('on',b.dataset.p===p)})}
+function go(p){if(PROT[p]&&!authed){setupLogin(p);show('login');return}show(p)}
+document.querySelectorAll('[data-p]').forEach(function(b){b.onclick=function(){go(b.dataset.p)}});
+document.querySelectorAll('[data-go]').forEach(function(b){b.onclick=function(){go(b.dataset.go)}});
+$('out').onclick=function(){authed=false;$('out').hidden=true;show('home')};
+
+var target='dash',hasPw=false;
+function getPw(){try{return localStorage.getItem('msm-pw')}catch(e){return null}}
+function setupLogin(p){target=p;hasPw=!!getPw();$('lMsg').textContent='';$('pw').value='';
+  $('lTitle').textContent=hasPw?'Sign in':'Create a password';
+  $('lBtn').textContent=hasPw?'Sign in':'Create password';
+  $('lNote').textContent=hasPw?'Enter your password to open the guards database.':'First use on this browser: choose a password of at least 8 characters.'}
+function sha(s){return crypto.subtle.digest('SHA-256',new TextEncoder().encode('msm:'+s)).then(function(b){return Array.from(new Uint8Array(b)).map(function(x){return ('0'+x.toString(16)).slice(-2)}).join('')})}
+$('lForm').onsubmit=function(e){e.preventDefault();var v=$('pw').value;
+  if(!window.crypto||!crypto.subtle){$('lMsg').textContent='This browser cannot do secure sign-in. Use a current browser over https.';return}
+  if(!hasPw&&v.length<8){$('lMsg').textContent='Password must have at least 8 characters.';return}
+  sha(v).then(function(h){
+    if(!hasPw){try{localStorage.setItem('msm-pw',h)}catch(x){}}
+    else if(h!==getPw()){$('lMsg').textContent='Wrong password.';return}
+    authed=true;$('out').hidden=false;show(target)})};
+
+/* file loading */
+$('file').onchange=function(){if(this.files[0])load(this.files[0])};
+var dr=$('drop');
+dr.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();$('file').click()}});
+['dragover','dragenter'].forEach(function(e){dr.addEventListener(e,function(ev){ev.preventDefault()})});
+dr.addEventListener('drop',function(ev){ev.preventDefault();if(ev.dataTransfer.files[0])load(ev.dataTransfer.files[0])});
+
+function load(f){
+  fname=f.name;$('msg').textContent='';$('rej').innerHTML='';
+  var r=new FileReader();
+  r.onerror=function(){alert('Could not read this file. Save it again as .xlsx or .csv and retry.')};
+  r.onload=function(e){
+    try{wb=XLSX.read(new Uint8Array(e.target.result),{type:'array'});
+      $('sheet').innerHTML=wb.SheetNames.map(function(n,i){return '<option value="'+i+'">'+esc(n)+'</option>'}).join('');
+      $('shRow').hidden=false;useSheet(0)}
+    catch(err){alert('This is not a valid Excel or CSV file: '+err.message)}};
+  r.readAsArrayBuffer(f);
+}
+$('sheet').onchange=function(){useSheet(+this.value)};
+
+function guess(re){for(var k=0;k<cols.length;k++)if(re.test(cols[k]))return k;return -1}
+function fillMap(id,re){var s=$(id);s.innerHTML='<option value="-1">None</option>'+cols.map(function(c,k){return '<option value="'+k+'">'+esc(c)+'</option>'}).join('');s.value=guess(re)}
+
+function useSheet(i){
+  var data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[i]],{header:1,defval:'',raw:false,blankrows:true});
+  var all=data.map(function(r,k){return{v:r,n:k+1}}).filter(function(o){return o.v.some(function(c){return String(c).trim()!==''})});
+  if(all.length<2){alert('This sheet has no data rows. The first row must be headings.');return}
+  cols=all[0].v.map(function(h,k){return String(h).trim()||('Column '+(k+1))});
+  rows=all.slice(1);colOn=cols.map(function(){return true});rowOn=rows.map(function(){return true});
+  fillMap('mK',/^(cnic|nic|national\s*id|cnic\s*(no|number|#)?)\.?$/i);
+  fillMap('mR',/^(region|zone)$/i);fillMap('mS',/^(sector|site|post|deployment)$/i);fillMap('mT',/^status$/i);
+  $('fInfo').textContent=fname+': '+rows.length+' rows, '+cols.length+' columns';
+  $('prev').hidden=false;$('barW').hidden=true;draw();
+}
+function draw(){
+  var h='<tr><th></th>'+cols.map(function(c,k){return '<th><label><input type="checkbox" data-c="'+k+'" '+(colOn[k]?'checked':'')+'> '+esc(c)+'</label></th>'}).join('')+'</tr>';
+  rows.slice(0,50).forEach(function(o,i){
+    h+='<tr><td><input type="checkbox" data-r="'+i+'" '+(rowOn[i]?'checked':'')+' aria-label="Row '+o.n+'"></td>'+cols.map(function(c,k){return '<td style="'+(colOn[k]?'':'opacity:.35')+'">'+esc(o.v[k])+'</td>'}).join('')+'</tr>'});
+  $('pt').innerHTML=h;info();
+}
+$('pt').onchange=function(e){var t=e.target;
+  if(t.dataset.c!==undefined){colOn[+t.dataset.c]=t.checked;draw()}
+  else if(t.dataset.r!==undefined){rowOn[+t.dataset.r]=t.checked;info()}};
+function info(){var n=rowOn.slice(0,50).filter(Boolean).length;
+  $('selInfo').textContent=n+' of '+Math.min(50,rows.length)+' preview rows ticked, '+colOn.filter(Boolean).length+' of '+cols.length+' columns'}
+$('allR').onclick=function(){for(var i=0;i<Math.min(50,rows.length);i++)rowOn[i]=true;draw()};
+$('noR').onclick=function(){for(var i=0;i<Math.min(50,rows.length);i++)rowOn[i]=false;draw()};
+
+/* import */
+function run(list){
+  var kc=+$('mK').value,rc=+$('mR').value,sc=+$('mS').value,tc=+$('mT').value;
+  var seen={};guards.forEach(function(g){if(g._k)seen[g._k]=1});
+  var rejected=[],added=0,i=0,total=list.length;
+  if(!total){alert('No rows to import.');return}
+  $('impSel').disabled=$('impAll').disabled=true;$('barW').hidden=false;$('bar').style.width='0';
+  function step(){
+    var end=Math.min(i+CHUNK,total);
+    for(;i<end;i++){var o=list[i],r=o.v,g={},key='';
+      if(kc>=0){key=String(r[kc]).replace(/\D/g,'');
+        if(!key){rejected.push([o.n,'Missing CNIC']);continue}
+        if(key.length!==13){rejected.push([o.n,'CNIC needs 13 digits, found '+key.length]);continue}
+        if(seen[key]){rejected.push([o.n,'Duplicate CNIC '+key]);continue}
+        seen[key]=1;g._k=key}
+      cols.forEach(function(c,k){if(colOn[k])g[c]=String(r[k]).trim()});
+      g._reg=rc>=0?String(r[rc]).trim():'';g._sec=sc>=0?String(r[sc]).trim():'';g._st=tc>=0?String(r[tc]).trim():'';
+      guards.push(g);added++}
+    $('bar').style.width=Math.round(end/total*100)+'%';
+    if(i<total)setTimeout(step,0);else done()}
+  function done(){
+    $('impSel').disabled=$('impAll').disabled=false;
+    $('msg').innerHTML='<span class="ok">Imported '+added+' guards.</span> '+(rejected.length?'<span class="err">'+rejected.length+' rows rejected.</span>':'')+(kc<0?' <span class="mut">No CNIC column chosen, so duplicates were not checked.</span>':'');
+    $('rej').innerHTML=rejected.length?'<div class="tw"><table><tr><th>Sheet row</th><th>Reason</th></tr>'+rejected.slice(0,200).map(function(x){return '<tr><td>'+x[0]+'</td><td>'+esc(x[1])+'</td></tr>'}).join('')+'</table></div>':'';
+    refresh()}
+  step();
+}
+$('impAll').onclick=function(){run(rows)};
+$('impSel').onclick=function(){var l=[];rows.slice(0,50).forEach(function(o,i){if(rowOn[i])l.push(o)});run(l)};
+
+/* views */
+function group(f){var o={};guards.forEach(function(g){var v=g[f]||'Unassigned';o[v]=(o[v]||0)+1});return o}
+function list(o,empty,label){var k=Object.keys(o).sort(function(a,b){return o[b]-o[a]});
+  if(!guards.length)return '<p class="mut">'+empty+'</p>';
+  return '<div class="tw"><table><tr><th>'+label+'</th><th>Guards</th></tr>'+k.map(function(x){return '<tr><td>'+esc(x)+'</td><td>'+o[x]+'</td></tr>'}).join('')+'</table></div>'}
+function badge(v){if(!v)return '';var c=/active|deployed|present/i.test(v)?'b-g':/leave/i.test(v)?'b-a':/vacan|inactive|absent|terminated/i.test(v)?'b-r':'b-b';return '<span class="badge '+c+'">'+esc(v)+'</span>'}
+function refresh(){
+  var R=group('_reg'),S=group('_sec'),T=group('_st');
+  $('sTot').textContent=guards.length;$('sReg').textContent=Object.keys(R).length;$('sSec').textContent=Object.keys(S).length;
+  $('regBox').innerHTML=list(R,'Import guards and match a Region column to see totals.','Region');
+  $('secBox').innerHTML=list(S,'Import guards and match a Sector column to see totals.','Sector');
+  var tk=Object.keys(T).filter(function(k){return k!=='Unassigned'});
+  $('stBox').hidden=!tk.length;$('stRow').innerHTML=tk.map(function(k){return badge(k)+' <b>'+T[k]+'</b> &nbsp;'}).join('');
+  if(guards.length){var ks=Object.keys(guards[0]).filter(function(k){return k.charAt(0)!=='_'});
+    $('gTbl').innerHTML='<table><tr><th>Status</th>'+ks.map(function(k){return '<th>'+esc(k)+'</th>'}).join('')+'</tr>'+guards.slice(0,200).map(function(g){return '<tr><td>'+badge(g._st)+'</td>'+ks.map(function(k){return '<td>'+esc(g[k])+'</td>'}).join('')+'</tr>'}).join('')+'</table>'}
+}
+refresh();
+})();
+</script>
+</body>
+</html>
