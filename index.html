@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<script id="msmPackEarly">(function(){try{var p=localStorage.getItem("msmPack");if(p&&p!=="default"){document.documentElement.setAttribute("data-pack",p)}if(localStorage.getItem("msmLite")==="1")document.documentElement.setAttribute("data-lite","")}catch(e){}})();</script>
 <script>/* Theme must be set before first paint to avoid a flash of the wrong theme.
    FIX (2026-09-24): this used to force 'dark' and DELETE the saved
    preference on every single page load — that is why the app was
@@ -6526,5 +6527,121 @@ setInterval(()=>{ wrap(); },2000);
 })();
 </script>
 <style id="msmFix10">html[data-theme="light"] #msmHomeRoot div[style*="a6ddcb"],html[data-theme="light"] .msm-card div[style*="a6ddcb"],html[data-theme="light"] [style*="rgb(166, 221, 203)"],html[data-theme="light"] [style*="#a6ddcb"],html[data-theme="light"] .msm-region-contact-grid label{color:#3E5A4E!important}</style>
+<script id="msmThemePackJs">
+(function(){
+'use strict';
+/* ===== MSM Theme Pack + Import Selector (additive layer; original code untouched) ===== */
+var D={
+glass:{base:'dark',bg:'linear-gradient(135deg,#1b2a4a,#3a1f5c 60%,#0f4c5c)',card:'rgba(255,255,255,.12)',bd:'rgba(255,255,255,.3)',tx:'#f4f7ff',mut:'#b9c3dd',ac:'#7cc4ff',acx:'#0b1730',ib:'rgba(0,0,0,.35)',blur:'blur(14px)',sh:'none',r:'16px'},
+fire:{base:'dark',bg:'linear-gradient(160deg,#120505,#2b0a06 60%,#3d1304)',card:'rgba(60,14,8,.92)',bd:'#ff5a1f',tx:'#fff1e8',mut:'#e0a58c',ac:'linear-gradient(90deg,#ff2d1a,#ff9b1a)',acx:'#1a0502',ib:'rgba(0,0,0,.4)',blur:'none',sh:'0 0 18px rgba(255,90,31,.28)',r:'14px'},
+diamond:{base:'light',bg:'linear-gradient(135deg,#eef4fa,#d7e2ee 60%,#f7fbff)',card:'rgba(255,255,255,.92)',bd:'#b4c3d4',tx:'#14202e',mut:'#4d5f73',ac:'linear-gradient(90deg,#5b7a99,#9fb6cc)',acx:'#fff',ib:'#fff',blur:'none',sh:'0 6px 20px rgba(60,90,120,.15)',r:'4px'},
+rainbow:{base:'dark',bg:'#0e0e16',card:'#181824',bd:'#3a3a55',tx:'#f5f5fb',mut:'#a9a9c2',ac:'linear-gradient(90deg,#ff3b6b,#ffb02e,#3be07a,#2ea8ff,#a45bff)',acx:'#0e0e16',ib:'rgba(0,0,0,.4)',blur:'none',sh:'none',r:'14px',rb:1},
+neon:{base:'dark',bg:'radial-gradient(circle at 20% 0,#14275e,#060b22 70%)',card:'rgba(8,16,48,.94)',bd:'#2ea8ff',tx:'#eaf3ff',mut:'#8fb2e8',ac:'linear-gradient(90deg,#2ea8ff,#a45bff,#ffb02e)',acx:'#050a1c',ib:'rgba(0,0,0,.4)',blur:'none',sh:'0 0 14px rgba(46,168,255,.4)',r:'14px'}
+};
+var CARDS='.msm-region-card,.msm-stat,.msm-login-card,.msm-sector-card,.msm-info-card,.msm-widget,.msm-feature-card-3d,.modal-card,.msm-modal-card,.transfer-card,.card';
+var NAV='.msm-final-topnav,.msm-public-nav';
+var BTN='.btn-brass,.btn-primary,.msm-primary,.msm-cta-3d';
+function sel(p,list){return list.split(',').map(function(s){return 'html[data-pack="'+p+'"] '+s}).join(',')}
+function build(){
+  var out='';
+  Object.keys(D).forEach(function(p){var t=D[p],h='html[data-pack="'+p+'"][data-pack]';
+    out+=h+'{--paper:'+(t.base==='dark'?'#10131c':'#eef4fa')+';--paper-dark:'+(t.base==='dark'?'#171b27':'#d7e2ee')+';--ink:'+t.tx+';--ink-soft:'+t.mut+';--line:'+t.bd+';--white:'+t.card+'}';
+    out+=sel(p,'body,#appRoot,#msmLoginPage')+'{background:'+t.bg+'!important;background-attachment:fixed!important;color:'+t.tx+'!important}';
+    out+=sel(p,'.muted,.msm-muted')+'{color:'+t.mut+'!important}';
+    out+=sel(p,CARDS)+'{background:'+t.card+'!important;color:'+t.tx+'!important;border:1px solid '+t.bd+'!important;border-radius:'+t.r+'!important;box-shadow:'+t.sh+'!important;-webkit-backdrop-filter:'+t.blur+';backdrop-filter:'+t.blur+'}';
+    if(t.rb)out+=sel(p,CARDS)+'{border:2px solid transparent!important;background:linear-gradient('+t.card+','+t.card+') padding-box,'+t.ac+' border-box!important}';
+    out+=sel(p,NAV)+'{background:'+t.card+'!important;border-color:'+t.bd+'!important;color:'+t.tx+'!important;-webkit-backdrop-filter:'+t.blur+';backdrop-filter:'+t.blur+'}';
+    out+=sel(p,NAV+','+NAV.split(',').join(' *,')+' *')+'{color:'+t.tx+'}';
+    out+=sel(p,BTN+',.msm-nav button.active')+'{background:'+t.ac+'!important;color:'+t.acx+'!important;border-color:transparent!important}';
+    out+=sel(p,'input,select,textarea')+'{background:'+t.ib+'!important;color:'+t.tx+'!important;border-color:'+t.bd+'!important}';
+    out+=sel(p,'.data-table th,.data-table td')+'{color:'+t.tx+'!important;border-color:'+t.bd+'!important}';
+    out+=sel(p,'.data-table th')+'{background:'+t.card+'!important}';
+    out+=sel(p,'h1,h2,h3,label')+'{color:'+t.tx+'}';
+  });
+  out+='html[data-lite] *{-webkit-backdrop-filter:none!important;backdrop-filter:none!important;box-shadow:none!important;animation:none!important}';
+  out+='html[data-pack]:not([data-pack="default"]) #msmThemeToggle{display:none!important}';
+  out+='#msmPackBox{position:fixed;top:10px;right:10px;z-index:100001;display:flex;gap:6px;align-items:center;background:rgba(0,0,0,.55);color:#fff;border-radius:999px;padding:5px 10px;font:700 11px system-ui,sans-serif}';
+  out+='html[data-pack="default"] #msmPackBox,html:not([data-pack]) #msmPackBox{right:112px}';
+  out+='#msmPackBox select{font:inherit;border-radius:8px;padding:3px 6px;background:#222;color:#fff;border:1px solid #666}#msmPackBox label{display:flex;gap:3px;align-items:center}';
+  out+='@media(max-width:650px){html[data-pack="default"] #msmPackBox,html:not([data-pack]) #msmPackBox{right:92px;top:6px}}';
+  out+='.msm-imp-bar{margin:10px 0;padding:10px;border:1px solid var(--line);border-radius:10px}.msm-imp-bar .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.msm-imp-bar button{padding:6px 10px;border-radius:8px;border:1px solid var(--line);background:transparent;color:inherit;cursor:pointer;font:inherit}#msmImpCols{display:flex;gap:10px;flex-wrap:wrap;margin-top:8px;font-size:12px}#msmImpCols label{display:flex;gap:4px;align-items:center}';
+  return out;
+}
+var st=document.createElement('style');st.id='msmThemePackCss';st.textContent=build();document.head.appendChild(st);
+
+/* ---- theme switcher ---- */
+function apply(p,lite){
+  var h=document.documentElement;h.setAttribute('data-pack',p);
+  if(lite)h.setAttribute('data-lite','');else h.removeAttribute('data-lite');
+  if(D[p]){h.setAttribute('data-theme',D[p].base);try{localStorage.setItem('msmTheme',D[p].base)}catch(e){}}
+  try{localStorage.setItem('msmPack',p);localStorage.setItem('msmLite',lite?'1':'0')}catch(e){}
+}
+var cur='default',lite=false;
+try{cur=localStorage.getItem('msmPack')||'default';lite=localStorage.getItem('msmLite')==='1'}catch(e){}
+if(!D[cur])cur='default';
+var box=document.createElement('div');box.id='msmPackBox';
+box.innerHTML='<select id="msmPackSel" aria-label="Theme"><option value="default">Original</option><option value="glass">Glass</option><option value="fire">Fire</option><option value="diamond">Diamond</option><option value="rainbow">Rainbow</option><option value="neon">Neon</option></select><label><input type="checkbox" id="msmLiteChk"> Lite</label>';
+document.body.appendChild(box);
+var S=document.getElementById('msmPackSel'),L=document.getElementById('msmLiteChk');
+S.value=cur;L.checked=lite;apply(cur,lite);
+S.onchange=function(){cur=S.value;apply(cur,L.checked)};
+L.onchange=function(){apply(S.value,L.checked)};
+
+/* ---- import: choose rows and columns ---- */
+var skip=new Set(),off=new Set(),lastRaw=null,LOCK=/^(name|cnic|msmno|sector|sectorid|clientproject|region|regionid)$/;
+function pi(){try{return pendingImport}catch(e){return null}}
+function $(i){return document.getElementById(i)}
+function ensureBar(){
+  if($('msmImpBar'))return;var sum=$('importPreviewSummary');if(!sum)return;
+  var d=document.createElement('div');d.id='msmImpBar';d.className='msm-imp-bar';
+  d.innerHTML='<div class="row"><button type="button" data-a="all">Tick all rows</button><button type="button" data-a="none">Clear all rows</button><button type="button" data-a="ready">Tick Ready rows only</button><span id="msmImpCnt"></span></div><div id="msmImpCols"></div>';
+  sum.parentNode.insertBefore(d,sum.nextSibling);
+  d.addEventListener('click',function(e){var a=e.target.getAttribute&&e.target.getAttribute('data-a');if(!a)return;var p=pi();if(!p)return;
+    skip.clear();if(a==='none')p.rows.forEach(function(r){skip.add(r.__row)});
+    if(a==='ready')p.rows.forEach(function(r){if(!r.__ok)skip.add(r.__row)});
+    decorate(true)});
+  d.addEventListener('change',function(e){var k=e.target.getAttribute('data-col');if(!k)return;if(e.target.checked)off.delete(k);else off.add(k)});
+}
+function decorate(force){
+  var p=pi();if(!p||!p.rows)return;
+  if(lastRaw!==window.__importRaw){lastRaw=window.__importRaw;skip.clear();off.clear()}
+  ensureBar();
+  var tr=document.querySelector('#importPreviewModal thead tr');
+  if(tr&&!tr.querySelector('.pk')){var th=document.createElement('th');th.className='pk';th.textContent='Import';tr.insertBefore(th,tr.firstChild)}
+  var byRow={};p.rows.forEach(function(r){byRow[String(r.__row)]=r});
+  document.querySelectorAll('#importPreviewTbody tr').forEach(function(row){
+    var n=row.firstElementChild?row.firstElementChild.textContent.trim():'';var r=byRow[n];
+    var c=row.querySelector('.pk input');
+    if(!c){var td=document.createElement('td');td.className='pk';td.innerHTML='<input type="checkbox" data-row="'+n+'" aria-label="Import row '+n+'">';row.insertBefore(td,row.firstChild);c=td.firstChild}
+    if(r){c.disabled=!r.__ok;c.checked=!!r.__ok&&!skip.has(r.__row)}
+  });
+  var ready=p.rows.filter(function(r){return r.__ok&&!skip.has(r.__row)}).length;
+  var cnt=$('msmImpCnt');if(cnt)cnt.textContent=ready+' of '+p.rows.length+' rows will be imported (preview shows first 300; buttons apply to all rows)';
+  var btn=$('confirmImportBtn');if(btn&&!/^Imported/.test(btn.textContent)){btn.disabled=ready===0;btn.textContent=ready?('Confirm '+ready+' Selected Row(s)'):'Nothing selected'}
+  var cols=$('msmImpCols');
+  if(cols&&(force||!cols.firstChild||cols.getAttribute('data-n')!==String(p.rows.length))){
+    var keys=[];try{keys=Object.keys(IMPORT_ALIASES)}catch(e){}
+    keys=keys.filter(function(k){return p.rows.some(function(r){return r[k]!==undefined&&String(r[k]).trim()!==''})});
+    cols.setAttribute('data-n',String(p.rows.length));
+    cols.innerHTML='<b>Columns to import:</b>'+keys.map(function(k){return '<label><input type="checkbox" data-col="'+k+'" '+(off.has(k)?'':'checked')+(LOCK.test(k)?' disabled':'')+'> '+k+'</label>'}).join('');
+  }
+}
+function wire(){
+  var tb=$('importPreviewTbody');if(!tb)return false;
+  new MutationObserver(function(){decorate(false)}).observe(tb,{childList:true});
+  tb.addEventListener('change',function(e){var n=e.target.getAttribute&&e.target.getAttribute('data-row');if(n===null||n===undefined)return;
+    var p=pi();if(!p)return;var r=p.rows.filter(function(x){return String(x.__row)===n})[0];if(!r)return;
+    if(e.target.checked)skip.delete(r.__row);else skip.add(r.__row);decorate(false)});
+  return true;
+}
+if(!wire()){var mo=new MutationObserver(function(){if(wire())mo.disconnect()});mo.observe(document.body,{childList:true,subtree:true})}
+var orig=window.confirmLongRollImport;
+if(typeof orig==='function'){window.confirmLongRollImport=function(){
+  var p=pi();
+  if(p&&p.rows)p.rows.forEach(function(r){if(skip.has(r.__row))r.__ok=false;off.forEach(function(k){if(!LOCK.test(k))r[k]=''})});
+  return orig.apply(this,arguments)}}
+})();
+
+</script>
 </body>
 </html>
