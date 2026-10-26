@@ -1,4 +1,4 @@
-const CACHE_NAME = 'msm-longroll-v12-import-safe';
+const CACHE_NAME = 'msm-longroll-v14-complete';
 const APP_SHELL = ['./','./index.html','./manifest.webmanifest'];
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)).then(()=>self.skipWaiting()));
